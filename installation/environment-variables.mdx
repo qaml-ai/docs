@@ -1,0 +1,141 @@
+---
+title: 'Environment Variables'
+description: 'Learn how to configure environment variables for camelAI.'
+---
+
+# Environment Variables
+
+This guide explains how to configure environment variables for camelAI.
+
+## Overview
+
+camelAI uses environment variables to configure various aspects of the application. These variables are typically set in a `.env.docker` file in the project root.
+
+## Required Variables
+
+### Database Configuration
+
+```bash
+# Database credentials
+DB_NAME=camel
+DB_USER=camel
+DB_PASSWORD=your_secure_password
+DB_HOST=db
+DB_PORT=5432
+```
+
+### Django Settings
+
+```bash
+# Django secret key for cryptographic signing
+DJANGO_SECRET_KEY=your_secret_key
+
+# Comma-separated list of allowed hosts
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Debug mode (set to False in production)
+DEBUG=False
+```
+
+### Application Settings
+
+```bash
+# Application port
+PORT=8000
+
+# Cache settings
+CACHE_HOST=cache
+CACHE_PORT=11211
+```
+
+## Optional Variables
+
+### Email Configuration
+
+```bash
+# SMTP settings for email notifications
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your_email@example.com
+EMAIL_HOST_PASSWORD=your_email_password
+EMAIL_USE_TLS=True
+```
+
+### Security Settings
+
+```bash
+# Security settings
+CSRF_TRUSTED_ORIGINS=https://your-domain.com
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+```
+
+## Example Configuration
+
+Here's a complete example of a `.env.docker` file:
+
+```bash
+# Database Configuration
+DB_NAME=camel
+DB_USER=camel
+DB_PASSWORD=your_secure_password
+DB_HOST=db
+DB_PORT=5432
+
+# Django Settings
+DJANGO_SECRET_KEY=your_secret_key
+ALLOWED_HOSTS=localhost,127.0.0.1
+DEBUG=False
+
+# Application Settings
+PORT=8000
+CACHE_HOST=cache
+CACHE_PORT=11211
+
+# Email Configuration (Optional)
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your_email@example.com
+EMAIL_HOST_PASSWORD=your_email_password
+EMAIL_USE_TLS=True
+
+# Security Settings (Optional)
+CSRF_TRUSTED_ORIGINS=https://your-domain.com
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+```
+
+## Security Best Practices
+
+1. Never commit the `.env.docker` file to version control
+2. Use strong, unique passwords for all credentials
+3. Keep your secret keys secure and rotate them regularly
+4. Use HTTPS in production
+5. Set appropriate file permissions:
+   ```bash
+   chmod 600 .env.docker
+   ```
+
+## Updating Variables
+
+After updating environment variables:
+
+1. Stop the services:
+   ```bash
+   docker compose down
+   ```
+
+2. Rebuild and restart:
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+## Next Steps
+
+After configuring your environment variables:
+
+1. [Start the Services](/installation/docker-compose)
+2. [Create a Superuser](/first-steps/creating-superuser)
+3. [Begin Using camelAI](/quickstart) 

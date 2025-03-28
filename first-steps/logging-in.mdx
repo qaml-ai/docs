@@ -1,0 +1,105 @@
+---
+title: 'Logging In'
+description: 'Learn how to log in to camelAI and access its features.'
+---
+
+# Logging In
+
+This guide explains how to log in to camelAI and access its various interfaces.
+
+## Accessing camelAI
+
+### Web Interface
+
+1. Open your web browser and navigate to:
+   ```
+   http://localhost:8000
+   ```
+
+2. You'll be presented with the login page
+
+3. Enter your superuser credentials:
+   - Username
+   - Password
+
+### Admin Interface
+
+For administrative tasks, you can access the admin interface at:
+```
+http://localhost:8000/admin/
+```
+
+## Interface Overview
+
+### Main Dashboard
+
+After logging in, you'll see the main dashboard which includes:
+
+- Quick access to recent analyses
+- System status indicators
+- Recent activity feed
+- Quick action buttons
+
+### Navigation Menu
+
+The main navigation menu provides access to:
+
+- Dashboard
+- Analysis
+- Databases
+- Reports
+- Settings
+
+## Security Features
+
+### Session Management
+
+- Sessions timeout after 30 minutes of inactivity
+- You can manually log out using the logout button
+- Multiple sessions are supported
+
+### Two-Factor Authentication (Optional)
+
+If enabled, you'll need to:
+
+1. Enter your username and password
+2. Provide the verification code from your authenticator app
+
+## Troubleshooting
+
+### Common Login Issues
+
+1. **Connection Refused**
+   - Check if the services are running:
+     ```bash
+     docker compose ps
+     ```
+   - Verify the port is correct (8000)
+
+2. **Invalid Credentials**
+   - Double-check your username and password
+   - Try resetting your password:
+     ```bash
+     docker compose exec camel python manage.py changepassword your_username
+     ```
+
+3. **Session Issues**
+   - Clear your browser cache and cookies
+   - Try using a different browser
+   - Check if your session has expired
+
+### Browser Requirements
+
+camelAI works best with:
+- Chrome (latest version)
+- Firefox (latest version)
+- Safari (latest version)
+- Edge (latest version)
+
+## Next Steps
+
+After successfully logging in:
+
+1. [Configure Initial Settings](/first-steps/initial-setup)
+2. [Connect Your Databases](/user-guide/databases)
+3. [Start Analyzing Data](/user-guide/analysis) 

@@ -1,0 +1,133 @@
+---
+title: 'Docker Compose Setup'
+description: 'Learn how to set up and configure Docker Compose for camelAI.'
+---
+
+# Docker Compose Setup
+
+This guide will walk you through setting up Docker Compose for camelAI.
+
+## Overview
+
+camelAI uses Docker Compose to manage multiple services:
+
+- `camel`: The main application
+- `nginx`: Reverse proxy
+- `pgvector`: PostgreSQL with vector extension
+- `memcached`: Caching layer
+
+## Installation Steps
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/qaml-ai/camelAI-docker-compose.git
+cd camelAI-docker-compose
+```
+
+### 2. Review the Docker Compose File
+
+The main Docker Compose configuration is in `docker-compose.prod.yml`. Here's a breakdown of the services:
+
+```yaml
+services:
+  camel:
+    build: .
+    environment:
+      - DJANGO_SETTINGS_MODULE=camel.settings.production
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - cache
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - camel
+
+  db:
+    image: ankane/pgvector:latest
+    environment:
+      - POSTGRES_DB=camel
+      - POSTGRES_USER=camel
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  cache:
+    image: memcached:alpine
+    ports:
+      - "11211:11211"
+
+volumes:
+  postgres_data:
+```
+
+### 3. Environment Variables
+
+Create a `.env.docker` file in the project root with the following variables:
+
+```bash
+DB_PASSWORD=your_secure_password
+DJANGO_SECRET_KEY=your_secret_key
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+### 4. Start the Services
+
+Run the following command to start all services:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### 5. Verify Installation
+
+Check that all services are running:
+
+```bash
+docker compose ps
+```
+
+You should see all services with a status of "running".
+
+## Common Issues
+
+### Port Conflicts
+
+If you see port conflicts, make sure:
+- Port 8000 is not in use by another application
+- Port 5432 is available for PostgreSQL
+- Port 11211 is available for Memcached
+
+### Volume Permissions
+
+If you encounter permission issues with volumes:
+
+```bash
+sudo chown -R $USER:$USER .
+```
+
+### Service Health Checks
+
+You can check the health of individual services:
+
+```bash
+docker compose logs camel
+docker compose logs nginx
+docker compose logs db
+docker compose logs cache
+```
+
+## Next Steps
+
+After setting up Docker Compose:
+
+1. [Create a Superuser](/first-steps/creating-superuser)
+2. [Configure Your Environment](/installation/environment-variables)
+3. [Start Using camelAI](/quickstart) 

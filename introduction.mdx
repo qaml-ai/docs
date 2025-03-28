@@ -1,71 +1,52 @@
 ---
-title: Introduction
-description: "Welcome to the home of your new documentation"
+title: 'Introduction to camelAI'
+description: 'Learn about camelAI, your intelligent data analyst that connects to your databases and provides natural language insights.'
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.png"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.png"
-  alt="Hero Dark"
-/>
+# 🐪 camelAI - The AI Data Analyst
 
-## Setting up
+camelAI is your intelligent data analyst that connects to your databases, understands your business, and gives you answers in natural language.
 
-The first step to world-class documentation is setting up your editing environments.
+## What is camelAI?
 
-<CardGroup cols={2}>
-  <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
-  >
-    Get your docs set up locally for easy development
-  </Card>
-  <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
-  >
-    Preview your changes before you push to make sure they're perfect
-  </Card>
-</CardGroup>
+camelAI is a powerful tool that bridges the gap between your data and business insights. It:
 
-## Make it yours
+- Connects directly to your databases
+- Understands your business context
+- Provides answers in natural language
+- Helps you make data-driven decisions
 
-Update your docs to your brand and add valuable content for the best user conversion.
+## Key Features
 
-<CardGroup cols={2}>
-  <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
-  >
-    Customize your docs to your company's colors and brands
-  </Card>
-  <Card
-    title="Reference APIs"
-    icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
-  >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/content/components/accordions"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
-  </Card>
-</CardGroup>
+### 🤖 Natural Language Interface
+Ask questions about your data in plain English and get clear, actionable insights.
+
+### 🔌 Database Integration
+Connect to your existing databases and start analyzing your data immediately.
+
+### 📊 Intelligent Analysis
+Get smart insights and recommendations based on your data patterns.
+
+### 🎯 Business Understanding
+camelAI learns your business context to provide relevant and meaningful insights.
+
+## Getting Started
+
+Ready to start using camelAI? Check out our [Quickstart Guide](/quickstart) to get up and running in minutes.
+
+## Architecture
+
+camelAI consists of several key components:
+
+- `camel` – The main application that handles analysis and user interactions
+- `nginx` – Reverse proxy for secure access
+- `pgvector` – PostgreSQL with vector extension for efficient data storage
+- `memcached` – Caching layer for improved performance
+
+## Next Steps
+
+1. Review the [Prerequisites](/installation/prerequisites)
+2. Set up your [Docker environment](/installation/docker-compose)
+3. Configure your [Environment Variables](/installation/environment-variables)
+4. Create your [Superuser Account](/first-steps/creating-superuser)
+5. Start [Analyzing Your Data](/user-guide/analysis)

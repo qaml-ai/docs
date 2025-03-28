@@ -1,0 +1,79 @@
+---
+title: 'Prerequisites'
+description: 'Learn about the system requirements and prerequisites for running camelAI.'
+---
+
+# Prerequisites
+
+Before you can run camelAI, you'll need to ensure your system meets the following requirements.
+
+## System Requirements
+
+### Operating System
+- Linux (Ubuntu 20.04 or later recommended)
+- macOS (10.15 or later)
+- Windows 10/11 (with WSL2)
+
+### Hardware Requirements
+- CPU: 2+ cores
+- RAM: 4GB minimum (8GB recommended)
+- Storage: 20GB free space
+
+## Required Software
+
+### Docker
+Docker is required to run camelAI and its dependencies. Install Docker by following the official installation guide for your operating system:
+
+- [Docker Desktop for Windows](https://docs.docker.com/desktop/install/windows-install/)
+- [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/)
+- [Docker Engine for Linux](https://docs.docker.com/engine/install/)
+
+After installation, verify Docker is running:
+
+```bash
+docker --version
+```
+
+### Docker Compose
+Docker Compose is used to manage camelAI's services. It's included with Docker Desktop for Windows and Mac. For Linux, you'll need to install it separately:
+
+```bash
+sudo apt-get update
+sudo apt-get install docker-compose-plugin
+```
+
+Verify the installation:
+
+```bash
+docker compose version
+```
+
+## Network Requirements
+
+- Port 8000 available for the web interface
+- Port 5432 available for PostgreSQL (if not using external database)
+- Port 11211 available for Memcached (if not using external cache)
+
+## Optional Requirements
+
+### Git
+While not strictly required, Git is recommended for version control and updates:
+
+```bash
+git --version
+```
+
+### Make
+Make is optional but recommended for development:
+
+```bash
+make --version
+```
+
+## Next Steps
+
+Once you have the prerequisites installed, you can proceed to:
+
+1. [Setting up Docker Compose](/installation/docker-compose)
+2. [Configuring Environment Variables](/installation/environment-variables)
+3. [Starting camelAI](/quickstart) 
