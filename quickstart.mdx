@@ -25,7 +25,19 @@ cd camelAI-docker-compose
 
 ### 2. Configure Environment Variables
 
-Create a `.env.docker` file in the project root with the required environment variables. See our [Environment Variables](/installation/environment-variables) guide for details.
+The repository includes a `.env.docker` template file. Copy it and update the values:
+
+```bash
+cp .env.docker .env.docker.local
+```
+
+Edit `.env.docker.local` with your configuration:
+- Set a secure `DJANGO_SECRET_KEY`
+- Update `POSTGRES_PASSWORD` with a secure password
+- Configure your AWS credentials if using Bedrock
+- Set up API keys if using OpenAI or Anthropic
+
+See our [Environment Variables](/installation/environment-variables) guide for details.
 
 ### 3. Start the Application
 

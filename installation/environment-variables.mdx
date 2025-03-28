@@ -9,66 +9,57 @@ This guide explains how to configure environment variables for camelAI.
 
 ## Overview
 
-camelAI uses environment variables to configure various aspects of the application. These variables are typically set in a `.env.docker` file in the project root.
+camelAI uses environment variables to configure various aspects of the application. These variables are typically set in a `.env.docker` file in the project root. A template file is provided in the repository.
 
 ## Required Variables
-
-### Database Configuration
-
-```bash
-# Database credentials
-DB_NAME=camel
-DB_USER=camel
-DB_PASSWORD=your_secure_password
-DB_HOST=db
-DB_PORT=5432
-```
 
 ### Django Settings
 
 ```bash
 # Django secret key for cryptographic signing
-DJANGO_SECRET_KEY=your_secret_key
+DJANGO_SECRET_KEY=change_this_to_a_secure_key_in_production
 
-# Comma-separated list of allowed hosts
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Debug mode (set to False in production)
-DEBUG=False
+# Hostname and site URL
+HOSTNAME=localhost
+SITE_URL=http://localhost:8000
 ```
 
-### Application Settings
+### Database Configuration
 
 ```bash
-# Application port
-PORT=8000
-
-# Cache settings
-CACHE_HOST=cache
-CACHE_PORT=11211
+# PostgreSQL password
+POSTGRES_PASSWORD=secure_password
+DB_PASSWORD=${POSTGRES_PASSWORD}
 ```
-
-## Optional Variables
 
 ### Email Configuration
 
 ```bash
-# SMTP settings for email notifications
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=your_email@example.com
-EMAIL_HOST_PASSWORD=your_email_password
-EMAIL_USE_TLS=True
+# Set to True if SMTP is not setup
+DISABLE_EMAIL=True
 ```
 
-### Security Settings
+### AI Provider Settings
 
 ```bash
-# Security settings
-CSRF_TRUSTED_ORIGINS=https://your-domain.com
-SECURE_SSL_REDIRECT=True
-SESSION_COOKIE_SECURE=True
-CSRF_COOKIE_SECURE=True
+# Set to True if using Bedrock only
+USE_BEDROCK_ONLY=True
+
+# Set to False if you don't want to use the prompt cache
+USE_PROMPT_CACHE=False
+
+# OpenAI and Anthropic API keys (if not using Bedrock)
+# OPENAI_API_KEY=your_openai_api_key
+# ANTHROPIC_API_KEY=your_anthropic_api_key
+```
+
+### AWS Configuration
+
+```bash
+# AWS credentials for Bedrock
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_REGION=your_region
 ```
 
 ## Example Configuration
@@ -76,35 +67,26 @@ CSRF_COOKIE_SECURE=True
 Here's a complete example of a `.env.docker` file:
 
 ```bash
-# Database Configuration
-DB_NAME=camel
-DB_USER=camel
-DB_PASSWORD=your_secure_password
-DB_HOST=db
-DB_PORT=5432
-
 # Django Settings
-DJANGO_SECRET_KEY=your_secret_key
-ALLOWED_HOSTS=localhost,127.0.0.1
-DEBUG=False
+DJANGO_SECRET_KEY=change_this_to_a_secure_key_in_production
+HOSTNAME=localhost
+SITE_URL=http://localhost:8000
 
-# Application Settings
-PORT=8000
-CACHE_HOST=cache
-CACHE_PORT=11211
+# Database Configuration
+POSTGRES_PASSWORD=secure_password
+DB_PASSWORD=${POSTGRES_PASSWORD}
 
-# Email Configuration (Optional)
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=your_email@example.com
-EMAIL_HOST_PASSWORD=your_email_password
-EMAIL_USE_TLS=True
+# Email Configuration
+DISABLE_EMAIL=True
 
-# Security Settings (Optional)
-CSRF_TRUSTED_ORIGINS=https://your-domain.com
-SECURE_SSL_REDIRECT=True
-SESSION_COOKIE_SECURE=True
-CSRF_COOKIE_SECURE=True
+# AI Provider Settings
+USE_BEDROCK_ONLY=True
+USE_PROMPT_CACHE=False
+
+# AWS Configuration
+AWS_ACCESS_KEY_ID=your_access_key_id
+AWS_SECRET_ACCESS_KEY=your_secret_access_key
+AWS_REGION=your_region
 ```
 
 ## Security Best Practices
