@@ -43,7 +43,7 @@
         },
         {
           "anchor": "Support",
-          "href": "mailto:support@qaml.ai",
+          "href": "mailto:support@camelai.com",
           "icon": "mail"
         }
       ]
@@ -57,7 +57,7 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@qaml.ai"
+        "href": "mailto:support@camelai.com"
       }
     ],
     "primary": {
