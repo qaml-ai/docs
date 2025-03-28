@@ -3,18 +3,28 @@ title: 'Docker Compose Setup'
 description: 'Learn how to set up and configure Docker Compose for camelAI.'
 ---
 
-# Docker Compose Setup
-
-This guide will walk you through setting up Docker Compose for camelAI.
-
 ## Overview
 
 camelAI uses Docker Compose to manage multiple services:
 
-- `camel`: The main application
+- `camel`: The main application (hosted on Amazon ECR)
 - `nginx`: Reverse proxy
 - `pgvector`: PostgreSQL with pgvector extension
 - `memcached`: Caching layer
+
+## Prerequisites
+
+Before setting up Docker Compose, ensure you have:
+
+1. Docker and Docker Compose installed
+2. AWS CLI installed and configured
+3. AWS ECR authentication set up:
+   ```bash
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 904534089871.dkr.ecr.us-west-2.amazonaws.com
+   ```
+4. Required IAM permissions:
+   - `AmazonEC2ContainerRegistryReadOnly` policy
+   - Or custom policy with `ecr:GetAuthorizationToken` and `ecr:BatchCheckLayerAvailability` permissions
 
 ## Installation Steps
 
@@ -115,6 +125,24 @@ You should see all services with a status of "running".
 
 ## Common Issues
 
+### ECR Authentication
+
+If you see errors related to ECR authentication:
+
+1. Verify AWS CLI is configured correctly:
+   ```bash
+   aws configure list
+   ```
+
+2. Check ECR authentication:
+   ```bash
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 904534089871.dkr.ecr.us-west-2.amazonaws.com
+   ```
+
+3. Verify IAM permissions:
+   - Check if you have the `AmazonEC2ContainerRegistryReadOnly` policy
+   - Or verify custom policy permissions
+
 ### Port Conflicts
 
 If you see port conflicts, make sure:
@@ -143,6 +171,6 @@ docker compose logs memcached
 
 After setting up Docker Compose:
 
-1. [Create a Superuser](/first-steps/creating-superuser)
+1. [Create a Superuser](/installation/creating-superuser)
 2. [Configure Your Environment](/installation/environment-variables)
-3. [Start Using camelAI](/quickstart) 
+3. [Start Using camelAI](/installation/quickstart) 

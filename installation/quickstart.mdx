@@ -3,16 +3,13 @@ title: 'Quickstart Guide'
 description: 'Get started with camelAI in minutes using Docker Compose.'
 ---
 
-# 🚀 Quickstart Guide
-
-Get camelAI up and running in minutes using Docker Compose. This guide will walk you through the installation process step by step.
-
 ## Prerequisites
 
 Before you begin, make sure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/)
+- [AWS CLI](https://aws.amazon.com/cli/)
 
 ## Installation Steps
 
@@ -23,7 +20,31 @@ git clone https://github.com/qaml-ai/camelAI-docker-compose.git
 cd camelAI-docker-compose
 ```
 
-### 2. Configure Environment Variables
+### 2. AWS ECR Authentication
+
+Since the camelAI image is stored in Amazon ECR, you'll need to authenticate Docker to access it:
+
+1. Install the AWS CLI if you haven't already
+2. Configure your AWS credentials:
+   ```bash
+   aws configure
+   ```
+   Enter your:
+   - AWS Access Key ID
+   - AWS Secret Access Key
+   - Default region (us-west-2)
+   - Default output format (json)
+
+3. Authenticate Docker with ECR:
+   ```bash
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 904534089871.dkr.ecr.us-west-2.amazonaws.com
+   ```
+
+4. Verify you have the necessary IAM permissions:
+   - The `AmazonEC2ContainerRegistryReadOnly` policy is required
+   - Or a custom policy with `ecr:GetAuthorizationToken` and `ecr:BatchCheckLayerAvailability` permissions
+
+### 3. Configure Environment Variables
 
 The repository includes a `.env.docker` template file. Copy it and update the values:
 
@@ -39,7 +60,7 @@ Edit `.env.docker.local` with your configuration:
 
 See our [Environment Variables](/installation/environment-variables) guide for details.
 
-### 3. Start the Application
+### 4. Start the Application
 
 Run the following command to start camelAI in production mode:
 
@@ -53,7 +74,7 @@ This will start the following services:
 - `pgvector` – PostgreSQL with vector extension
 - `memcached` – Caching layer
 
-### 4. Create a Superuser
+### 5. Create a Superuser
 
 Once the services are running, create your initial superuser account:
 
@@ -63,7 +84,7 @@ docker compose exec camel python manage.py createuser
 
 Follow the prompts to set up your superuser credentials.
 
-### 5. Access the Web Interface
+### 6. Access the Web Interface
 
 Visit the following URL in your browser:
 ```
@@ -72,23 +93,16 @@ http://localhost:8000
 
 Log in using the superuser credentials you just created.
 
-## Next Steps
-
-Now that you have camelAI running, you can:
-
-1. [Connect your databases](/user-guide/databases)
-2. [Start analyzing your data](/user-guide/analysis)
-3. [Create custom reports](/user-guide/features/reports)
-
 ## Troubleshooting
 
 If you encounter any issues during installation:
 
 1. Check that Docker and Docker Compose are running
 2. Verify your environment variables are correctly set
-3. Check the logs using:
+3. Ensure you're authenticated with AWS ECR
+4. Check the logs using:
    ```bash
    docker compose logs
    ```
 
-For more detailed troubleshooting, visit our [Troubleshooting Guide](/troubleshooting).
+For more detailed troubleshooting, visit our [Troubleshooting Guide](/troubleshooting). 

@@ -16,24 +16,19 @@
           {
             "group": "Introduction",
             "pages": [
-              "introduction",
-              "quickstart"
+              "introduction"
             ]
           },
           {
-            "group": "Installation",
+            "group": "Self Hosting",
             "pages": [
+              "installation/quickstart",
               "installation/prerequisites",
               "installation/docker-compose",
-              "installation/environment-variables"
-            ]
-          },
-          {
-            "group": "First Steps",
-            "pages": [
-              "first-steps/creating-superuser",
-              "first-steps/logging-in",
-              "first-steps/initial-setup"
+              "installation/environment-variables",
+              "installation/creating-superuser",
+              "installation/logging-in",
+              "installation/initial-setup"
             ]
           }
         ]
