@@ -53,6 +53,7 @@ USE_PROMPT_CACHE=False
 
 ```bash
 # AWS credentials for Bedrock
+# Note: The AWS user must have the AmazonBedrockFullAccess IAM policy
 AWS_ACCESS_KEY_ID=your_access_key_id
 AWS_SECRET_ACCESS_KEY=your_secret_access_key
 AWS_REGION=your_region
@@ -91,10 +92,6 @@ AWS_REGION=your_region
 2. Use strong, unique passwords for all credentials
 3. Keep your secret keys secure and rotate them regularly
 4. Use HTTPS in production
-5. Set appropriate file permissions:
-   ```bash
-   chmod 600 .env.docker
-   ```
 
 ## Updating Variables
 
