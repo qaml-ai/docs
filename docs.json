@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "camelAI Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#3F60C1",
+    "light": "#5F83F0",
+    "dark": "#3F60C1"
   },
   "favicon": "/favicon.png",
   "navigation": {
@@ -42,9 +42,9 @@
           "icon": "github"
         },
         {
-          "anchor": "Support",
-          "href": "mailto:support@camelai.com",
-          "icon": "mail"
+          "anchor": "Web App",
+          "href": "https://app.camelai.com",
+          "icon": "browser"
         }
       ]
     }

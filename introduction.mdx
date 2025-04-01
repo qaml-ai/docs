@@ -5,34 +5,88 @@ description: 'Learn about camelAI, your intelligent data analyst that connects t
 
 ## What is camelAI?
 
-camelAI is a powerful tool that bridges the gap between your data and business insights. It:
+camelAI is a powerful business intelligence tool that bridges the gap between your data and actionable insights. It connects an LLM directly to your database, data warehouse, or uploaded CSV files, allowing you to:
 
-- Connects directly to your databases
-- Understands your schemas
-- Provides answers in natural language
-- Helps you make data-driven decisions
+- Ask questions in natural language
+- Generate SQL queries automatically
+- Visualize results with interactive Plotly graphs
+- Make data-driven decisions quickly and easily
+
+## Access Options
+
+<CardGroup cols={2}>
+  <Card
+    title="Web Application"
+    icon="globe"
+    href="https://camelai.com"
+  >
+    Most users should start with our web app, offering a free tier with 10 messages per week, no installation required, and immediate access to data analytics.
+  </Card>
+  <Card
+    title="Self-Hosted Docker"
+    icon="docker"
+    href="/installation/prerequisites"
+  >
+    For organizations requiring on-premises deployment. Requires a valid license - contact our sales team.
+  </Card>
+</CardGroup>
+<Note>
+  Interested in an on-prem license? [Book a call with our sales team](https://cal.com/ipr-camelai/book-a-demo) here.
+</Note>
 
 ## Key Features
 
-### 🤖 Natural Language Interface
-Ask questions about your data in plain English and get clear, actionable insights.
+<CardGroup cols={2}>
+  <Card
+    title="AI Chat Interface"
+    icon="robot"
+  >
+    Connects Claude Sonnet to your database, writes SQL from natural language, creates visualizations, and shows all queries for transparency.
+  </Card>
+  <Card
+    title="Dashboards"
+    icon="chart-line"
+  >
+    Save any visualization to dashboards that refresh automatically, provide up-to-date metrics, and can be created in minutes.
+  </Card>
+</CardGroup>
 
-### 🔌 Database Integration
-Connect to your existing databases and start analyzing your data immediately.
+## Ideal For
 
-### 📊 Intelligent Analysis
-Get smart insights and recommendations based on your data patterns.
-
-### 🎯 Business Understanding
-camelAI learns your business context to provide relevant and meaningful insights.
+<CardGroup cols={3}>
+  <Card title="Executives" icon="user-tie">
+    Non-technical leaders needing data insights
+  </Card>
+  <Card title="Founders" icon="rocket">
+    Time-constrained startup leaders
+  </Card>
+  <Card title="Product Managers" icon="clipboard-list">
+    Making data-driven product decisions
+  </Card>
+  <Card title="Data Analysts" icon="database">
+    Beginning analysts learning SQL
+  </Card>
+  <Card title="Ad-hoc Questions" icon="square-question">
+    Queries without existing dashboards
+  </Card>
+  <Card title="Metrics Monitoring" icon="chart-bar">
+    Companies setting up KPI tracking
+  </Card>
+</CardGroup>
 
 ## Getting Started
 
-Ready to start using camelAI? Check out our [Quickstart Guide](/installation/quickstart) to get up and running in minutes.
-
-## Next Steps
-
-1. Review the [Prerequisites](/installation/prerequisites)
-2. Set up your [Docker environment](/installation/docker-compose)
-3. Configure your [Environment Variables](/installation/environment-variables)
-4. Create your [Superuser Account](/installation/creating-superuser)
+<Steps>
+  <Step title="Review Prerequisites">
+    Check the [Prerequisites](/installation/prerequisites) for self-hosted deployment
+  </Step>
+  <Step title="Set up Docker">
+    Configure your [Docker environment](/installation/docker-compose)
+  </Step>
+  <Step title="Configure Environment">
+    Set up your [Environment Variables](/installation/environment-variables)
+  </Step>
+  <Step title="Create Superuser">
+    Set up your [Superuser Account](/installation/creating-superuser)
+  </Step>
+</Steps>
