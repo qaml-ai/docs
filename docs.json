@@ -63,7 +63,7 @@
     "primary": {
       "type": "button",
       "label": "Try camelAI",
-      "href": "http://localhost:8000"
+      "href": "https://app.camelai.com"
     }
   },
   "footer": {
