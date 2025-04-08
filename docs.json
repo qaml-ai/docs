@@ -16,7 +16,8 @@
           {
             "group": "Introduction",
             "pages": [
-              "introduction"
+              "introduction",
+              "plans"
             ]
           },
           {
@@ -29,6 +30,12 @@
               "installation/creating-superuser",
               "installation/logging-in",
               "installation/initial-setup"
+            ]
+          },
+          {
+            "group": "Setup",
+            "pages": [
+              "setup/rbac"
             ]
           }
         ]
