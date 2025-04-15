@@ -48,6 +48,11 @@ The following table provides a comprehensive breakdown of permissions by role in
 | **Data Source Management** |
 | Connect data sources | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | Assign data sources to groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Private Connection Management** |
+| Create private connections⁵ | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| Edit own private connections | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Delete own private connections | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Share private connection data⁶ | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | **Group Management** |
 | Create/delete groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
 | Configure external sharing for groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
@@ -89,6 +94,10 @@ The following table provides a comprehensive breakdown of permissions by role in
 
 ⁴ **Chat with Artifact**: The "Start a chat" button on dashboard artifacts is only available to users who have access to the underlying data source through their group membership
 
+⁵ **Private Connections**: Non-admin users can create private connections (currently limited to CSV and Excel files up to 1GB) if enabled by an org-admin. This feature is enabled by default per user.
+
+⁶ **Private Connection Sharing**: Data from private connections cannot be shared with other users. If an artifact with private data is added to a dashboard, that dashboard becomes private and only visible to the creator. Only org-admins can share private connection data by adding the connection to a group.
+
 ## Admin Panel Features
 
 Enterprise tier organizations have access to an admin panel with the following management capabilities:
@@ -99,11 +108,14 @@ Enterprise tier organizations have access to an admin panel with the following m
     - Toggle admin status for users
     - Deactivate users
     - Users can belong to multiple groups
+    - Toggle permission for users to create private connections (enabled by default)
   </Tab>
   <Tab title="Data Sources Management">
     - Connect data sources and assign to groups
     - A data source can belong to multiple groups
     - Control which groups have access to which data sources
+    - Add private connections created by users to groups to enable sharing
+    - Note: Original connection owners retain edit/delete access to their private connections even after adding to a group
   </Tab>
   <Tab title="Groups Management">
     - Create groups to connect users with data sources
@@ -129,6 +141,9 @@ Enterprise tier organizations have access to an admin panel with the following m
   </Step>
   <Step title="User Group Membership">
     The user attempting to access must be a member of all required groups
+  </Step>
+  <Step title="Private Connection Limitations">
+    Dashboards containing artifacts that use private connections cannot be shared unless an org-admin has added those private connections to a group
   </Step>
 </Steps>
 
@@ -163,5 +178,11 @@ Access is automatically removed when:
   </Accordion>
   <Accordion title="External Sharing Settings Changed">
     External sharing settings for a group are changed, affecting dashboards with artifacts using data sources from that group
+  </Accordion>
+  <Accordion title="Private Connection Added to Dashboard">
+    A user adds an artifact using a private connection to a previously shared dashboard, causing the dashboard to become private until an org-admin adds the private connection to the relevant groups
+  </Accordion>
+  <Accordion title="Private Connection Removed from Group">
+    An org-admin removes a private connection from a group, restricting access to dashboards containing artifacts using that connection
   </Accordion>
 </AccordionGroup>
