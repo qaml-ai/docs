@@ -4,22 +4,30 @@ description: 'Updates and improvements to camelAI'
 icon: 'megaphone'
 ---
 
-# Version 0.1.0 
+# Version 0.1.x
 Released April 14th, 2025
+
+<Warning>
+  This update includes changes to user permissions. Enterprise administrators should review permission settings after upgrading.
+</Warning>
 
 <Tabs>
   <Tab title="Key Features">
     ### Reference Queries & Knowledge Base Enhancement
     
-    - Added support for many-to-many relationships for reference queries and knowledge base items (Django Admin Dashboard only)
+    - Added support for many-to-many relationships for reference queries and knowledge base items **(Django Admin Dashboard only)**
+    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/ca28fb2c-84da-416e-438d-867ff5318100/public" />
     - Added visual tags in UI to identify reference queries and knowledge base items used across multiple data sources
+    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/36578466-38df-4325-3de2-8eadc49cf900/public" />
     
-    ### Enterprise User Permissions
+    ### Enterprise User Permissions: Private Connections
     
     - Users can now create private connections only they can access, if the org-admin allows it
-    - Added "Can Upload Data" permission for non-admin enterprise users as a flag on the user
-    - Limited data source types that non-admin users can upload to just CSV and Excel files
-    - Allow non-admin users to edit and delete their own connections
+      - **This flag is on by default** and can be toggled at the User level in the Admin Panel.
+    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/3ff773d2-ee13-43fe-127a-934471fe9500/public" />
+    - At this time, non-admins can only add CSV and Excel files. The max file size for file upload is 1GB.
+    - Non-admin users have the ability to edit and delete their own connections.
+    - Data from a private connection cannot be shared. If an artifact with private data is added to a dashboard, that dashboard will be made private.
     
     ### User Experience Improvements
     
@@ -33,23 +41,18 @@ Released April 14th, 2025
     - Improved handling of large datasets
   </Tab>
   
-  <Tab title="Bug Fixes & Performance">
-    ### Important Bug Fixes
-    
+  <Tab title="Bug Fixes & Performance">  
+    #### 0.1.2
+    - Save function for many to many relationship of knowledge base items to data source connections
+
+    #### 0.1.1
     - Fixed "Start Chatting" 404 error
     - Fixed squished user icon in side nav
     - Fixed knowledge base saving issues
     - Fixed reference query math calculations
     - Fixed multiple issues with reference query deletion
-    
-    ### Performance Improvements
-    
     - Significantly improved dashboard load times
     - Better support for large Excel files
     - Faster connections list loading
   </Tab>
 </Tabs>
-
-<Warning>
-  This update includes changes to user permissions. Enterprise administrators should review permission settings after upgrading.
-</Warning>
