@@ -63,6 +63,11 @@
           "anchor": "Web App",
           "href": "https://app.camelai.com",
           "icon": "browser"
+        },
+        {
+          "anchor": "Website",
+          "href": "https://camelai.com",
+          "icon": "globe-pointer"
         }
       ]
     }
