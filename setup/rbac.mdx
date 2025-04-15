@@ -11,7 +11,7 @@ description: 'Learn how to manage user permissions, data access, and dashboard s
 
 Access permissions in camelAI follow this hierarchy (from highest to lowest):
 
-<CardGroup cols={1}>
+<CardGroup cols={2}>
   <Card title="Superuser" icon="user-shield">
     System-level access with complete control
   </Card>
@@ -33,6 +33,61 @@ Access permissions in camelAI follow this hierarchy (from highest to lowest):
     Cannot view or interact with the resource
   </Card>
 </CardGroup>
+
+## Detailed Permission Matrix
+
+The following table provides a comprehensive breakdown of permissions by role in camelAI Enterprise:
+
+| Permission | Superuser | Org Admin | Owner | Group Member | External Viewer | No Access |
+|------------|:---------:|:---------:|:-----:|:------------:|:--------------:|:---------:|
+| **User Management** |
+| Add users to organization | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Assign users to groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Toggle admin status | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Deactivate users | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Data Source Management** |
+| Connect data sources | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Assign data sources to groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Group Management** |
+| Create/delete groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Configure external sharing for groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Dashboard Access** |
+| View shared dashboards | ✅ | ✅ | ✅ | ✅ | ✅ | ✗ |
+| **Dashboard Management** |
+| Create dashboards | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| View all organization's dashboards | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Edit any dashboard | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Edit own dashboard | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Delete any dashboard | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Delete own dashboard | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **Dashboard Sharing** |
+| Share with groups¹ | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| External email sharing² | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **Artifact Management** |
+| Create artifacts | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| Edit any artifact | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Edit own artifact | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Delete any artifact | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Delete own artifact | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **Chat/Query Access** |
+| Use AI chat with any data source | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Use AI chat with permitted data sources³ | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| Start chat with dashboard artifact⁴ | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| View database queries | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+
+**Notes:**
+
+¹ **Group Sharing Restrictions**: Owner can only share dashboards with groups if:
+   - The owner is a member of the group
+   - The group has access to all data sources used by artifacts in the dashboard
+
+² **External Sharing Restrictions**: External sharing is only possible if:
+   - The owner belongs to a group with external sharing enabled (`can_share_externally=true`)
+   - All artifacts in the dashboard use data sources from groups with external sharing enabled
+
+³ **Data Source Access**: Users can only access data sources through chat that are connected to groups they belong to
+
+⁴ **Chat with Artifact**: The "Start a chat" button on dashboard artifacts is only available to users who have access to the underlying data source through their group membership
 
 ## Admin Panel Features
 
