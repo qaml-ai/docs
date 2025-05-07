@@ -59,8 +59,11 @@ cp .env.docker .env.docker.local
 Edit `.env.docker.local` with your configuration:
 - Set a secure `DJANGO_SECRET_KEY`
 - Update `POSTGRES_PASSWORD` with a secure password
-- Configure your AWS credentials if using Bedrock
-- Set up API keys if using OpenAI or Anthropic
+- Configure at least one LLM provider:
+  - OpenAI API key
+  - Anthropic API key
+  - AWS Bedrock credentials
+  - Azure OpenAI credentials
 
 See our [Environment Variables](/installation/environment-variables) guide for details.
 
@@ -74,9 +77,10 @@ docker compose -f docker-compose.prod.yml up -d
 
 This will start the following services:
 - `camel` – The main application
+- `huey` – Background task worker
 - `nginx` – Reverse proxy
 - `pgvector` – PostgreSQL with vector extension
-- `memcached` – Caching layer
+- `redis` – Queue and caching layer
 
 ### 5. Create a Superuser
 

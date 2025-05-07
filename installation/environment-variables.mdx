@@ -12,10 +12,10 @@ camelAI uses environment variables to configure various aspects of the applicati
 ### Django Settings
 
 ```bash
-# Django secret key for cryptographic signing
+# This is the Django secret key. Change it to a secure key in production.
 DJANGO_SECRET_KEY=change_this_to_a_secure_key_in_production
 
-# Hostname and site URL
+# This is the hostname and site URL. Change it to your own domain in production.
 HOSTNAME=localhost
 SITE_URL=http://localhost:8000
 ```
@@ -23,7 +23,7 @@ SITE_URL=http://localhost:8000
 ### Database Configuration
 
 ```bash
-# PostgreSQL password
+# This is the password for the internal postgres user. Change it to a secure password in production.
 POSTGRES_PASSWORD=secure_password
 DB_PASSWORD=${POSTGRES_PASSWORD}
 ```
@@ -31,59 +31,80 @@ DB_PASSWORD=${POSTGRES_PASSWORD}
 ### Email Configuration
 
 ```bash
-# Set to True if SMTP is not setup
+# Set to True if SMTP is not setup.
 DISABLE_EMAIL=True
 ```
 
 ### AI Provider Settings
 
+At least one LLM provider is needed for camelAI to function. You can configure one or more of the following providers:
+
+#### OpenAI
+
 ```bash
-# Set to True if using Bedrock only
-USE_BEDROCK_ONLY=True
-
-# Set to False if you don't want to use the prompt cache
-USE_PROMPT_CACHE=True
-
-# OpenAI and Anthropic API keys (if not using Bedrock)
+# Set this to your OpenAI API key if using OpenAI
 # OPENAI_API_KEY=your_openai_api_key
+```
+
+#### Anthropic
+
+```bash
+# Set this to your Anthropic API key if using Anthropic
 # ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-### AWS Configuration
+#### AWS Bedrock
 
 ```bash
-# AWS credentials for Bedrock
-# Note: The AWS user must have the AmazonBedrockFullAccess IAM policy
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
-AWS_REGION=your_region
+# Set these to your own AWS credentials if using Bedrock
+# AWS_ACCESS_KEY_ID=your_access_key_id
+# AWS_SECRET_ACCESS_KEY=your_secret_access_key
+# AWS_REGION=your_region
 ```
+
+#### Azure OpenAI
+
+```bash
+# Set these to your own Azure credentials if using Azure OpenAI
+# AZURE_OPENAI_ENDPOINT=your_azure_endpoint
+# AZURE_OPENAI_API_KEY=your_azure_api_key
+```
+
+For detailed instructions on setting up Azure OpenAI, see our [Azure OpenAI Setup Guide](/installation/azure-openai-setup).
 
 ## Example Configuration
 
 Here's a complete example of a `.env.docker` file:
 
 ```bash
-# Django Settings
+# This is the Django secret key. Change it to a secure key in production.
 DJANGO_SECRET_KEY=change_this_to_a_secure_key_in_production
+
+# This is the hostname and site URL. Change it to your own domain in production.
 HOSTNAME=localhost
 SITE_URL=http://localhost:8000
 
-# Database Configuration
+# This is the password for the internal postgres user. Change it to a secure password in production.
 POSTGRES_PASSWORD=secure_password
 DB_PASSWORD=${POSTGRES_PASSWORD}
 
-# Email Configuration
+# Set to True if SMTP is not setup.
 DISABLE_EMAIL=True
 
-# AI Provider Settings
-USE_BEDROCK_ONLY=True
-USE_PROMPT_CACHE=True
+# Set this to your OpenAI API key if using OpenAI
+# OPENAI_API_KEY=your_openai_api_key
 
-# AWS Configuration
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
-AWS_REGION=your_region
+# Set this to your Anthropic API key if using Anthropic
+# ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Set these to your own AWS credentials if using Bedrock
+# AWS_ACCESS_KEY_ID=your_access_key_id
+# AWS_SECRET_ACCESS_KEY=your_secret_access_key
+# AWS_REGION=your_region
+
+# Set these to your own Azure credentials if using Azure OpenAI
+# AZURE_OPENAI_ENDPOINT=your_azure_endpoint
+# AZURE_OPENAI_API_KEY=your_azure_api_key
 ```
 
 ## Security Best Practices

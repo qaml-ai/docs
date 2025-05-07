@@ -53,10 +53,29 @@ services:
       - DB_HOST=pgvector
       - DB_USER=postgres
       - MEDIA_ROOT=/app/media
-      - MEMCACHED_SERVER=memcached:11211
+      - REDIS_URL=redis://redis:6379
     depends_on:
-      - memcached
+      - redis
       - pgvector
+
+  huey:
+    image: 904534089871.dkr.ecr.us-west-2.amazonaws.com/camel-app:latest
+    restart: unless-stopped
+    command: python manage.py run_huey
+    volumes:
+      - media_volume:/app/media
+      - static_volume:/app/staticfiles
+    env_file:
+      - .env.docker
+    environment:
+      - DB_HOST=pgvector
+      - DB_USER=postgres
+      - MEDIA_ROOT=/app/media
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - pgvector
+      - camel
 
   nginx:
     image: nginx:alpine
@@ -70,10 +89,9 @@ services:
     depends_on:
       - camel
 
-  memcached:
-    image: memcached:alpine
+  redis:
+    image: redis:latest
     restart: unless-stopped
-    command: memcached -m 64
 
   pgvector:
     image: pgvector/pgvector:pg17
@@ -100,8 +118,11 @@ cp .env.docker .env.docker.local
 Edit `.env.docker.local` with your configuration:
 - Set a secure `DJANGO_SECRET_KEY`
 - Update `POSTGRES_PASSWORD` with a secure password
-- Configure your AWS credentials if using Bedrock
-- Set up API keys if using OpenAI or Anthropic
+- Configure at least one LLM provider:
+  - OpenAI API key
+  - Anthropic API key
+  - AWS Bedrock credentials
+  - Azure OpenAI credentials
 
 See our [Environment Variables](/installation/environment-variables) guide for details.
 
@@ -164,7 +185,7 @@ You can check the health of individual services:
 docker compose logs camel
 docker compose logs nginx
 docker compose logs pgvector
-docker compose logs memcached
+docker compose logs redis
 ```
 
 ## Next Steps

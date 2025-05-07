@@ -27,6 +27,7 @@
               "installation/prerequisites",
               "installation/docker-compose",
               "installation/environment-variables",
+              "installation/azure-openai-setup",
               "installation/creating-superuser",
               "installation/logging-in",
               "installation/initial-setup"

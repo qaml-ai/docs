@@ -1,0 +1,89 @@
+---
+title: 'Azure OpenAI Setup'
+description: 'Learn how to set up Azure OpenAI for camelAI.'
+---
+
+## Overview
+
+Azure OpenAI provides a secure, enterprise-grade way to use OpenAI's models in your camelAI deployment. This guide walks you through the process of setting up Azure OpenAI and configuring the necessary models.
+
+## Prerequisites
+
+- An active Microsoft Azure account
+- Subscription with Azure OpenAI access (may require approval)
+
+## Step-by-Step Setup Process
+
+### 1. Create an Azure OpenAI Resource
+
+1. Go to the [Azure Portal](https://portal.azure.com/)
+2. Click **Create a Resource**
+3. Search for "openai"
+4. Click **Azure OpenAI**
+5. Click **Create**
+6. Fill in the required details:
+   - **Subscription**: Select your Azure subscription
+   - **Resource group**: Create new or select existing
+   - **Region**: Choose East US2 (Global Standard). o3 is not available in other regions.
+   - **Name**: Give your resource a unique name
+   - **Pricing tier**: Select a pricing tier (Standard S0 is recommended)
+7. Click **Review + create**
+8. Click **Create**
+
+### 2. Deploy Required Models
+
+After your Azure OpenAI resource is created:
+
+1. Click **Go to resource**
+2. Click **Azure AI Foundry portal**
+3. Click **Model catalog** in the sidebar
+4. Deploy the following models (required for camelAI):
+   - **o3**
+   - **gpt-4.1-mini**
+   - **o3-mini**
+
+For each model:
+1. Click on the model name
+2. Click **Deploy**
+3. **Use the default deployment name as provided by Azure**
+4. Click **Deploy**
+5. Repeat for each required model
+
+### 3. Get API Information
+
+After deploying the models:
+
+1. Go to **Home** in the sidebar
+2. Copy the following information:
+   - **Azure OpenAI Service endpoint**: This will be your `AZURE_OPENAI_ENDPOINT`
+   - **API Key 1** or **API Key 2**: This will be your `AZURE_OPENAI_API_KEY`
+
+### 4. Configure camelAI
+
+Update your `.env.docker` file with the Azure OpenAI settings:
+
+```bash
+# Azure OpenAI Settings
+AZURE_OPENAI_ENDPOINT=your_azure_endpoint
+AZURE_OPENAI_API_KEY=your_azure_api_key
+```
+
+## Troubleshooting
+
+Common issues:
+
+1. **Models Not Available**: Ensure the models are fully deployed and check deployment names match exactly what camelAI expects (default names)
+
+2. **Authentication Errors**: Double-check your API key and endpoint URL
+
+3. **Rate Limit Errors**: Azure OpenAI has rate limits. Consider adjusting your quota or upgrading your pricing tier
+
+4. **Regional Availability**: Some models may only be available in specific regions
+
+## Next Steps
+
+After setting up Azure OpenAI:
+
+1. [Configure Other Environment Variables](/installation/environment-variables)
+2. [Start Services](/installation/docker-compose)
+3. [Create a Superuser](/installation/creating-superuser) 
