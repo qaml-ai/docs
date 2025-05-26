@@ -4,6 +4,46 @@ description: 'Updates and improvements to camelAI'
 icon: 'megaphone'
 ---
 
+# Version 0.3.x
+Released May 26th, 2025
+
+<Warning>
+  Enterprise users must update their Claude API keys to Sonnet 4.0 before updating Docker.
+</Warning>
+
+<Tabs>
+  <Tab title="Updates">
+    ### Claude Sonnet 4.0 Integration
+    
+    - Upgraded from Claude Sonnet 3.7 to 4.0 with improved benchmarks and better visualization capabilities at the same API cost
+    - **Note:** Enterprise users must update their API keys before updating Docker
+    
+    ### Query Library UI Overhaul
+    
+    - Complete redesign of reference queries management with bulk processing and streaming uploads
+    - Users can now easily manage and clone queries between datasets without long wait times
+    
+    ### Uninterrupted Chat Streams
+    
+    - Implemented Redis pub/sub architecture for stream resilience
+    - Chat threads now continue running in the background even if users navigate away mid-stream
+    
+    ### Minor Features
+    
+    - **New Data Sources** – Added Mixpanel as a supported data source
+    - **Snowflake Database Connectivity** – Added Snowflake database connectivity
+    - **Enhanced BigQuery Integration** – BigQuery integration now supports Service Account JSON Key support
+    - **Artifact Warnings** – Added warnings for artifacts when data sources have been deleted
+    
+    ### Bug Fixes
+    
+    - Fixed tool call streaming issues for Claude
+    - Corrected Snowflake warehouse specification handling
+    - Improved streaming loading performance and eliminated UI flicker
+    - Fixed connection deletion security to prevent unauthorized access
+  </Tab>
+</Tabs>
+
 # Version 0.2.x
 Released May 2nd, 2025
 
