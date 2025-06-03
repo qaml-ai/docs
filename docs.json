@@ -11,13 +11,25 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Getting Started",
+        "tab": "MCP",
         "groups": [
           {
-            "group": "Introduction",
+            "group": "Get Started",
             "pages": [
-              "introduction",
-              "plans"
+              "mcp/introduction",
+              "mcp/getting-started"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Application",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "app/introduction",
+              "app/plans"
             ]
           },
           {
@@ -47,7 +59,8 @@
           {
             "group": "Updates",
             "pages": [
-              "changelog/changelog"
+              "changelog/app",
+              "changelog/mcp"
             ]
           }
         ]
