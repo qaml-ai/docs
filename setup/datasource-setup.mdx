@@ -1,0 +1,188 @@
+---
+title: 'Role-Based Access Control (RBAC)'
+description: 'Learn how to manage user permissions, data access, and dashboard sharing in camelAI Enterprise'
+---
+
+<Note>
+  RBAC is only available in our Enterprise tier. Need enterprise-grade access control? [Book a call with our sales team](https://cal.com/ipr-camelai/book-a-demo).
+</Note>
+
+## Permissions Hierarchy
+
+Access permissions in camelAI follow this hierarchy (from highest to lowest):
+
+<CardGroup cols={2}>
+  <Card title="Superuser" icon="user-shield">
+    System-level access with complete control
+  </Card>
+  <Card title="Org Admin" icon="building-user">
+    Organization-wide access and control (Enterprise only)
+  </Card>
+  <Card title="Owner" icon="user-crown">
+    Resource creator with management permissions
+    - In non-Enterprise tiers: full control
+    - In Enterprise tier: control dependent on group membership
+  </Card>
+  <Card title="Group Member" icon="users">
+    Access based on group permissions (Enterprise only)
+  </Card>
+  <Card title="External Viewer" icon="user-lock">
+    View-only access to shared dashboards (via email)
+  </Card>
+  <Card title="No Access" icon="ban">
+    Cannot view or interact with the resource
+  </Card>
+</CardGroup>
+
+## Detailed Permission Matrix
+
+The following table provides a comprehensive breakdown of permissions by role in camelAI Enterprise:
+
+| Permission | Superuser | Org Admin | Owner | Group Member | External Viewer | No Access |
+|------------|:---------:|:---------:|:-----:|:------------:|:--------------:|:---------:|
+| **User Management** |
+| Add users to organization | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Assign users to groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Toggle admin status | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Deactivate users | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Data Source Management** |
+| Connect data sources | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Assign data sources to groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Private Connection Management** |
+| Create private connections⁵ | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| Edit own private connections | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Delete own private connections | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Share private connection data⁶ | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Group Management** |
+| Create/delete groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Configure external sharing for groups | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| **Dashboard Access** |
+| View shared dashboards | ✅ | ✅ | ✅ | ✅ | ✅ | ✗ |
+| **Dashboard Management** |
+| Create dashboards | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| View all organization's dashboards | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Edit any dashboard | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Edit own dashboard | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Delete any dashboard | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Delete own dashboard | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **Dashboard Sharing** |
+| Share with groups¹ | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| External email sharing² | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **Artifact Management** |
+| Create artifacts | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| Edit any artifact | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Edit own artifact | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| Delete any artifact | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Delete own artifact | ✅ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **Chat/Query Access** |
+| Use AI chat with any data source | ✅ | ✅ | ✗ | ✗ | ✗ | ✗ |
+| Use AI chat with permitted data sources³ | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| Start chat with dashboard artifact⁴ | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+| View database queries | ✅ | ✅ | ✅ | ✅ | ✗ | ✗ |
+
+**Notes:**
+
+¹ **Group Sharing Restrictions**: Owner can only share dashboards with groups if:
+   - The owner is a member of the group
+   - The group has access to all data sources used by artifacts in the dashboard
+
+² **External Sharing Restrictions**: External sharing is only possible if:
+   - The owner belongs to a group with external sharing enabled (`can_share_externally=true`)
+   - All artifacts in the dashboard use data sources from groups with external sharing enabled
+
+³ **Data Source Access**: Users can only access data sources through chat that are connected to groups they belong to
+
+⁴ **Chat with Artifact**: The "Start a chat" button on dashboard artifacts is only available to users who have access to the underlying data source through their group membership
+
+⁵ **Private Connections**: Non-admin users can create private connections (currently limited to CSV and Excel files up to 1GB) if enabled by an org-admin. This feature is enabled by default per user.
+
+⁶ **Private Connection Sharing**: Data from private connections cannot be shared with other users. If an artifact with private data is added to a dashboard, that dashboard becomes private and only visible to the creator. Only org-admins can share private connection data by adding the connection to a group.
+
+## Admin Panel Features
+
+Enterprise tier organizations have access to an admin panel with the following management capabilities:
+
+<Tabs>
+  <Tab title="Users Management">
+    - Add users and assign them to groups
+    - Toggle admin status for users
+    - Deactivate users
+    - Users can belong to multiple groups
+    - Toggle permission for users to create private connections (enabled by default)
+  </Tab>
+  <Tab title="Data Sources Management">
+    - Connect data sources and assign to groups
+    - A data source can belong to multiple groups
+    - Control which groups have access to which data sources
+    - Add private connections created by users to groups to enable sharing
+    - Note: Original connection owners retain edit/delete access to their private connections even after adding to a group
+  </Tab>
+  <Tab title="Groups Management">
+    - Create groups to connect users with data sources
+    - Configure external sharing permissions per group
+    - The `can_share_externally` boolean (default: false) controls whether members can share dashboards externally
+  </Tab>
+  <Tab title="Dashboards Management">
+    - View all organization dashboards
+    - Manage sharing settings:
+      - Share with specific groups (if group has access to all required data sources)
+      - Enable external view-only sharing (if all artifacts use data sources from groups with external sharing enabled)
+    - Delete artifacts or entire dashboards
+  </Tab>
+</Tabs>
+
+## Dashboard Sharing Rules
+
+### Conditions for Sharing with Groups (Enterprise Tier)
+
+<Steps>
+  <Step title="Group Data Source Access">
+    The group must have access to all data sources used by all artifacts in the dashboard
+  </Step>
+  <Step title="User Group Membership">
+    The user attempting to access must be a member of all required groups
+  </Step>
+  <Step title="Private Connection Limitations">
+    Dashboards containing artifacts that use private connections cannot be shared unless an org-admin has added those private connections to a group
+  </Step>
+</Steps>
+
+### Conditions for External Sharing
+
+<Warning>
+  External sharing permissions are carefully controlled to protect sensitive data.
+</Warning>
+
+<Steps>
+  <Step title="Owner Permissions">
+    The dashboard owner must be in a group with external sharing enabled
+  </Step>
+  <Step title="Data Source Permissions">
+    All artifacts in the dashboard must use data sources from groups that allow external sharing
+  </Step>
+  <Step title="Changes in Conditions">
+    If any condition changes (e.g., artifact added using a restricted data source), external access should be revoked
+  </Step>
+</Steps>
+
+## Access Revocation
+
+Access is automatically removed when:
+
+<AccordionGroup>
+  <Accordion title="User Removed from Group">
+    A user is removed from a group required to access a dashboard
+  </Accordion>
+  <Accordion title="Data Source Removed from Group">
+    A data source is removed from a group and dashboards using that data source are shared with the group
+  </Accordion>
+  <Accordion title="External Sharing Settings Changed">
+    External sharing settings for a group are changed, affecting dashboards with artifacts using data sources from that group
+  </Accordion>
+  <Accordion title="Private Connection Added to Dashboard">
+    A user adds an artifact using a private connection to a previously shared dashboard, causing the dashboard to become private until an org-admin adds the private connection to the relevant groups
+  </Accordion>
+  <Accordion title="Private Connection Removed from Group">
+    An org-admin removes a private connection from a group, restricting access to dashboards containing artifacts using that connection
+  </Accordion>
+</AccordionGroup>
