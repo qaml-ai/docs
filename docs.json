@@ -25,6 +25,7 @@
             "pages": [
               "mcp/claude-integration",
               "mcp/cursor-integration",
+              "mcp/mircosoft-copilot-integration",
               "mcp/windsurf-integration"
             ]
           }
