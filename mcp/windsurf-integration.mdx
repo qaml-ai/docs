@@ -1,0 +1,129 @@
+---
+title: 'Windsurf Integration'
+description: 'Connect camelAI MCP server to Windsurf for seamless data analysis in your AI-powered code editor'
+---
+
+# Adding camelAI to Windsurf
+
+Integrate camelAI directly into Windsurf's Cascade to access powerful data analysis capabilities without leaving your development environment. Query your databases, generate insights, and get SQL results all within your AI-powered code editor.
+
+#### Step 1: Create MCP Configuration
+
+Create or edit the MCP configuration file at `~/.codeium/windsurf/mcp_config.json`:
+
+```bash
+mkdir -p ~/.codeium/windsurf
+touch ~/.codeium/windsurf/mcp_config.json
+```
+
+#### Step 2: Configure the Server
+
+Add the following configuration to your `mcp_config.json` file:
+
+```json
+{
+  "mcpServers": {
+    "camelai": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://app.camelai.com/mcp",
+        "--header",
+        "Authorization: Bearer ${API_KEY}"
+      ],
+      "env": {
+        "API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+<Warning>
+Replace `your_api_key_here` with your actual API key from [app.camelai.com/api-keys](https://app.camelai.com/api-keys/).
+</Warning>
+
+#### Step 3: Refresh Plugins
+
+After saving your configuration, press the refresh button in the Plugins section or restart Windsurf to load the new MCP server connection.
+
+## Managing Tools
+
+Windsurf has a limit of 100 total tools available to Cascade at any given time. You can manage which camelAI tools are enabled:
+
+### Via Settings
+
+Alternatively, go to `Windsurf Settings` > `Cascade` > `Plugins` and click the `Manage plugins` button to configure tool availability.
+
+## Using camelAI in Windsurf
+
+Once configured, camelAI tools will be automatically available in Windsurf's Cascade.
+
+### Tool Execution
+
+Windsurf's Cascade will automatically use camelAI tools when relevant to your queries. The AI will determine which tools to use based on the context of your conversation and requests.
+
+<Note>
+Enterprise users may need to manually enable MCP integration via settings before using MCP servers.
+</Note>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Server Not Connecting">
+    **Symptoms:** camelAI tools don't appear in Windsurf's available tools
+
+    **Solutions:**
+    - Verify your API key is correct
+    - Check that `mcp_config.json` is in the correct location (`~/.codeium/windsurf/`)
+    - Press the refresh button in the Plugins section
+    - Restart Windsurf after configuration changes
+    - Ensure you have internet connectivity
+  </Accordion>
+
+  <Accordion title="Authentication Errors">
+    **Symptoms:** Tools appear but fail with authentication errors
+
+    **Solutions:**
+    - Generate a new API key at [app.camelai.com/api-keys](https://app.camelai.com/api-keys/)
+    - Verify the API key is correctly set in the `env` section
+    - Check that your API key has the necessary permissions
+  </Accordion>
+
+  <Accordion title="Tool Limit Reached">
+    **Symptoms:** Some camelAI tools are not available
+
+    **Solutions:**
+    - Windsurf limits total tools to 100 across all MCP servers
+    - Disable unused tools from other MCP plugins
+    - Prioritize the most important camelAI tools for your workflow
+  </Accordion>
+
+  <Accordion title="mcp-remote Installation Issues">
+    **Symptoms:** Server fails to start with mcp-remote errors
+
+    **Solutions:**
+    - Ensure Node.js and npm are installed
+    - Run `npm install -g mcp-remote` to install the package globally
+    - Check your network connection and firewall settings
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connect Data Sources" icon="database" href="/app/introduction">
+    Set up your database connections in the camelAI web app
+  </Card>
+  <Card title="Learn More About MCP" icon="book" href="/mcp/introduction">
+    Understand the full capabilities of camelAI's MCP server
+  </Card>
+</CardGroup>
+
+---
+
+<Note>
+Having issues with the integration? Reach out to our support team or check our [troubleshooting guide](#troubleshooting) above.
+</Note> 

@@ -1,0 +1,130 @@
+---
+title: 'Cursor Integration'
+description: 'Connect camelAI MCP server to Cursor for seamless data analysis in your code editor'
+---
+
+# Adding camelAI to Cursor
+
+Integrate camelAI directly into Cursor to access powerful data analysis capabilities without leaving your development environment. Query your databases, generate insights, and get SQL results all within your code editor.
+
+## Configuration
+
+camelAI uses the SSE (Server-Sent Events) transport method for MCP integration, allowing for real-time communication between Cursor and our servers.
+
+### Step 1: Create MCP Configuration
+
+Create an MCP configuration file in one of these locations:
+
+<Tabs>
+  <Tab title="Global">
+    Create `~/.cursor/mcp.json` in your home directory for access across all projects:
+    ```bash
+    mkdir -p ~/.cursor
+    touch ~/.cursor/mcp.json
+    ```
+  </Tab>
+  <Tab title="Project-Specific">
+    Create `.cursor/mcp.json` in your project directory for project-specific access:
+    ```bash
+    mkdir -p .cursor
+    touch .cursor/mcp.json
+    ```
+  </Tab>
+</Tabs>
+
+### Step 2: Configure the Server
+
+Add the following configuration to your `mcp.json` file:
+
+```json
+{
+  "mcpServers": {
+    "camelai": {
+      "url": "https://app.camelai.com/mcp",
+      "env": {
+        "API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+<Warning>
+Replace `your_api_key_here` with your actual API key from [app.camelai.com/api-keys](https://app.camelai.com/api-keys/).
+</Warning>
+
+After saving your configuration file, restart Cursor to load the MCP server connection.
+
+## Using camelAI in Cursor
+
+Once configured, camelAI tools will be automatically available in Cursor's Composer Agent.
+
+### Tool Approval
+
+By default, Cursor will ask for approval before running camelAI tools:
+
+<Steps>
+  <Step title="Tool Request">
+    When the Agent wants to query your data, it will display a tool approval request
+  </Step>
+  <Step title="Review Parameters">
+    Click the arrow next to the tool name to see what query will be executed
+  </Step>
+  <Step title="Approve or Deny">
+    Choose whether to allow the tool to run based on the query parameters
+  </Step>
+</Steps>
+
+<Tip>
+You can enable auto-run mode in Cursor's settings to automatically approve camelAI tool usage without manual confirmation.
+</Tip>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Server Not Connecting">
+    **Symptoms:** camelAI tools don't appear in Cursor's available tools
+
+    **Solutions:**
+    - Verify your API key is correct
+    - Check that `mcp.json` is in the correct location
+    - Restart Cursor after configuration changes
+    - Ensure you have internet connectivity
+  </Accordion>
+
+  <Accordion title="Authentication Errors">
+    **Symptoms:** Tools appear but fail with authentication errors
+
+    **Solutions:**
+    - Generate a new API key at [app.camelai.com/api-keys](https://app.camelai.com/api-keys/)
+    - Verify the API key is correctly set in the `env` section
+    - Check that your API key has the necessary permissions
+  </Accordion>
+
+  <Accordion title="Timeout Issues">
+    **Symptoms:** Tools time out when processing complex queries
+
+    **Solutions:**
+    - Break complex queries into smaller parts
+    - Check your database connection performance
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connect Data Sources" icon="database" href="/app/introduction">
+    Set up your database connections in the camelAI web app
+  </Card>
+  <Card title="Learn More About MCP" icon="book" href="/mcp/introduction">
+    Understand the full capabilities of camelAI's MCP server
+  </Card>
+</CardGroup>
+
+---
+
+<Note>
+Having issues with the integration? Reach out to our support team or check our [troubleshooting guide](#troubleshooting) above.
+</Note> 

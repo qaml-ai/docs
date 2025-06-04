@@ -17,7 +17,10 @@
             "group": "Get Started",
             "pages": [
               "mcp/introduction",
-              "mcp/getting-started"
+              "mcp/getting-started",
+              "mcp/claude-integration",
+              "mcp/cursor-integration",
+              "mcp/windsurf-integration"
             ]
           }
         ]

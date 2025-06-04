@@ -1,0 +1,204 @@
+---
+title: 'Claude Integration'
+description: 'Connect camelAI MCP server to Claude for seamless data analysis in your AI conversations'
+---
+
+# Adding camelAI to Claude
+
+Integrate camelAI directly into Claude to access powerful data analysis capabilities within your AI conversations. Query your databases, generate insights, and get SQL results all through Claude's interface.
+
+<Note>
+Custom integrations using remote MCP are available for Claude Pro, Max, Team, and Enterprise plans. This feature is currently in beta.
+</Note>
+
+## Prerequisites
+
+Before setting up the integration, ensure you have:
+
+<CardGroup cols={1}>
+  <Card title="Claude Subscription" icon="claude">
+    Active Claude Pro, Max, Team, or Enterprise plan
+  </Card>
+</CardGroup>
+
+## Adding the Integration
+
+The process varies slightly depending on your Claude plan type:
+
+<Tabs>
+  <Tab title="Claude Pro/Max">
+    <Steps>
+      <Step title="Navigate to Settings">
+        Go to Settings > Integrations in your Claude interface
+      </Step>
+      <Step title="Add Custom Integration">
+        Locate the "Integrations" section and click "Add custom integration" at the bottom
+      </Step>
+      <Step title="Enter Server URL">
+        Add your camelAI remote MCP server URL: `https://app.camelai.com/mcp`
+      </Step>
+      <Step title="Complete Setup">
+        Click "Add" to finish configuring your integration
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Claude Team/Enterprise">
+    <Note>
+    Only Primary Owners or Owners can enable integrations on Team and Enterprise accounts. Once configured, individual users can authenticate with their own credentials.
+    </Note>
+    
+    <Steps>
+      <Step title="Navigate to Settings">
+        Go to Settings > Integrations in your Claude interface
+      </Step>
+      <Step title="Switch to Organization">
+        Toggle to "Organization integrations" at the top of the page
+      </Step>
+      <Step title="Add Custom Integration">
+        Locate the "Integrations" section and click "Add custom integration" at the bottom
+      </Step>
+      <Step title="Enter Integration Name">
+        Enter "camelAI" for the Integration Name
+      </Step>
+      <Step title="Enter Server URL">
+        Add your camelAI remote MCP server URL: `https://app.camelai.com/mcp`
+      </Step>
+      <Step title="Complete Setup">
+        Click "Add" to finish configuring your integration
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Authentication
+
+After adding the integration, you'll need to authenticate:
+
+<Steps>
+  <Step title="Connect to camelAI">
+    Find camelAI in your integrations and click "Connect"
+  </Step>
+  <Step title="OAuth Authentication">
+    You'll be redirected to camelAI's authentication page to sign in with your camelAI account
+  </Step>
+  <Step title="Grant Permissions">
+    Review and approve the requested permissions for Claude to access your data sources
+  </Step>
+</Steps>
+
+## Using camelAI with Claude
+
+Once connected, camelAI tools will be available in your Claude conversations.
+
+### Example Usage
+
+In Claude conversations, you can ask questions like:
+
+<CodeGroup>
+```text Natural Language Queries
+"Show me the top 10 customers by revenue this quarter"
+
+"What's the trend in user signups over the last 6 months?"
+
+"Find products with low inventory levels"
+```
+
+```text SQL Generation
+"Generate SQL to calculate monthly recurring revenue"
+
+"Create a query to find users who haven't logged in for 30 days"
+
+"Write SQL to join orders with customer data"
+```
+</CodeGroup>
+
+## Using with Claude Research
+
+Use Claude Research with camelAI enabled to create rich reports of your data.
+
+## Security Considerations
+
+<AccordionGroup>
+  <Accordion title="Data Access">
+    - camelAI acts as an intermediary between Claude and your databases
+    - Claude can only access resources you've given permission for
+  </Accordion>
+</AccordionGroup>
+
+## Managing the Integration
+
+### Editing or Removing
+
+To modify your camelAI integration:
+
+<Steps>
+  <Step title="Navigate to Settings">
+    Go to Settings > Integrations in Claude
+  </Step>
+  <Step title="Find camelAI">
+    Locate camelAI in the "Integrations" section
+  </Step>
+  <Step title="Modify Integration">
+    Click "Remove" or select the three dots to edit configuration
+  </Step>
+  <Step title="Follow Prompts">
+    Complete the removal or editing process as prompted
+  </Step>
+</Steps>
+
+### Disconnecting Authentication
+
+You can disconnect your camelAI authentication at any time:
+
+- Through Claude: Settings > Integrations > Disconnect camelAI
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Integration Not Appearing">
+    **Symptoms:** camelAI doesn't show up in your integrations list
+
+    **Solutions:**
+    - Verify you have a Claude Pro, Max, Team, or Enterprise subscription
+    - Check that you correctly entered the server URL: `https://app.camelai.com/mcp`
+    - Try removing and re-adding the integration
+  </Accordion>
+
+  <Accordion title="Authentication Failing">
+    **Symptoms:** Cannot connect to camelAI during OAuth flow
+
+    **Solutions:**
+    - Ensure you have a valid camelAI account
+    - Try disconnecting and reconnecting the integration
+    - Verify your camelAI account has active database connections
+  </Accordion>
+
+  <Accordion title="Tools Not Working">
+    **Symptoms:** camelAI tools fail when Claude tries to use them
+
+    **Solutions:**
+    - Verify your database connections are active in camelAI
+    - Check that you've enabled the tools in the "Search and tools" menu
+    - Ensure your camelAI account has access to the data sources you're querying
+    - Try disconnecting and reconnecting the OAuth integration
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connect Data Sources" icon="database" href="/app/introduction">
+    Set up your database connections in the camelAI web app
+  </Card>
+  <Card title="Learn More About MCP" icon="book" href="/mcp/introduction">
+    Understand the full capabilities of camelAI's MCP server
+  </Card>
+</CardGroup>
+
+---
+
+<Note>
+Having issues with the integration? Reach out to our support team or check our [troubleshooting guide](#troubleshooting) above.
+</Note> 
