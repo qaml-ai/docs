@@ -15,6 +15,17 @@ For the latest official guidance from Cursor, see their Model Context Protocol d
 
 camelAI uses the SSE (Server-Sent Events) transport method for MCP integration, allowing for real-time communication between Cursor and our servers.
 
+## Quick Install (Recommended)
+
+Make sure you have the latest version of Cursor installed and just click the "Add to Cursor" below:
+
+<a href="https://cursor.com/install-mcp?name=camelAI&config=eyJ0eXBlIjoic3RyZWFtYWJsZS1odHRwIiwidXJsIjoiaHR0cHM6Ly9hcHAuY2FtZWxhaS5jb20vbWNwIn0%3D">
+  <img className="block dark:hidden" noZoom src="https://cursor.com/deeplink/mcp-install-dark.svg" alt="Install MCP Server" />
+  <img className="hidden dark:block" noZoom src="https://cursor.com/deeplink/mcp-install-light.svg" alt="Install MCP Server" />
+</a>
+
+## Manual Install
+
 ### Step 1: Create MCP Configuration
 
 Create an MCP configuration file in one of these locations:
@@ -43,21 +54,13 @@ Add the following configuration to your `mcp.json` file:
 ```json
 {
   "mcpServers": {
-    "camelai": {
-      "url": "https://app.camelai.com/mcp",
-      "env": {
-        "API_KEY": "your_api_key_here"
-      }
+    "camelAI": {
+      "type": "streamable-http",
+      "url": "https://app.camelai.com/mcp"
     }
   }
 }
 ```
-
-<Warning>
-Replace `your_api_key_here` with your actual API key from [app.camelai.com/api-keys](https://app.camelai.com/api-keys/).
-</Warning>
-
-After saving your configuration file, restart Cursor to load the MCP server connection.
 
 ## Using camelAI in Cursor
 
@@ -92,7 +95,6 @@ You can enable auto-run mode in Cursor's settings to automatically approve camel
     **Symptoms:** camelAI tools don't appear in Cursor's available tools
 
     **Solutions:**
-    - Verify your API key is correct
     - Check that `mcp.json` is in the correct location
     - Restart Cursor after configuration changes
     - Ensure you have internet connectivity
@@ -102,9 +104,7 @@ You can enable auto-run mode in Cursor's settings to automatically approve camel
     **Symptoms:** Tools appear but fail with authentication errors
 
     **Solutions:**
-    - Generate a new API key at [app.camelai.com/api-keys](https://app.camelai.com/api-keys/)
-    - Verify the API key is correctly set in the `env` section
-    - Check that your API key has the necessary permissions
+    - Click logout and log back in in the Cursor MCP Tools settings section
   </Accordion>
 
   <Accordion title="Timeout Issues">
