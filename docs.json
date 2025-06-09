@@ -28,6 +28,7 @@
             "group": "Integrate",
             "pages": [
               "mcp/claude-integration",
+              "mcp/chatgpt-integration",
               "mcp/cursor-integration",
               "mcp/mircosoft-copilot-integration",
               "mcp/windsurf-integration"
@@ -90,6 +91,11 @@
           "anchor": "Web App",
           "href": "https://app.camelai.com",
           "icon": "browser"
+        },
+        {
+          "anchor": "Developer Console",
+          "href": "https://console.camelai.com",
+          "icon": "laptop-code"
         },
         {
           "anchor": "Website",
