@@ -83,12 +83,7 @@
     "global": {
       "anchors": [
         {
-          "anchor": "GitHub",
-          "href": "https://github.com/qaml-ai/camelAI-docker-compose",
-          "icon": "github"
-        },
-        {
-          "anchor": "Web App",
+          "anchor": "Agent App",
           "href": "https://app.camelai.com",
           "icon": "browser"
         },
@@ -101,6 +96,11 @@
           "anchor": "Website",
           "href": "https://camelai.com",
           "icon": "globe-pointer"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/qaml-ai/camelAI-docker-compose",
+          "icon": "github"
         }
       ]
     }
