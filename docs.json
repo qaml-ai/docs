@@ -11,6 +11,10 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "API Reference",
+        "openapi": "https://api.camelai.com/api/schema/"
+      },
+      {
         "tab": "MCP",
         "groups": [
           {
