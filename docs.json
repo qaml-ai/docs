@@ -12,7 +12,18 @@
     "tabs": [
       {
         "tab": "API Reference",
-        "openapi": "https://api.camelai.com/api/schema/"
+        "groups": [
+          {
+            "group": "Quickstart",
+            "pages": [
+              "dev_api/camel-api-quickstart"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "openapi": "https://api.camelai.com/api/schema/"
+          }
+        ]
       },
       {
         "tab": "MCP",
