@@ -1,0 +1,112 @@
+---
+title: 'Row Level Security (RLS)'
+description: 'How to use dynamic row-level security with Camel, ClickHouse, and PostgreSQL.'
+---
+
+# Row Level Security (RLS) with Camel
+
+Camel supports dynamic row-level security (RLS) for ClickHouse and PostgreSQL data sources. This allows you to restrict which rows are visible to each user, based on their unique identifier (uid).
+
+## How It Works
+
+When a user interacts with Camel (for example, through an iframe or the API), Camel sets a session variable to the current `uid` for every query it runs. This variable can then be referenced in your database's RLS policies to filter data dynamically per user.
+
+- **Supported Databases:**
+  - ClickHouse
+  - PostgreSQL
+- **Other databases:** RLS is not yet supported, but may be added in the future.
+
+## Setting the UID Variable
+
+- **PostgreSQL:**
+  - Camel sets the session variable `camel.uid` using `SET LOCAL camel.uid = '<uid>'` for each query.
+- **ClickHouse:**
+  - Camel sets the session setting `SQL_camel_uid` for each query.
+
+You can use this variable in your RLS policies or views to restrict data access.
+
+## Example: PostgreSQL RLS Policy
+
+Suppose you have a table `orders` with a column `user_id`. You want each user to only see their own orders.
+
+1. Enable RLS on the table:
+
+```sql
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+```
+
+2. Create a policy using the `camel.uid` variable:
+
+```sql
+CREATE POLICY user_rls_policy ON orders
+  USING (user_id::text = current_setting('camel.uid'));
+```
+
+- Here, `current_setting('camel.uid')` returns the current user's uid as set by Camel.
+
+## Example: ClickHouse RLS Policy
+
+ClickHouse supports native row policies that can use custom settings for dynamic, per-user or per-tenant isolation. You do not need to use views for RLS—row policies are more robust and secure.
+
+Suppose you have a table `orders` with a column `tenant_id`, and you want to restrict each user to only see their own tenant's data. You can use a custom setting (e.g., `SQL_camel_uid`) that Camel sets for each query.
+
+1. Create a role and allow the custom setting:
+
+```sql
+CREATE ROLE readonly_role;
+ALTER ROLE readonly_role SETTINGS SQL_camel_uid CHANGEABLE_IN_READONLY;
+GRANT SELECT ON orders TO readonly_role;
+```
+
+2. Create a row policy using the custom setting:
+
+```sql
+CREATE ROW POLICY orders_rls_policy ON orders USING tenant_id = getSetting('SQL_camel_uid') TO readonly_role;
+```
+
+3. Create a user and assign the role:
+
+```sql
+CREATE USER IF NOT EXISTS readonly_user IDENTIFIED BY '' SETTINGS readonly = 1;
+GRANT readonly_role TO readonly_user;
+SET DEFAULT ROLE readonly_role TO readonly_user;
+```
+
+Now, when Camel queries ClickHouse, it automatically sets the `SQL_camel_uid` setting for the session. The row policy will enforce that only rows matching the user's uid (or tenant id) are visible.
+
+**Security Benefits:**
+- If the `SQL_camel_uid` setting is omitted, the query fails, preventing accidental data leaks.
+- The setting is provided in the session context, not merged into the SQL, making it more resistant to SQL injection.
+- You only need to ensure that queries do not allow overriding the setting in the SQL itself.
+
+This approach is robust, scalable, and leverages ClickHouse's built-in security features for row-level access control.
+
+## How to Use
+
+- When embedding Camel iframes or using the API, always set a unique `uid` for each user.
+- All queries run by Camel for that user will have the session variable set automatically.
+- You can use this variable in your database RLS policies, views, or queries to restrict data access.
+
+## Best Practices
+
+- Always use a unique, stable identifier for each user as the `uid`.
+- Test your RLS policies with different uids to ensure correct data isolation.
+- Document your RLS logic for your team.
+
+## Limitations
+
+- RLS via session variable is only supported for ClickHouse and PostgreSQL at this time.
+- Other databases do not support this feature yet.
+- The session variable is only set for queries run through Camel.
+
+## Troubleshooting
+
+- If users see too much or too little data, double-check your RLS policy logic and that the `uid` is being set as expected.
+- You can log or audit the value of the session variable in your database for debugging.
+
+## Learn More
+
+- [PostgreSQL Row Level Security Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+- [ClickHouse Settings Documentation](https://clickhouse.com/docs/en/operations/settings/settings/)
+
+For further help, contact support@camel.ai. 

@@ -11,12 +11,13 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "API Reference",
+        "tab": "API",
         "groups": [
           {
-            "group": "Quickstart",
+            "group": "Docs",
             "pages": [
-              "dev_api/camel-api-quickstart"
+              "dev_api/camel-api-quickstart",
+              "dev_api/row-level-security"
             ]
           },
           {
