@@ -23,6 +23,13 @@
           {
             "group": "API Reference",
             "openapi": "https://api.camelai.com/api/schema/"
+          },
+          {
+            "group": "Best Practices",
+            "pages": [
+              "dev_api/knowledge-base-guide",
+              "dev_api/reference-query-guide"
+            ]
           }
         ]
       },

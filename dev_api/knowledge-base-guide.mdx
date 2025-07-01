@@ -1,0 +1,153 @@
+---
+title: 'Knowledge Base Guide'
+description: 'Learn how to configure and optimize your Knowledge Base for better camelAI performance'
+---
+
+The Knowledge Base is a critical feature that enhances camelAI's ability to understand and analyze your data accurately. It provides context-specific information that helps camelAI deliver consistent, relevant insights tailored to your business domain.
+
+## What is the Knowledge Base?
+
+The knowledge base is a text area where you define important context about your data, business logic, and terminology. This information helps camelAI:
+
+- Maintain consistent metric definitions across all queries
+- Navigate complex schemas by understanding which tables to prioritize or avoid
+- Interpret ambiguous column names and relationships
+- Apply proper data formatting and display preferences
+- Handle time periods and date calculations correctly
+- Understand locale-specific requirements (currency, language, regional formats)
+
+## Best Practices
+
+### 1. Always Include a Dataset Description
+
+Every knowledge base should start with a clear description of what your dataset represents. This foundational context helps camelAI understand the overall purpose and structure of your data.
+
+<CodeGroup>
+```text Example
+This dataset is a replica of our production e-commerce database. 
+It contains customer orders, product inventory, and shipping information 
+from our online retail platform serving the US market.
+```
+</CodeGroup>
+
+### 2. Specify Standard Schemas
+
+If your data follows a well-known schema or is a replica of a standard system, explicitly state this. camelAI can leverage its understanding of common schemas to provide better insights.
+
+<Note>
+**Examples of standard schemas to mention:**
+- "This PostgreSQL database mirrors our Salesforce CRM data structure"
+- "Our MySQL database follows the Shopify schema for e-commerce data"
+- "This dataset implements the FHIR standard for healthcare records"
+- "Our analytics tables follow the Google Analytics 4 event schema"
+</Note>
+
+### 3. Define Company-Specific Terminology
+
+Document any terms that have specific meanings within your organization, especially when they differ from industry standards or could be ambiguous. 
+
+<Warning>
+We recommend using multiple focused entries to improve RAG performance.
+</Warning>
+
+<CodeGroup>
+```text Example
+Entry 1: "Active User": A user who has logged in within the last 30 days AND completed at least one transaction
+Entry 2: "LTV" (Lifetime Value): The sum of total_purchases + subscription_revenue + addon_revenue columns
+Entry 3: "Churn": When a customer has no activity for 90+ days (not the standard 30-day definition)
+Entry 4: "Region": Refers to our custom sales territories, not geographic regions (see regions_mapping table)
+```
+</CodeGroup>
+
+### 4. Clarify Complex Relationships
+
+Help camelAI navigate joins and relationships by explaining non-obvious connections between tables.
+
+<CodeGroup>
+```text Example
+Table Relationships:
+- orders.user_id links to users.id (primary relationship)
+- orders.promo_code links to both promotions.code AND partner_promotions.code
+- product_variants should be used instead of products table for inventory queries
+- Always join transactions through transaction_items, never directly to orders
+```
+</CodeGroup>
+
+### 5. Specify Data Preferences
+
+Include preferences for how data should be formatted, calculated, or displayed.
+
+<CodeGroup>
+```text Example
+Data Handling Preferences:
+- When calculating percentages, round to 1 decimal place
+- Week starts on Monday for all weekly aggregations
+- Fiscal year begins April 1st
+```
+</CodeGroup>
+
+### 6. Document Data Quality Issues
+
+Be transparent about known data limitations or quality issues to prevent misleading analyses.
+
+<CodeGroup>
+```text Example
+Data Quality Notes:
+- Revenue data before March 2022 may be incomplete due to migration
+- The user_demographics table has ~15% missing values for age field
+- Avoid using the legacy_orders table - use orders_v2 instead
+- Product categories were restructured in June 2023; use category_mapping for historical comparisons
+```
+</CodeGroup>
+
+## Structuring Knowledge Base Entries
+
+### Use Multiple Focused Entries
+
+Due to RAG implementation, multiple smaller, focused entries perform better than one large entry. 
+
+<Tabs>
+<Tab title="✅ Good Practice">
+```text
+Entry 1: "Customer segments: Premium (>$1000/year), Standard ($100-999), Basic (<$100)"
+Entry 2: "Subscription tiers: Starter ($29/mo), Professional ($99/mo), Enterprise (custom)"
+Entry 3: "Geographic regions: NA (US/Canada), EU (European Union), APAC (Asia-Pacific)"
+```
+</Tab>
+<Tab title="❌ Poor Practice">
+```text
+Customer and Business Context: Our customer segments include Premium customers who spend over $1000 per year, Standard customers who spend $100-999 annually,
+and Basic customers under $100. We also have subscription tiers with Starter at $29/month, Professional at $99/month, and Enterprise with custom pricing. 
+Our geographic regions cover NA which includes US and Canada, EU covering the European Union, and APAC for Asia-Pacific. Additionally, our fiscal year 
+starts April 1st, we calculate LTV as total_purchases plus subscription_revenue plus addon_revenue, and active users must have logged in within 30 days AND
+completed a transaction. Our churn definition is 90+ days of inactivity, and regions refer to sales territories not geographic areas.
+```
+</Tab>
+</Tabs>
+
+## Managing Your Knowledge Base
+
+You can create, read, update, and delete knowledge base entries through the API or through the developer console. Changes take effect immediately for all new conversations.
+
+### Tips for Maintenance
+
+<CardGroup cols={2}>
+<Card title="Regular Reviews" icon="calendar">
+Review and update your knowledge base quarterly to ensure accuracy
+</Card>
+<Card title="Stay Current" icon="arrow-trend-up">
+Add new definitions as your business evolves
+</Card>
+<Card title="Clean Up" icon="trash">
+Remove outdated information to prevent confusion
+</Card>
+<Card title="Test Changes" icon="flask">
+Test the impact of changes using the preview feature in the developer console
+</Card>
+</CardGroup>
+
+## Next Steps
+
+<Card title="Configure Reference Queries" icon="arrow-right" href="/dev_api/reference-query-guide">
+Learn how to set up complex, frequently-used calculations for better performance
+</Card>

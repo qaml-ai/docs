@@ -1,0 +1,184 @@
+---
+title: 'Reference Query Guide'
+description: 'Learn how to create and use Reference Queries to teach camelAI your business metrics and SQL patterns'
+---
+
+Reference Queries are pre-defined SQL queries that teach camelAI how to calculate your business metrics correctly. They serve as building blocks that camelAI can reference, adapt, and combine to answer complex questions about your data.
+
+## What are Reference Queries?
+
+Reference Queries are SQL queries stored in a vectorized database that camelAI searches when processing user questions. Unlike the Knowledge Base which stores textual context, Reference Queries provide actual SQL implementations of your business logic.
+
+## Why Use Reference Queries?
+
+Reference Queries help camelAI:
+
+<CardGroup cols={2}>
+  <Card title="Standardize Metrics" icon="chart-line">
+    Ensure consistent metric calculations across all analyses
+  </Card>
+  <Card title="Navigate Schema" icon="sitemap">
+    Handle complex schema relationships through example joins
+  </Card>
+  <Card title="Replicate Logic" icon="copy">
+    Maintain consistency with existing dashboard logic
+  </Card>
+  <Card title="Business Rules" icon="rules">
+    Handle intricate business rules that require specific SQL patterns
+  </Card>
+</CardGroup>
+
+- **Accelerate query generation** by providing proven templates
+
+## When to Use Reference Queries vs Knowledge Base
+
+<Tabs>
+  <Tab title="Reference Queries">
+    **Use Reference Queries for:**
+    - Complex SQL logic with multiple joins
+    - Specific metric calculations
+    - Dashboard query replication
+    - Table relationship examples
+  </Tab>
+  <Tab title="Knowledge Base">
+    **Use Knowledge Base for:**
+    - General context and definitions
+    - Information that can't be expressed as queries
+    - Critical business rules that must always be considered
+    - Data formatting preferences
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+### 1. Use SQL Comments for Context
+
+Comments in your SQL queries are included when we vectorize them, improving search accuracy:
+
+```sql
+-- Title: "Monthly Recurring Revenue (MRR)"
+SELECT 
+    DATE_TRUNC('month', subscription_date) as month,
+    -- Convert all subscription types to monthly equivalent
+    SUM(CASE 
+        WHEN billing_period = 'monthly' THEN amount
+        WHEN billing_period = 'yearly' THEN amount / 12
+    END) as mrr
+FROM subscriptions
+WHERE status = 'active'  -- Only active subscriptions count toward MRR
+GROUP BY 1;
+```
+
+<Info>
+The comments help camelAI understand not just what the query does, but why certain logic is applied.
+</Info>
+
+### 2. Replicate Dashboard Queries
+
+If your users already have dashboards, add those queries as references to ensure consistency:
+
+```sql
+-- Title: "Customer Churn Rate"
+SELECT 
+    COUNT(CASE WHEN last_order < CURRENT_DATE - 90 THEN 1 END) / 
+    COUNT(*) * 100 as churn_rate
+FROM customers;
+```
+
+### 3. Document Complex Joins
+
+Show camelAI how your tables relate through example queries:
+
+```sql
+-- Title: "Customer Order Summary"
+SELECT c.email, COUNT(o.order_id) as order_count, SUM(o.total) as lifetime_value
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+WHERE o.status = 'completed'
+GROUP BY c.email;
+```
+
+### 4. Include Business Logic
+
+Capture complex business rules in your reference queries:
+
+```sql
+-- Title: "Active Users"
+-- Active = logged in within 30 days AND has valid subscription
+SELECT COUNT(DISTINCT user_id) as active_users
+FROM users
+WHERE last_login >= CURRENT_DATE - 30
+  AND subscription_status = 'active';
+```
+
+### 5. Title your Reference Queries
+
+Titles of queries are optional fields, but we strongly recommend creating a descriptive, to the point title. It strongly improves RAG performance.
+
+<Tip>
+Use language your users will use to ask questions.
+</Tip>
+
+**Example:** If your dashboard shows "Customer Acquisition Cost", title your reference query exactly that way, not "CAC Calculation" or "Marketing Efficiency Query".
+
+**Good Titles:**
+- "Weekly Active Users"
+- "Customer Churn Rate"
+- "Average Order Value by Region"
+- "Product Performance Metrics"
+
+**Poor Titles:**
+- "Query_1"
+- "complicated_join_v2"
+- "SELECT statement for users"
+
+## Implementation Strategy
+
+<Steps>
+  <Step title="Start with Core Metrics">
+    Add queries for your 5-10 most important KPIs
+  </Step>
+  <Step title="Add Dashboard Queries">
+    Include all queries powering existing dashboards
+  </Step>
+  <Step title="Document Relationships">
+    Add example joins between commonly used tables
+  </Step>
+  <Step title="Include Edge Cases">
+    Add queries handling special business logic
+  </Step>
+  <Step title="Iterate Based on Usage">
+    Monitor what users ask and add missing patterns
+  </Step>
+</Steps>
+
+## Maintenance and Optimization
+
+<CardGroup cols={3}>
+  <Card title="Version Control" icon="code-branch">
+    Track changes to critical metric definitions
+  </Card>
+  <Card title="Performance Test" icon="gauge-high">
+    Ensure reference queries run efficiently
+  </Card>
+  <Card title="Regular Review" icon="refresh">
+    Update queries as schema evolves
+  </Card>
+</CardGroup>
+
+- **User Feedback**: Add queries for commonly requested analyses
+- **Clean Up**: Remove outdated or unused queries periodically
+
+## Next Steps
+
+<Tip>
+Start small with your most important metrics, then expand based on user needs.
+</Tip>
+
+1. Identify your most important business metrics
+2. Extract SQL from existing dashboards and reports
+3. Create reference queries with descriptive titles
+4. Test by asking camelAI questions about those metrics
+5. Refine based on accuracy and performance
+
+For general context and definitions, see our [Knowledge Base Guide](/dev_api/knowledge-base-guide).
