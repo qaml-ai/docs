@@ -14,7 +14,13 @@
         "tab": "API",
         "groups": [
           {
-            "group": "Docs",
+            "group": "General",
+            "pages": [
+              "dev_api/introduction"
+            ]
+          },
+          {
+            "group": "Quick Start",
             "pages": [
               "dev_api/camel-api-quickstart",
               "dev_api/row-level-security"
