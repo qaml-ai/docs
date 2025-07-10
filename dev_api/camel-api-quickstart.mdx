@@ -49,7 +49,7 @@ You can use the unified endpoint to add any supported data source type via API.
 Example for adding a PostgreSQL data source:
 
 ```bash
-curl -X POST https://api.camel.ai/api/v1/sources/add/ \
+curl -X POST https://api.camelai.com/api/v1/sources/add/ \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -83,7 +83,7 @@ You can add knowledge base entries either through the web console (recommended f
 - [Learn more about Knowledge Base best practices](/dev_api/knowledge-base-guide)
 
 ```bash
-curl -X POST https://api.camel.ai/api/v1/knowledge-base/ \
+curl -X POST https://api.camelai.com/api/v1/knowledge-base/ \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -102,7 +102,7 @@ You can add reference queries through the web console (recommended for first-tim
 - [Learn more about Reference Query best practices](/dev_api/reference-query-guide)
 
 ```bash
-curl -X POST https://api.camel.ai/api/v1/reference-queries/ \
+curl -X POST https://api.camelai.com/api/v1/reference-queries/ \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -131,7 +131,7 @@ The `uid` (user identifier) is a crucial concept:
 - [See detailed API reference for iframe generation](/api-reference/iframe/create-iframe-link)
 
 ```bash
-curl -X POST https://api.camel.ai/api/v1/iframe/create \
+curl -X POST https://api.camelai.com/api/v1/iframe/create \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -158,7 +158,7 @@ curl -X POST https://api.camel.ai/api/v1/iframe/create \
 **Response:**
 ```json
 {
-  "iframe_url": "https://app.camel.ai/iframe/abc123xyz/",
+  "iframe_url": "https://app.camelai.com/iframe/abc123xyz/",
   "cache_key": "abc123xyz",
   "expires_in": 900
 }
@@ -178,7 +178,7 @@ Add the iframe to your application:
     <h1>Ask Questions About Your Data</h1>
     
     <iframe 
-        src="https://app.camel.ai/iframe/abc123xyz/"
+        src="https://app.camelai.com/iframe/abc123xyz/"
         width="100%"
         height="600"
         frameborder="0"
@@ -198,7 +198,7 @@ function DataChat({ userId }) {
 
   useEffect(() => {
     async function createIframe() {
-      const response = await fetch('https://api.camel.ai/api/v1/iframe/create', {
+      const response = await fetch('https://api.camelai.com/api/v1/iframe/create', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer YOUR_API_KEY',
@@ -260,6 +260,6 @@ function DataChat({ userId }) {
 ### Support
 
 For additional help:
-- API Documentation: https://docs.camel.ai
-- Support Email: support@camel.ai
-- Community Forum: https://community.camel.ai 
+- API Documentation: https://docs.camelai.com
+- Support Email: support@camelai.com
+- Community Forum: https://community.camelai.com 
