@@ -30,7 +30,8 @@
             "group": "Best Practices",
             "pages": [
               "dev_api/knowledge-base-guide",
-              "dev_api/reference-query-guide"
+              "dev_api/reference-query-guide",
+              "dev_api/model-selection-guide"
             ]
           }
         ]

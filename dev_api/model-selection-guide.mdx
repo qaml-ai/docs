@@ -1,0 +1,113 @@
+---
+title: 'Model Selection Guide'
+description: 'Learn how to choose the right AI model for your camelAI iframe implementation'
+---
+
+Selecting the appropriate model is crucial for optimizing your users' experience with camelAI. Different models offer unique strengths in terms of intelligence, speed, cost, and interaction style. This guide will help you choose the model that best fits your use case.
+
+## How Model Selection Works
+
+When you create an iframe through the camelAI API, you specify which model to use. This model choice is locked for that specific chat conversation - ensuring consistency throughout the user's interaction. If users access previous conversations, camelAI automatically uses the model that was originally selected for that chat.
+
+## Available Models
+
+We currently support four models across two providers:
+
+### Model Comparison
+
+| Model | Provider | Best For | Speed | Cost | Intelligence |
+|-------|----------|----------|-------|------|--------------|
+| **O3** (Default) | OpenAI | Complex queries, tool-heavy workflows | Medium | Higher | Very High |
+| **Sonnet 4.0** | Anthropic | In-depth research, comprehensive analysis | Medium | Medium | Very High |
+| **O4 Mini** | OpenAI | Simple data, cost-conscious deployments | Fast | Low | High |
+| **4.1** | OpenAI | Speed-critical applications, straightforward data | Very Fast | Lowest | Medium |
+
+## Model Characteristics
+
+<Tabs>
+<Tab title="OpenAI O3">
+Our recommended default model strikes the best balance for most use cases.
+
+**Strengths:**
+- Excellent at complex reasoning and tool calling
+- Provides concise, focused responses  
+
+**Considerations:**
+- Higher cost compared to other OpenAI models
+- Slower response times
+
+**Use O3 when:**
+- Your data requires complex joins or calculations
+- Accuracy is more important than speed
+</Tab>
+
+<Tab title="Claude Sonnet 4.0">
+An exceptionally capable model that excels at thorough analysis.
+
+**Strengths:**
+- Extremely helpful and proactive
+- Excellent for exploratory data analysis
+
+**Considerations:**
+- Provides more information than requested
+- Slower response times
+
+**Use Claude Sonnet 4.0 when:**
+- Users perform in-depth research or exploration
+- User questions tend to be open-ended
+</Tab>
+
+<Tab title="OpenAI O4 Mini">
+A cost-effective model that handles straightforward queries well.
+
+**Strengths:**
+- Significantly lower cost than O3
+- Faster response times
+- Clear, direct communication style
+
+**Considerations:**
+- Less capable with complex reasoning
+- May struggle with nuanced queries
+
+**Use O4 Mini when:**
+- Your data schema is simple and well-structured
+- Most queries are straightforward lookups
+- Cost optimization is a priority
+</Tab>
+
+<Tab title="OpenAI 4.1">
+The fastest model in our lineup, optimized for speed.
+
+**Strengths:**
+- Fastest response times by far
+- Efficient for simple tasks
+
+**Considerations:**
+- Limited reasoning capabilities
+- Best suited for basic queries only
+- More expensive per token, but generates less tokens so typically cheaper overall
+
+**Use 4.1 when:**
+- Speed is the absolute priority
+- User queries are simple and predictable
+</Tab>
+</Tabs>
+
+## Best Practices
+
+### Test Before Production
+
+We strongly recommend experimenting with different models using your actual data before deploying to production. Model performance can vary significantly based on:
+
+- Your data structure complexity
+- Typical query patterns
+- User expectations
+- Performance requirements
+
+## Updates and Support
+
+We continuously evaluate and update our model offerings to provide the best possible experience. This guide will be updated as new models become available or existing models are improved.
+
+<Card title="Need a specific model?" icon="envelope" href="mailto:support@camelai.com?subject=Model Support Request">
+    If you don't see a model that meets your requirements, we'd love to hear from you. Contact us to request additional model support.
+</Card>
