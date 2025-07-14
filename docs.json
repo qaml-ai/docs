@@ -71,7 +71,7 @@
             ]
           },
           {
-            "group": "Installation",
+            "group": "Docker Installation",
             "pages": [
               "installation/quickstart",
               "installation/prerequisites",
