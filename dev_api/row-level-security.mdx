@@ -5,6 +5,10 @@ description: 'How to use dynamic row-level security with Camel, ClickHouse, and 
 
 Row Level Security (RLS) allows you to restrict which rows are visible to each user, based on their unique identifier (uid).
 
+<Card title="Need RLS for other databases?" icon="envelope" href="mailto:support@camelai.com?subject=RLS Support Request">
+  RLS currently supports ClickHouse and PostgreSQL. Email us to request support for your database.
+</Card>
+
 ## How It Works
 
 When a user interacts with Camel (for example, through an iframe or the API), Camel sets a session variable to the current `uid` for every query it runs. This variable can then be referenced in your database's RLS policies to filter data dynamically per user.
