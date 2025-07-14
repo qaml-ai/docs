@@ -97,8 +97,7 @@
           {
             "group": "Updates",
             "pages": [
-              "changelog/app",
-              "changelog/mcp"
+              "changelog/app"
             ]
           }
         ]

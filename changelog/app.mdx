@@ -1,173 +1,154 @@
 ---
-title: 'App'
+title: 'App Changelog'
 description: 'Updates to camelAI Application'
 icon: 'megaphone'
 ---
 
-# Version 0.3.x
-Released May 26th, 2025
-
+<Update label="May 26, 2025" description="Version 0.3.x">
 <Warning>
   Enterprise users must request access to Claude Sonnet 4 in AWS Bedrock before updating Docker.
 </Warning>
 
-<Tabs>
-  <Tab title="Updates">
-    ### Claude Sonnet 4.0 Integration
-    
-    - Upgraded from Claude Sonnet 3.7 to 4.0 with improved benchmarks and better visualization capabilities at the same API cost
-    - **Note:** Enterprise users must have access to Claude Sonnet 4 in AWS Bedrock.
-    
-    ### Query Library UI Overhaul
-    
-    - Complete redesign of reference queries management with bulk processing and streaming uploads
-    - Users can now easily manage and clone queries between datasets without long wait times
-    
-    ### Uninterrupted Chat Streams
-    
-    - Implemented Redis pub/sub architecture for stream resilience
-    - Chat threads now continue running in the background even if users navigate away mid-stream
-    
-    ### Minor Features
-    
-    - **New Data Sources** – Added Mixpanel as a supported data source
-    - **Snowflake Database Connectivity** – Added Snowflake database connectivity
-    - **Enhanced BigQuery Integration** – BigQuery integration now supports Service Account JSON Key support
-    - **Artifact Warnings** – Added warnings for artifacts when data sources have been deleted
-    
-    ### Bug Fixes
-    
-    - Fixed tool call streaming issues for Claude
-    - Corrected Snowflake warehouse specification handling
-    - Improved streaming loading performance and eliminated UI flicker
-    - Fixed connection deletion security to prevent unauthorized access
-  </Tab>
-</Tabs>
+### Claude Sonnet 4.0 Integration
 
-# Version 0.2.x
-Released May 2nd, 2025
+- Upgraded from Claude Sonnet 3.7 to 4.0 with improved benchmarks and better visualization capabilities at the same API cost
+- **Note:** Enterprise users must have access to Claude Sonnet 4 in AWS Bedrock.
 
-<Tabs>
-  <Tab title="Updates">
-    ### OpenAI O3 Model Support
-    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/3423d679-38ac-495a-a691-f804dda00400/public" />
-    - We now support OpenAI's O3 model alongside Claude 3.7
-    - Enter API keys for both models, and users will see a model switcher in the chat input field
-    - If you prefer to keep only Claude 3.7, that's perfectly fine - the switcher only appears when multiple model API keys are provided
-    
-    ### Updated Chat UI
-    <iframe
-      src="https://customer-8di4ooto5tznarrf.cloudflarestream.com/763627b7ac8a8cda90da561bff443479/iframe?poster=https%3A%2F%2Fcustomer-8di4ooto5tznarrf.cloudflarestream.com%2F763627b7ac8a8cda90da561bff443479%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600&autoplay=true"
-      width="100%"
-      height="400"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    />
+### Query Library UI Overhaul
 
-    - Redesigned chat interface to better separate camelAI's "work" from its "final answer"
-    - The UI no longer auto-collapses the AI's thought process, making it easier to track what camel is doing
-    
-    ### Python Capabilities
-    
-    - camelAI now has expanded Python access beyond just creating Plotly graphs
-    - It can use Python to analyze tables, which greatly improves Excel and CSV parsing as well as complex data computation
-    
-    ### Minor Features
-    
-    - **Artifacts of Delete Data Sources** – A warning message now appears on artifacts when one or more data sources used have been deleted
-    - **Soft-Delete for Connections** – We now use soft deletion for connections instead of hard deletion, preserving threads while clearing sensitive data
-      - For enterprise users, soft-deleted connections are only visible in Django admin where you can hard delete if needed
-    - Improved error messaging when users lose access to a thread due to group privilege changes (Enterprise only)
-    - **New Integrations** – Azure data source support (Enterprise only)
-    
-    ### Bug Fixes
-    
-    - Prevent deleted connections from appearing in the query/knowledge-base selector in Django Admin
-    - Ensure users cannot access soft-deleted connections via the UI (only accessible in Django Admin)
-    - Plotly image rendering now works reliably (moved to and fixed in a separate process)
-    - Fix user.has_connection_access logic used in RBAC
-    - Fix broken thread-history display
-    - Fix fake-empty-artifact bug
-    - Broken tests around soft-delete now pass
-  </Tab>
-</Tabs>
+- Complete redesign of reference queries management with bulk processing and streaming uploads
+- Users can now easily manage and clone queries between datasets without long wait times
 
-# Version 0.1.x
-Released April 14th, 2025
+### Uninterrupted Chat Streams
 
+- Implemented Redis pub/sub architecture for stream resilience
+- Chat threads now continue running in the background even if users navigate away mid-stream
+
+### Minor Features
+
+- **New Data Sources** – Added Mixpanel as a supported data source
+- **Snowflake Database Connectivity** – Added Snowflake database connectivity
+- **Enhanced BigQuery Integration** – BigQuery integration now supports Service Account JSON Key support
+- **Artifact Warnings** – Added warnings for artifacts when data sources have been deleted
+
+### Bug Fixes
+
+- Fixed tool call streaming issues for Claude
+- Corrected Snowflake warehouse specification handling
+- Improved streaming loading performance and eliminated UI flicker
+- Fixed connection deletion security to prevent unauthorized access
+</Update>
+
+<Update label="May 2, 2025" description="Version 0.2.x">
+### OpenAI O3 Model Support
+<img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/3423d679-38ac-495a-a691-f804dda00400/public" />
+- We now support OpenAI's O3 model alongside Claude 3.7
+- Enter API keys for both models, and users will see a model switcher in the chat input field
+- If you prefer to keep only Claude 3.7, that's perfectly fine - the switcher only appears when multiple model API keys are provided
+
+### Updated Chat UI
+<iframe
+  src="https://customer-8di4ooto5tznarrf.cloudflarestream.com/763627b7ac8a8cda90da561bff443479/iframe?poster=https%3A%2F%2Fcustomer-8di4ooto5tznarrf.cloudflarestream.com%2F763627b7ac8a8cda90da561bff443479%2Fthumbnails%2Fthumbnail.jpg%3Ftime%3D%26height%3D600&autoplay=true"
+  width="100%"
+  height="400"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+
+- Redesigned chat interface to better separate camelAI's "work" from its "final answer"
+- The UI no longer auto-collapses the AI's thought process, making it easier to track what camel is doing
+
+### Python Capabilities
+
+- camelAI now has expanded Python access beyond just creating Plotly graphs
+- It can use Python to analyze tables, which greatly improves Excel and CSV parsing as well as complex data computation
+
+### Minor Features
+
+- **Artifacts of Delete Data Sources** – A warning message now appears on artifacts when one or more data sources used have been deleted
+- **Soft-Delete for Connections** – We now use soft deletion for connections instead of hard deletion, preserving threads while clearing sensitive data
+  - For enterprise users, soft-deleted connections are only visible in Django admin where you can hard delete if needed
+- Improved error messaging when users lose access to a thread due to group privilege changes (Enterprise only)
+- **New Integrations** – Azure data source support (Enterprise only)
+
+### Bug Fixes
+
+- Prevent deleted connections from appearing in the query/knowledge-base selector in Django Admin
+- Ensure users cannot access soft-deleted connections via the UI (only accessible in Django Admin)
+- Plotly image rendering now works reliably (moved to and fixed in a separate process)
+- Fix user.has_connection_access logic used in RBAC
+- Fix broken thread-history display
+- Fix fake-empty-artifact bug
+- Broken tests around soft-delete now pass
+</Update>
+
+<Update label="April 14, 2025" description="Version 0.1.x">
 <Warning>
   This update includes changes to user permissions. Enterprise administrators should review permission settings after upgrading.
 </Warning>
 
-<Tabs>
-  <Tab title="Updates">
-    ### Reference Queries & Knowledge Base Enhancement
-    
-    - Added support for many-to-many relationships for reference queries and knowledge base items **(Django Admin Dashboard only)**
-    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/ca28fb2c-84da-416e-438d-867ff5318100/public" />
-    - Added visual tags in UI to identify reference queries and knowledge base items used across multiple data sources
-    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/36578466-38df-4325-3de2-8eadc49cf900/public" />
-    
-    ### Enterprise User Permissions: Private Connections
-    
-    - Users can now create private connections only they can access, if the org-admin allows it
-      - **This flag is on by default** and can be toggled at the User level in the Admin Panel.
-    <img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/3ff773d2-ee13-43fe-127a-934471fe9500/public" />
-    - At this time, non-admins can only add CSV and Excel files. The max file size for file upload is 1GB.
-    - Non-admin users have the ability to edit and delete their own connections.
-    - Data from a private connection cannot be shared. If an artifact with private data is added to a dashboard, that dashboard will be made private.
-    - As an org-admin, you can add any private connection to a Group and that Group will have access to the data source. Please note, the owner of the connection will still have edit and delete access even if the connection is tied to a Group.
-    
-    ### User Experience Improvements
-    
-    - Added ability for users to give thumbs up to chat messages (will be used for query generation in a future release)
-    - Added warning to contact owner for incomplete connection setup
-    - Improved SAML group membership handling for better enterprise authentication
-    
-    ### BigQuery Improvements
-    
-    - Added support for date-sharded tables
-    - Improved handling of large datasets
+### Reference Queries & Knowledge Base Enhancement
 
-    ### Performance Improvements
-    - Significantly improved dashboard load times
-    - Better support for large Excel files
-    - Faster connections list loading
+- Added support for many-to-many relationships for reference queries and knowledge base items **(Django Admin Dashboard only)**
+<img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/ca28fb2c-84da-416e-438d-867ff5318100/public" />
+- Added visual tags in UI to identify reference queries and knowledge base items used across multiple data sources
+<img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/36578466-38df-4325-3de2-8eadc49cf900/public" />
 
-    ### Bug fixes
-    - Fixed "Start Chatting" 404 error
-    - Fixed squished user icon in side nav
-    - Fixed knowledge base saving issues
-    - Fixed reference query math calculations
-    - Fixed multiple issues with reference query deletion
+### Enterprise User Permissions: Private Connections
 
-  </Tab>
-  
-  <Tab title="Patches">  
-    #### 0.1.3
-    April 30th, 2025
-    - Fixed dashboard sharing
-    - Removed automatic redirect to dashboard after adding artifact
-    - Improved error messaging for enterprise users who lost access to thread data
-    - Fixed Excel file update functionality
-    - Restyled artifact panel for better usability
-    - Extended conversation length limit to 200K
-    - Made side navigation float on chat screens
-    - Fixed sample connections for new users at signup
+- Users can now create private connections only they can access, if the org-admin allows it
+  - **This flag is on by default** and can be toggled at the User level in the Admin Panel.
+<img height="200" src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/3ff773d2-ee13-43fe-127a-934471fe9500/public" />
+- At this time, non-admins can only add CSV and Excel files. The max file size for file upload is 1GB.
+- Non-admin users have the ability to edit and delete their own connections.
+- Data from a private connection cannot be shared. If an artifact with private data is added to a dashboard, that dashboard will be made private.
+- As an org-admin, you can add any private connection to a Group and that Group will have access to the data source. Please note, the owner of the connection will still have edit and delete access even if the connection is tied to a Group.
 
-    #### 0.1.2
-    April 23rd, 2025
-    - Fixed CSV SUMMARIZE functionality with DuckDB
-    - Fixed MongoDB views bug
-    - Added support for special characters in connection forms
-    - Fixed MSSQL server escaping
-    - Fixed onboarding flow for magic link users
-    - Fixed magic link functionality
-    - Added support for XLSB Excel files
-    
-    #### 0.1.1
-    April 15th, 2025
-    - Fixed save function for many to many relationship of knowledge base items to data source connections.
-    - Better conversation trunctionation. Supports longer threads.
-  </Tab>
-</Tabs>
+### User Experience Improvements
+
+- Added ability for users to give thumbs up to chat messages (will be used for query generation in a future release)
+- Added warning to contact owner for incomplete connection setup
+- Improved SAML group membership handling for better enterprise authentication
+
+### BigQuery Improvements
+
+- Added support for date-sharded tables
+- Improved handling of large datasets
+
+### Performance Improvements
+- Significantly improved dashboard load times
+- Better support for large Excel files
+- Faster connections list loading
+
+### Bug fixes
+- Fixed "Start Chatting" 404 error
+- Fixed squished user icon in side nav
+- Fixed knowledge base saving issues
+- Fixed reference query math calculations
+- Fixed multiple issues with reference query deletion
+
+### Patches
+
+#### 0.1.3 - April 30, 2025
+- Fixed dashboard sharing
+- Removed automatic redirect to dashboard after adding artifact
+- Improved error messaging for enterprise users who lost access to thread data
+- Fixed Excel file update functionality
+- Restyled artifact panel for better usability
+- Extended conversation length limit to 200K
+- Made side navigation float on chat screens
+- Fixed sample connections for new users at signup
+
+#### 0.1.2 - April 23, 2025
+- Fixed CSV SUMMARIZE functionality with DuckDB
+- Fixed MongoDB views bug
+- Added support for special characters in connection forms
+- Fixed MSSQL server escaping
+- Fixed onboarding flow for magic link users
+- Fixed magic link functionality
+- Added support for XLSB Excel files
+
+#### 0.1.1 - April 15, 2025
+- Fixed save function for many to many relationship of knowledge base items to data source connections.
+- Better conversation trunctionation. Supports longer threads.
+</Update>
