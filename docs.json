@@ -27,10 +27,6 @@
             ]
           },
           {
-            "group": "API Reference",
-            "openapi": "https://api.camelai.com/api/schema/"
-          },
-          {
             "group": "Best Practices",
             "pages": [
               "dev_api/knowledge-base-guide",
@@ -40,20 +36,23 @@
         ]
       },
       {
-        "tab": "MCP",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "API Reference",
+            "openapi": "https://api.camelai.com/api/schema/"
+          }
+        ]
+      },
+      {
+        "tab": "Integrations",
+        "groups": [
+          {
+            "group": "MCP Server",
             "pages": [
               "mcp/introduction",
-              "mcp/getting-started"
-            ]
-          },
-          {
-            "group": "Integrate",
-            "pages": [
+              "mcp/getting-started",
               "mcp/claude-integration",
-              "mcp/chatgpt-integration",
               "mcp/cursor-integration",
               "mcp/mircosoft-copilot-integration",
               "mcp/windsurf-integration"
@@ -62,17 +61,17 @@
         ]
       },
       {
-        "tab": "Application",
+        "tab": "Self-Hosting",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Enterprise Setup",
             "pages": [
               "app/introduction",
               "app/plans"
             ]
           },
           {
-            "group": "Self Hosting",
+            "group": "Installation",
             "pages": [
               "installation/quickstart",
               "installation/prerequisites",
