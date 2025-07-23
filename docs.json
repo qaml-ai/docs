@@ -16,7 +16,8 @@
           {
             "group": "General",
             "pages": [
-              "dev_api/introduction"
+              "dev_api/introduction",
+              "dev_api/pricing"
             ]
           },
           {
