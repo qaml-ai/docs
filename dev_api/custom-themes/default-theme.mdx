@@ -1,0 +1,44 @@
+---
+title: 'Default Theme'
+description: 'Set a default theme that automatically applies to iframes without explicit theme parameters'
+---
+
+Every organization can mark one theme as its default. That default is automatically applied to any iframe that doesn't explicitly specify a theme.
+
+<CardGroup cols={2}>
+  <Card title="Single Default" icon="star">
+    Only one theme at a time can hold default status per organization
+  </Card>
+  <Card title="Automatic Application" icon="sparkles">
+    Iframes without theme parameters inherit the current default
+  </Card>
+  <Card title="Override Hierarchy" icon="layer-group">
+    Explicit theme parameters always win over the default
+  </Card>
+  <Card title="Easy Switching" icon="arrows-rotate">
+    Setting a new default instantly removes default status from the previous theme
+  </Card>
+</CardGroup>
+
+## Changing the Default
+
+When you designate a new default theme:
+
+<Steps>
+  <Step title="Previous Default Demoted">
+    The previous default (if any) loses its default status
+  </Step>
+  <Step title="Immediate Application">
+    All existing iframes relying on the old default immediately adopt the new default
+  </Step>
+  <Step title="Explicit Themes Preserved">
+    Iframes that explicitly declared a theme keep using the theme they were built with
+  </Step>
+</Steps>
+
+## camelAI's Built‑in Styling
+
+Out of the box, camelAI ships with a clean, accessible theme that:
+
+- Supports both light and dark mode, automatically matching the user's system preference
+- Uses Show Analysis and Code as the default response mode for maximum transparency

@@ -1,0 +1,55 @@
+---
+title: 'Recommendations'
+description: 'Guide your users with intelligent question suggestions that appear at the start of a new chat'
+---
+
+## Start Recommendations
+These are the three recommendation options that appear on the start screen when users starts a new chat.
+
+<img 
+  src="https://imagedelivery.net/0Ey8LwpQ4ATeP19F21mqig/2ef487b2-3a2c-4691-8fd7-0893686b6000/public" 
+  alt="Show Analysis and Code"
+  height="200"
+  className="rounded-lg"
+/>
+
+<CardGroup cols={2}>
+  <Card title="Highlight Common Use Cases" icon="star">
+    Showcase the most frequently asked questions in your organization
+  </Card>
+  <Card title="Showcase Specific Metrics" icon="chart-line">
+    Feature important KPIs and metrics users should explore
+  </Card>
+  <Card title="Guide Toward Valuable Insights" icon="lightbulb">
+    Direct users to high-impact analysis opportunities
+  </Card>
+  <Card title="Demonstrate Capabilities" icon="sparkles">
+    Show the range of questions camelAI can answer
+  </Card>
+</CardGroup>
+
+### Configuration
+
+<Steps>
+  <Step title="Provide Starter Prompts">
+    Create a list of 1-500 recommended starter prompts
+  </Step>
+  <Step title="Support Multiple Options">
+    If you provide more than 3, camelAI will **randomly select** which 3 to display
+  </Step>
+  <Step title="Keep It Conversational">
+    Recommendations should be conversational and relevant to your data. Keep each recommendation short and sweet.
+  </Step>
+</Steps>
+
+## In-Chat Recommendations
+
+After each interaction, camelAI automatically generates three follow-up suggestions based on:
+
+- The most recent message exchange
+- Your connected data source structure  
+- Natural next steps in the analysis
+
+<Warning>
+In-chat recommendations are currently AI-generated and cannot be customized. They're designed to be contextually relevant and encourage deeper data exploration.
+</Warning>

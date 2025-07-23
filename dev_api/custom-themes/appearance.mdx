@@ -1,0 +1,62 @@
+---
+title: 'Appearance'
+description: 'Customize camelAI visual appearance to match your brand and application design'
+---
+
+## Theme Mode
+
+Choose how camelAI handles light and dark themes:
+
+<CardGroup cols={3}>
+  <Card title="Light Only" icon="sun-bright">
+    Force light mode for all users
+  </Card>
+  <Card title="Dark Only" icon="moon">
+    Force dark mode for all users
+  </Card>
+  <Card title="Both (Adaptive)" icon="circle-half-stroke">
+    Automatically detect and match the user's system preference
+  </Card>
+</CardGroup>
+
+## UI Color Theming
+
+Customize the iframe appearance by providing four key colors:
+
+<AccordionGroup>
+  <Accordion title="Primary Background Color">
+    Used as the primary background color for the chat app and artifact panel
+  </Accordion>
+  <Accordion title="Dark Background Color">
+    Dark background color used for text input and side navigation
+  </Accordion>
+  <Accordion title="Light Background Color">
+    Light background color used for artifact tags
+  </Accordion>
+  <Accordion title="Outline Color">
+    Outline color for borders, buttons, and interactive elements like recommendations
+  </Accordion>
+</AccordionGroup>
+
+These four colors make up the bulk of colors applied throughout the interface.
+
+<Tip>
+We recommend the backgrounds are different shades of the same color.
+</Tip>
+
+### Color Requirements
+
+The number of colors required depends on your theme mode selection.
+
+<CardGroup cols={2}>
+  <Card title="Light or Dark Mode Only" icon="palette">
+    **4 colors total**
+    
+    Provide all four color values for your chosen mode
+  </Card>
+  <Card title="Both Modes (Adaptive)" icon="swatchbook">
+    **8 colors total**
+    
+    Provide 4 colors for light mode + 4 colors for dark mode
+  </Card>
+</CardGroup>

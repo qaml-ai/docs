@@ -33,6 +33,17 @@
               "dev_api/reference-query-guide",
               "dev_api/model-selection-guide"
             ]
+          },
+          {
+            "group": "Custom Themes",
+            "pages": [
+              "dev_api/custom-themes/introduction",
+              "dev_api/custom-themes/default-theme",
+              "dev_api/custom-themes/appearance",
+              "dev_api/custom-themes/response-modes",
+              "dev_api/custom-themes/start-chat-message",
+              "dev_api/custom-themes/recommendations"
+            ]
           }
         ]
       },
