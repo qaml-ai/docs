@@ -69,9 +69,13 @@ The response will include your source ID:
 }
 ```
 
-## Step 3: Add Knowledge Base Entries (Recommended)
+## Step 3: Add Knowledge Base Entries
 
 Knowledge base entries provide context about your data that helps Camel generate better responses.
+
+<Warning>
+  Knowledge base massively improves camelAI's ability to answer questions about your data. This is a must-have for any production application.
+</Warning>
 
 You can add knowledge base entries either through the web console (recommended for first-time setup, just like adding data sources) or via the API.
 
@@ -88,9 +92,13 @@ curl -X POST https://api.camelai.com/api/v1/knowledge-base/ \
   }'
 ```
 
-## Step 4: Add Reference Queries (Recommended)
+## Step 4: Add Reference Queries
 
 Reference queries are pre-written SQL queries that can be used as examples or templates.
+
+<Warning>
+  Reference queries massively improve camelAI's ability to answer questions about your data. We recommend adding at least 10 reference queries that capture key metrics that your users are likely to ask.
+</Warning>
 
 You can add reference queries through the web console (recommended for first-time setup, just like adding data sources) or via the API.
 
