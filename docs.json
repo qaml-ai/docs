@@ -63,12 +63,12 @@
           {
             "group": "MCP Server",
             "pages": [
-              "mcp/introduction",
-              "mcp/getting-started",
-              "mcp/claude-integration",
-              "mcp/cursor-integration",
-              "mcp/mircosoft-copilot-integration",
-              "mcp/windsurf-integration"
+              "mcp_server/introduction",
+              "mcp_server/getting-started",
+              "mcp_server/claude-integration",
+              "mcp_server/cursor-integration",
+              "mcp_server/mircosoft-copilot-integration",
+              "mcp_server/windsurf-integration"
             ]
           }
         ]
