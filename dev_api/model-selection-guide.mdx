@@ -11,30 +11,46 @@ When you create an iframe through the camelAI API, you specify which model to us
 
 ## Available Models
 
-We currently support four models across two providers:
+We currently support five models across two providers:
 
 ### Model Comparison
 
 | Model | Provider | Best For | Speed | Cost | Intelligence |
 |-------|----------|----------|-------|------|--------------|
-| **O3** (Default) | OpenAI | Complex queries, tool-heavy workflows | Medium | Higher | Very High |
-| **Sonnet 4.0** | Anthropic | In-depth research, comprehensive analysis | Medium | Medium | Very High |
+| **GPT-5** (Default) | OpenAI | Complex multi-step workflows, long-context | Medium | Medium | Very High |
+| **O3** | OpenAI | Complex queries, tool-heavy workflows | Medium | Highest | Very High |
+| **Sonnet 4.0** | Anthropic | In-depth research, comprehensive analysis | Medium | Highest | Very High |
 | **O4 Mini** | OpenAI | Simple data, cost-conscious deployments | Fast | Low | High |
 | **4.1** | OpenAI | Speed-critical applications, straightforward data | Very Fast | Lowest | Medium |
 
 ## Model Characteristics
 
 <Tabs>
+<Tab title="OpenAI GPT-5">
+Our recommended default model offering state-of-the-art reasoning and reliability.
+
+**Strengths:**
+- Strong long-context understanding
+- Excellent multi-turn coherence and instruction following
+
+**Considerations:**
+- Typically slower than lightweight models for simple tasks
+
+**Use GPT-5 when:**
+- Your data requires complex joins or calculations
+- Accuracy is more important than speed
+</Tab>
+
 <Tab title="OpenAI O3">
-Our recommended default model strikes the best balance for most use cases.
+A strong general-purpose model that balances capability and cost for many use cases.
 
 **Strengths:**
 - Excellent at complex reasoning and tool calling
 - Provides concise, focused responses  
 
 **Considerations:**
-- Higher cost compared to other OpenAI models
-- Slower response times
+- Higher cost than O4 Mini and GPT-5
+- Medium response times
 
 **Use O3 when:**
 - Your data requires complex joins or calculations
