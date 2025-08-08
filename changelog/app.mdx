@@ -4,7 +4,79 @@ description: 'Updates to camelAI Application'
 icon: 'megaphone'
 ---
 
-<Update label="May 26, 2025" description="Version 0.3.x">
+<Update label="August 1, 2025" description="Version 0.3.2">
+### Claude Opus 4 Support
+
+- Added support for Claude Opus 4 model with enhanced reasoning capabilities
+- Seamless model switching with persistence across sessions
+
+### Multi-CSV Support & Thread Management
+
+- Upload and analyze multiple CSV files in a single connection
+- Complete thread management with rename, delete, and keyboard shortcuts
+- Thread titles now displayed in chat header with dropdown menu
+
+### AWS Bedrock Integration
+
+- Organizations can now bring their own AWS Bedrock credentials
+- Admin interface for credential configuration and model overrides
+- Support for custom AWS regions
+
+### Performance & Mobile Improvements
+
+- Asynchronous dataset description generation with progress indicators
+- Fixed artifact pane behavior on mobile devices
+- Better CSV handling for files with numeric prefixes
+
+### Bug Fixes
+
+- Major MongoDB adapter refactoring to resolve connection issues
+- Fixed Plotly chart rendering and SVG downloads
+- Resolved DuckDB locking issues during concurrent access
+- Fixed Opus model initialization problems
+</Update>
+
+<Update label="June 30, 2025" description="Version 0.3.1">
+### Comprehensive API Expansion
+
+- New REST API endpoints for threads, messages, and data sources
+- Programmatic connection creation for all database types
+- Synchronous agent methods for immediate responses
+- Thread management operations via API (rename, delete)
+
+### Large File Upload Support
+
+- S3-based uploads supporting files up to 10GB
+- Progress indicators and automatic fallback for smaller files
+- Improved error handling for upload failures
+
+### O4-mini Model & Autograph Mode
+
+- Added O4-mini model for faster, cost-effective responses
+- Toggle for automatic visualization generation on data queries
+- Model selection persistence across sessions
+
+### Admin Thread Management
+
+- New admin interface for viewing and managing all organization threads
+- Search, filter, and pagination capabilities
+- Audit logging for thread deletions
+
+### Performance Optimizations
+
+- Dashboard artifacts now cached for 10 minutes
+- Parallelized search queries reduce search time by up to 50%
+- Asynchronous artifact refresh reduces server load by 90%
+
+### Bug Fixes
+
+- Fixed knowledge base item duplication across connections
+- Resolved query library production crashes
+- Improved Snowflake connection stability
+- Fixed CSV field size limitations for large exports
+</Update>
+
+<Update label="May 26, 2025" description="Version 0.3.0">
 <Warning>
   Enterprise users must request access to Claude Sonnet 4 in AWS Bedrock before updating Docker.
 </Warning>

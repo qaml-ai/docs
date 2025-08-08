@@ -110,7 +110,8 @@
           {
             "group": "Updates",
             "pages": [
-              "changelog/app"
+              "changelog/app",
+              "changelog/embedded"
             ]
           }
         ]

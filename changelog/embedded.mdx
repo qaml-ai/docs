@@ -1,0 +1,91 @@
+---
+title: 'Embedded Changelog'
+description: 'Updates to camelAI Embedded API + iframe offering'
+icon: 'code'
+---
+
+<Update label="August 8, 2025" description="Version 0.0.1-beta" tags={["Beta"]}>
+### 🎉 Initial Beta Release
+
+We're excited to announce the beta release of camelAI's embedded offering! You can now integrate camelAI directly into your SaaS product with our API + iframe solution, bringing the full power of AI-driven business intelligence to your users.
+
+### Major Features
+
+#### Enhanced Security & Upload Protection
+- Implemented comprehensive SSRF (Server-Side Request Forgery) protection for file uploads
+- Added robust URL validation to prevent access to internal networks and private IP ranges
+- Enhanced security by blocking localhost, loopback addresses, and reserved IP ranges
+- Maximum file size limit of 10GB per file with support for CSV, TSV, XLS, XLSX, SQLite, and Parquet formats
+
+#### GPT-5 Model Integration
+- Added support for GPT-5 as the new default model with minimal reasoning effort configuration
+- Implemented GPT-5 Agent with optimized message format conversion
+- Made GPT-5 the default model for new iframe links
+- Updated API endpoints to support GPT-5 model selection
+
+#### Advanced Theme Management System
+- Create, edit, and manage multiple themes per organization
+- Live theme preview functionality with instant updates
+- Support for custom CSS variables for both light and dark modes
+- Theme validation and default theme management
+- Theme persistence with theme ID referencing for iframe embeds
+
+#### Complete Iframe Embedding Solution
+- Secure iframe link generation with JWT caching for authentication
+- Rate limiting per IP address for iframe endpoints
+- Customizable TTL (time-to-live) for iframe sessions
+- Support for source selection and model configuration
+- Comprehensive security measures for cross-origin requests
+- Configurable response modes: "full" for technical users and "basic" for non-technical users
+
+#### Reference Query Management (CRUD)
+- Full CRUD operations for reference queries in the console
+- Query library with search and filter capabilities
+- Data source selector integration
+- Query cloning and persistence features
+
+#### Data Sources Management Overhaul
+- Modern React-based data sources page with intuitive UI
+- Type-based filtering for data sources
+- Enhanced connection management with host/database details
+- Improved schema input for new data source creation
+- Last-used tracking for better user experience
+
+#### Team Management with Email Invitations
+- Comprehensive team management system with OrgInvite model
+- Email-based invitation system with custom templates
+- Team management pages for listing and adding members
+- Member removal flow with proper confirmation
+- Seamless navigation integration
+
+### Minor Features
+
+- **Mobile Responsiveness** – Enhanced mobile experience with automatic artifact pane hiding and responsive resize handling
+- **Billing System Integration** – Improved Stripe integration with token counting and subscription management
+- **API Key Usage Visualization** – Chart.js-based usage tracking with message usage through thread associations
+
+### Bug Fixes
+
+- Fixed critical SSRF vulnerability in file upload system
+- Resolved MongoDB performance issues with optimized queries
+- Fixed cancel chat thread functionality in iframe context
+- Resolved code duplication bug in GPT5Agent implementation
+- Fixed syntax highlighting rendering issues in iframe artifacts
+- Improved handling of deleted organizations with soft delete functionality
+
+### Known Limitations
+
+- Billing is not yet implemented (coming in next release)
+- Some features may be subject to change before full release
+
+### Coming Soon
+
+- Full billing integration
+- Additional model support
+- Enhanced analytics, limits, and usage reporting
+- More customization options for iframe embeds
+
+---
+
+Ready to get started? Check out our [Embedded Integration Guide](/embedded/quickstart) to integrate camelAI into your application today!
+</Update>
