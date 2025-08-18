@@ -23,9 +23,16 @@
           {
             "group": "Quick Start",
             "pages": [
-              "dev_api/camel-api-quickstart",
-              "dev_api/row-level-security",
-              "dev_api/bigquery-rls"
+              "dev_api/camel-api-quickstart"
+            ]
+          },
+          {
+            "group": "Row Level Security",
+            "pages": [
+              "dev_api/row-level-security/introduction",
+              "dev_api/row-level-security/postgresql",
+              "dev_api/row-level-security/clickhouse",
+              "dev_api/row-level-security/bigquery"
             ]
           },
           {

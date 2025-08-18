@@ -1,0 +1,258 @@
+---
+title: 'BigQuery RLS'
+description: 'Implement row-level security in BigQuery with Camel.'
+---
+
+BigQuery doesn't support dynamic session variables like PostgreSQL or ClickHouse. Instead, it uses row access policies based on the authenticated user's identity. To implement per-user RLS with Camel, you'll need to create separate connections with different credentials.
+
+<Warning>
+  BigQuery RLS requires managing multiple service accounts or user credentials, which adds complexity compared to PostgreSQL and ClickHouse implementations.
+</Warning>
+
+## How Camel Handles BigQuery RLS
+
+Unlike PostgreSQL and ClickHouse where Camel sets a session variable for each query, BigQuery requires a different approach:
+
+- **Service Account Authentication**: Each connection uses a specific service account with its own credentials
+- **Row Access Policies**: BigQuery filters data based on the authenticated service account's identity
+- **Multiple Connections**: You create separate Camel connections for different user groups or tenants
+- **Query Routing**: Camel routes queries to the appropriate connection based on the `srcs` parameter
+
+## Setting Up RLS
+
+### Step 1: Create Service Accounts
+
+Create separate service accounts for each access level or tenant:
+
+```bash
+# Create service account
+gcloud iam service-accounts create tenant-reader \
+  --display-name="Tenant Data Reader"
+
+# Generate key
+gcloud iam service-accounts keys create tenant-key.json \
+  --iam-account=tenant-reader@project.iam.gserviceaccount.com
+```
+
+### Step 2: Grant BigQuery Permissions
+
+```bash
+gcloud projects add-iam-policy-binding project \
+  --member="serviceAccount:tenant-reader@project.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataViewer"
+```
+
+### Step 3: Create Row Access Policies
+
+Create policies that filter data based on the service account:
+
+```sql
+CREATE ROW ACCESS POLICY tenant_policy
+  ON `project.dataset.table`
+  GRANT TO ("serviceAccount:tenant-reader@project.iam.gserviceaccount.com")
+  FILTER USING (tenant_id = 'tenant_a');
+```
+
+### Step 4: Configure Camel Connections
+
+In Camel, create a connection for each service account:
+
+1. Navigate to your data sources
+2. Add a new BigQuery connection
+3. Configure with service account credentials:
+   - **Name**: `bigquery_tenant_a`
+   - **Service Account**: Upload the `tenant-key.json` file
+   - **Project ID**: Your GCP project ID
+
+Repeat this process for each tenant or user group that needs separate access.
+
+## Complete Example: Multi-Tenant Setup
+
+Let's implement a multi-tenant system where different service accounts represent different tenants.
+
+### 1. Create the Data Table
+
+```sql
+-- Create a table with tenant data
+CREATE TABLE `project.analytics.events` (
+  event_id STRING,
+  tenant_id STRING,
+  user_email STRING,
+  event_type STRING,
+  event_data JSON,
+  created_at TIMESTAMP
+);
+
+-- Insert sample data
+INSERT INTO `project.analytics.events` 
+  (event_id, tenant_id, user_email, event_type, event_data, created_at)
+VALUES
+  ('evt_001', 'tenant_a', 'user1@tenanta.com', 'login', JSON '{"ip": "192.168.1.1"}', CURRENT_TIMESTAMP()),
+  ('evt_002', 'tenant_a', 'user2@tenanta.com', 'purchase', JSON '{"amount": 99.99}', CURRENT_TIMESTAMP()),
+  ('evt_003', 'tenant_b', 'user1@tenantb.com', 'login', JSON '{"ip": "192.168.2.1"}', CURRENT_TIMESTAMP()),
+  ('evt_004', 'tenant_b', 'user2@tenantb.com', 'signup', JSON '{"plan": "premium"}', CURRENT_TIMESTAMP());
+```
+
+### 2. Create Service Accounts
+
+```bash
+# Create service accounts for each tenant
+gcloud iam service-accounts create tenant-a-reader \
+  --display-name="Tenant A Data Reader"
+
+gcloud iam service-accounts create tenant-b-reader \
+  --display-name="Tenant B Data Reader"
+
+# Generate keys
+gcloud iam service-accounts keys create tenant-a-key.json \
+  --iam-account=tenant-a-reader@project.iam.gserviceaccount.com
+
+gcloud iam service-accounts keys create tenant-b-key.json \
+  --iam-account=tenant-b-reader@project.iam.gserviceaccount.com
+```
+
+### 3. Create Row Access Policies
+
+```sql
+-- Policy for Tenant A
+CREATE ROW ACCESS POLICY tenant_a_policy
+  ON `project.analytics.events`
+  GRANT TO ("serviceAccount:tenant-a-reader@project.iam.gserviceaccount.com")
+  FILTER USING (tenant_id = 'tenant_a');
+
+-- Policy for Tenant B
+CREATE ROW ACCESS POLICY tenant_b_policy
+  ON `project.analytics.events`
+  GRANT TO ("serviceAccount:tenant-b-reader@project.iam.gserviceaccount.com")
+  FILTER USING (tenant_id = 'tenant_b');
+```
+
+### 4. Grant BigQuery Permissions
+
+```bash
+# Grant BigQuery data viewer role to service accounts
+gcloud projects add-iam-policy-binding project \
+  --member="serviceAccount:tenant-a-reader@project.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataViewer"
+
+gcloud projects add-iam-policy-binding project \
+  --member="serviceAccount:tenant-b-reader@project.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataViewer"
+```
+
+### 5. Configure Camel Connections
+
+Set up the connections in Camel:
+
+1. **Tenant A Connection**:
+   - Name: `bigquery_tenant_a`
+   - Service Account: `tenant-a-reader@project.iam.gserviceaccount.com`
+   - Key File: Upload `tenant-a-key.json`
+
+2. **Tenant B Connection**:
+   - Name: `bigquery_tenant_b`
+   - Service Account: `tenant-b-reader@project.iam.gserviceaccount.com`
+   - Key File: Upload `tenant-b-key.json`
+
+### 6. Use Tenant-Specific Connections
+
+When creating an iframe, specify which data source to use based on the user's tenant:
+
+```javascript
+// For Tenant A users
+const options = {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <token>',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    uid: 'user123',
+    srcs: ['bigquery_tenant_a'],  // Specify the tenant-specific connection
+    ttl: 900,
+    model: 'o3',
+    // ... other config
+  })
+};
+
+fetch('https://api.camelai.com/api/v1/iframe/create', options)
+  .then(response => response.json())
+  .then(response => console.log(response))
+  .catch(err => console.error(err));
+
+// For Tenant B users
+const options = {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer <token>',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    uid: 'user456',
+    srcs: ['bigquery_tenant_b'],  // Different connection for Tenant B
+    ttl: 900,
+    model: 'o3',
+    // ... other config
+  })
+};
+```
+
+## Testing Your Policies
+
+### Using BigQuery Console
+
+Test your policies by impersonating different service accounts:
+
+```bash
+# Authenticate as Tenant A service account
+gcloud auth activate-service-account \
+  --key-file=tenant-a-key.json
+
+# Query should only return Tenant A data
+bq query --use_legacy_sql=false \
+  'SELECT * FROM `project.analytics.events`'
+
+# Switch to Tenant B
+gcloud auth activate-service-account \
+  --key-file=tenant-b-key.json
+
+# Query should only return Tenant B data
+bq query --use_legacy_sql=false \
+  'SELECT * FROM `project.analytics.events`'
+```
+
+### Verify Policy Application
+
+Check which policies are applied to a table:
+
+```sql
+SELECT *
+FROM `project.dataset.INFORMATION_SCHEMA.ROW_ACCESS_POLICIES`
+WHERE table_name = 'your_table';
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **"Access Denied" Errors**:
+   - Verify service account has BigQuery Data Viewer role
+   - Check row access policy syntax
+   - Ensure service account is included in GRANT TO clause
+
+2. **All Data Visible**:
+   - Confirm row access policies are enabled on the table
+   - Check if user has additional roles (e.g., Owner, Editor)
+   - Verify FILTER USING clause logic
+
+3. **No Data Returned**:
+   - Test the filter condition separately
+   - Verify service account email matches policy
+   - Check data exists matching the filter criteria
+
+## Learn More
+
+- [BigQuery IAM Documentation](https://cloud.google.com/bigquery/docs/access-control)
+- [Service Account Best Practices](https://cloud.google.com/iam/docs/best-practices-service-accounts)
+
+For assistance with BigQuery RLS implementation, contact support@camelai.com.

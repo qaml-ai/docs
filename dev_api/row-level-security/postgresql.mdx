@@ -1,0 +1,126 @@
+---
+title: 'PostgreSQL RLS'
+description: 'Implement row-level security in PostgreSQL with Camel.'
+---
+
+PostgreSQL provides native row-level security (RLS) support that integrates seamlessly with Camel. Using session variables, you can create dynamic, per-user data access policies.
+
+## How Camel Sets the UID
+
+For every query executed through Camel, the system automatically sets a session variable:
+
+```sql
+SET LOCAL camel.uid = '<user_uid>';
+```
+
+This variable is available throughout the query execution and can be referenced in your RLS policies.
+
+## Setting Up RLS
+
+### Step 1: Enable RLS on Your Table
+
+First, enable row-level security on the tables you want to protect:
+
+```sql
+ALTER TABLE your_table ENABLE ROW LEVEL SECURITY;
+```
+
+<Note>
+  Once RLS is enabled, the table will deny all access by default unless you create policies to grant access.
+</Note>
+
+### Step 2: Create an RLS Policy
+
+Create a policy that uses the `camel.uid` session variable to filter rows:
+
+```sql
+CREATE POLICY user_access_policy ON your_table
+  FOR ALL
+  USING (user_id::text = current_setting('camel.uid'));
+```
+
+This policy ensures users can only see rows where the `user_id` column matches their uid.
+
+## Complete Example: User Orders
+
+Let's implement RLS for an e-commerce scenario where users should only see their own orders.
+
+### 1. Create the Orders Table
+
+```sql
+CREATE TABLE orders (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) NOT NULL,
+  product_name VARCHAR(255),
+  amount DECIMAL(10, 2),
+  order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert sample data
+INSERT INTO orders (user_id, product_name, amount) VALUES
+  ('user_123', 'Laptop', 999.99),
+  ('user_123', 'Mouse', 29.99),
+  ('user_456', 'Keyboard', 79.99),
+  ('user_789', 'Monitor', 399.99);
+```
+
+### 2. Enable RLS
+
+```sql
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+```
+
+### 3. Create the Policy
+
+```sql
+CREATE POLICY orders_user_policy ON orders
+  FOR ALL
+  USING (user_id = current_setting('camel.uid'));
+```
+
+### 4. Grant Permissions
+
+```sql
+-- Create a role for Camel users
+CREATE ROLE camel_users;
+
+-- Grant necessary permissions
+GRANT SELECT, INSERT, UPDATE, DELETE ON orders TO camel_users;
+GRANT USAGE ON SEQUENCE orders_id_seq TO camel_users;
+
+-- Your Camel database user should be a member of this role
+GRANT camel_users TO your_camel_db_user;
+```
+
+## Testing Your Policies
+
+You can test your RLS policies directly in PostgreSQL:
+
+```sql
+-- Set the session variable manually for testing
+SET LOCAL camel.uid = 'user_123';
+
+-- This should only return orders for user_123
+SELECT * FROM orders;
+
+-- Reset the session
+RESET camel.uid;
+```
+
+## Troubleshooting
+
+### Users See No Data
+- Verify the `camel.uid` is being set correctly
+- Check that your policy logic is correct
+- Ensure the user has the necessary table permissions
+
+### Performance Issues
+- Check if filter columns are indexed
+- Analyze query plans for inefficient policy checks
+
+## Learn More
+
+- [PostgreSQL RLS Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+- [PostgreSQL GRANT Practices](https://www.postgresql.org/docs/current/sql-grant.html)
+
+For assistance with PostgreSQL RLS implementation, contact support@camelai.com.

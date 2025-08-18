@@ -1,0 +1,71 @@
+---
+title: 'Row Level Security (RLS)'
+description: 'Restrict data access on a per-user basis across different databases.'
+---
+
+Row Level Security (RLS) allows you to restrict which rows are visible to each user, based on their unique identifier (uid). This ensures that users only see the data they're authorized to access.
+
+<Card title="Need RLS for other databases?" icon="envelope" href="mailto:support@camelai.com?subject=RLS Support Request">
+  RLS currently supports ClickHouse, PostgreSQL, and BigQuery. Email us to request support for your database.
+</Card>
+
+## Supported Databases
+
+Camel supports row-level security across multiple database platforms, each with its own implementation approach:
+
+<CardGroup cols={3}>
+  <Card
+    title="PostgreSQL"
+    icon="database"
+    href="/dev_api/row-level-security/postgresql"
+  >
+    Native RLS policies with session variables
+  </Card>
+  <Card
+    title="ClickHouse"
+    icon="layer-group"
+    href="/dev_api/row-level-security/clickhouse"
+  >
+    Row policies with custom settings
+  </Card>
+  <Card
+    title="BigQuery"
+    icon="cloud"
+    href="/dev_api/row-level-security/bigquery"
+  >
+    Row access policies with user credentials
+  </Card>
+</CardGroup>
+
+## How It Works
+
+When a user interacts with Camel (through an iframe or the API), Camel automatically manages the security context for each query:
+
+1. **User Identification**: Each request includes a unique `uid` identifier
+2. **Session Context**: Camel sets database-specific session variables or settings
+3. **Policy Enforcement**: Your database's RLS policies use these variables to filter data
+4. **Automatic Filtering**: Users only see rows they're authorized to access
+
+## Implementation Approaches
+
+### Dynamic Session Variables
+**PostgreSQL & ClickHouse**: Camel sets a session variable (`camel.uid` or `SQL_camel_uid`) for each query. Your RLS policies reference this variable to filter data dynamically.
+
+### Per-User Connections
+**BigQuery**: Since BigQuery doesn't support session variables, you'll need to create separate connections with different credentials for each user or group.
+
+## Security Benefits
+
+- **Data Isolation**: Ensures complete data separation between users
+- **SQL Injection Protection**: Session variables are set outside of SQL queries
+- **Fail-Safe**: Queries without proper authentication fail rather than exposing data
+
+## Getting Started
+
+Choose your database platform to see specific implementation instructions:
+
+- [PostgreSQL RLS Setup →](/dev_api/row-level-security/postgresql)
+- [ClickHouse RLS Setup →](/dev_api/row-level-security/clickhouse)
+- [BigQuery RLS Setup →](/dev_api/row-level-security/bigquery)
+
+For further help, contact support@camelai.com.

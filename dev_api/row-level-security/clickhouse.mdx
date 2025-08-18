@@ -1,0 +1,175 @@
+---
+title: 'ClickHouse RLS'
+description: 'Implement row-level security in ClickHouse with Camel.'
+---
+
+ClickHouse supports native row policies that provide robust, secure row-level access control. Camel integrates with ClickHouse's custom settings feature to enable dynamic, per-user data isolation.
+
+## How Camel Sets the UID
+
+For every query executed through Camel, the system automatically sets a custom session setting:
+
+```sql
+-- Set as part of the query session
+SQL_camel_uid = '<user_uid>'
+```
+
+This setting is available throughout the query execution and can be referenced in your row policies.
+
+## Setting Up RLS
+
+### Step 1: Create a Role with Custom Settings
+
+First, create a role that allows the custom setting to be used:
+
+```sql
+CREATE ROLE camel_readonly_role;
+
+-- Allow the custom setting to be modified in readonly mode
+ALTER ROLE camel_readonly_role 
+  SETTINGS SQL_camel_uid CHANGEABLE_IN_READONLY;
+```
+
+### Step 2: Grant Table Permissions
+
+Grant the necessary permissions to the role:
+
+```sql
+GRANT SELECT ON database.table TO camel_readonly_role;
+```
+
+### Step 3: Create a Row Policy
+
+Create a row policy that uses the custom setting to filter data:
+
+```sql
+CREATE ROW POLICY user_policy ON database.table
+  USING user_id = getSetting('SQL_camel_uid')
+  TO camel_readonly_role;
+```
+
+### Step 4: Create Users and Assign Roles
+
+```sql
+-- Create a user for Camel connections
+CREATE USER IF NOT EXISTS camel_user 
+  IDENTIFIED BY 'secure_password'
+  SETTINGS readonly = 1;
+
+-- Assign the role
+GRANT camel_readonly_role TO camel_user;
+SET DEFAULT ROLE camel_readonly_role TO camel_user;
+```
+
+## Complete Example: Multi-Tenant Data
+
+Let's implement RLS for a multi-tenant analytics platform where each tenant should only see their own data.
+
+### 1. Create the Events Table
+
+```sql
+CREATE TABLE analytics.events (
+  event_id UUID DEFAULT generateUUIDv4(),
+  tenant_id String,
+  user_id String,
+  event_type String,
+  event_data String,
+  timestamp DateTime DEFAULT now()
+) ENGINE = MergeTree()
+ORDER BY (tenant_id, timestamp);
+
+-- Insert sample data
+INSERT INTO analytics.events (tenant_id, user_id, event_type, event_data) VALUES
+  ('tenant_001', 'user_123', 'page_view', '{"page": "/home"}'),
+  ('tenant_001', 'user_456', 'click', '{"button": "signup"}'),
+  ('tenant_002', 'user_789', 'page_view', '{"page": "/products"}'),
+  ('tenant_002', 'user_012', 'purchase', '{"amount": 99.99}');
+```
+
+### 2. Set Up the Role and Permissions
+
+```sql
+-- Create the role
+CREATE ROLE tenant_access_role;
+
+-- Configure the custom setting
+ALTER ROLE tenant_access_role 
+  SETTINGS SQL_camel_uid CHANGEABLE_IN_READONLY;
+
+-- Grant table access
+GRANT SELECT ON analytics.events TO tenant_access_role;
+```
+
+### 3. Create the Row Policy
+
+```sql
+CREATE ROW POLICY tenant_isolation_policy 
+  ON analytics.events
+  USING tenant_id = getSetting('SQL_camel_uid')
+  TO tenant_access_role;
+```
+
+### 4. Create the User
+
+```sql
+CREATE USER IF NOT EXISTS camel_app_user
+  IDENTIFIED BY 'secure_password'
+  SETTINGS readonly = 1;
+
+GRANT tenant_access_role TO camel_app_user;
+SET DEFAULT ROLE tenant_access_role TO camel_app_user;
+```
+
+## Testing Your Policies
+
+You can test your row policies using the ClickHouse client:
+
+```sql
+-- Set the custom setting for testing
+SET SQL_camel_uid = 'tenant_001';
+
+-- This should only return data for tenant_001
+SELECT * FROM analytics.events;
+
+-- Test with a different tenant
+SET SQL_camel_uid = 'tenant_002';
+SELECT * FROM analytics.events;
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+| Issue | Solution |
+|-------|----------|
+| "Unknown setting SQL_camel_uid" | Ensure the role has `CHANGEABLE_IN_READONLY` permission for the setting |
+| No data returned | Verify the getSetting value matches your data exactly (case-sensitive) |
+| All data visible | Check that the row policy is applied to the correct role |
+| Poor performance | Ensure filter columns are in the ORDER BY clause |
+
+### Debugging Queries
+
+Enable query logging to debug issues:
+
+```sql
+SET log_queries = 1;
+SET log_query_settings = 1;
+
+-- Run your query
+SELECT * FROM analytics.events;
+
+-- Check the log
+SELECT 
+  query,
+  Settings['SQL_camel_uid'] as uid_setting,
+  exception
+FROM system.query_log
+WHERE query_id = (SELECT query_id FROM system.query_log ORDER BY event_time DESC LIMIT 1);
+```
+
+## Learn More
+
+- [ClickHouse Row Policies Documentation](https://clickhouse.com/docs/en/operations/access-rights#row-policy-management)
+- [ClickHouse Settings Documentation](https://clickhouse.com/docs/en/operations/settings/settings/)
+
+For assistance with ClickHouse RLS implementation, contact support@camelai.com.
