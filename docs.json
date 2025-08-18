@@ -24,7 +24,8 @@
             "group": "Quick Start",
             "pages": [
               "dev_api/camel-api-quickstart",
-              "dev_api/row-level-security"
+              "dev_api/row-level-security",
+              "dev_api/bigquery-rls"
             ]
           },
           {

@@ -1,0 +1,30 @@
+---
+title: 'BigQuery Row Level Security (RLS)'
+description: 'How to use dynamic row-level security with BigQuery.'
+---
+
+BigQuery does not support setting a user or custom session variable at the session level. As a result, dynamic per-user RLS (as done with PostgreSQL or ClickHouse) is not natively possible.
+
+**Workaround:**  
+To implement per-user row-level security in BigQuery with Camel:
+
+- Create a separate BigQuery connection for each user, each using different user credentials or service account keys.
+- Create RLS policies in BigQuery to enforce data security.
+
+This approach allows you to restrict data access per user, but requires managing multiple connections and credentials.
+
+## Example: BigQuery Row Access Policy
+
+Suppose you have a table `dataset1.table1` with a column `Email`, and you want each user to only see their own rows based on their email address.
+
+1. Create a row access policy using `SESSION_USER()`:
+
+```sql
+CREATE ROW ACCESS POLICY salary_personal
+  ON dataset1.table1
+  GRANT TO ("domain:example.com")
+  FILTER USING (Email = SESSION_USER());
+```
+
+- Here, `SESSION_USER()` returns the email address of the user making the query.
+- The policy ensures that each user only sees rows where the `Email` column matches their own email.
