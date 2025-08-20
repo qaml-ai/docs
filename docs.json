@@ -11,6 +11,18 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Getting Started",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "getting-started/overview",
+              "getting-started/for-developers"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API",
         "groups": [
           {
@@ -85,13 +97,6 @@
         "tab": "Self-Hosting",
         "groups": [
           {
-            "group": "Enterprise Setup",
-            "pages": [
-              "app/introduction",
-              "app/plans"
-            ]
-          },
-          {
             "group": "Docker Installation",
             "pages": [
               "installation/quickstart",
@@ -105,9 +110,10 @@
             ]
           },
           {
-            "group": "Setup",
+            "group": "Configuration",
             "pages": [
-              "setup/rbac"
+              "setup/rbac",
+              "setup/datasource-setup"
             ]
           }
         ]

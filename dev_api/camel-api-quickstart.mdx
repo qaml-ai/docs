@@ -240,26 +240,6 @@ function DataChat({ userId }) {
 
 1. **UID Management**: Use consistent UIDs for each user to maintain conversation history
 2. **TTL Settings**: Balance between security (shorter TTL) and user experience (longer TTL)
-3. **Knowledge Base**: Add comprehensive knowledge base entries to improve response quality
-4. **Reference Queries**: Include common queries your users might need
-5. **Error Handling**: Always implement proper error handling for API calls
-6. **Security**: Never expose your API key in client-side code
-
-## Next Steps
-
-- Explore the full API documentation for advanced features
-- Set up webhooks for real-time notifications
-- Implement custom styling for the iframe
-- Use the chat API directly for more control over the conversation flow
-
-## Troubleshooting
-
-### Common Issues
-
-1. **401 Unauthorized**: Check your API key is correctly formatted in the Authorization header
-2. **404 Not Found**: Verify the endpoint URL and source IDs
-3. **Iframe not loading**: Ensure the iframe URL hasn't expired (check TTL)
-4. **No data returned**: Verify your data source connection and permissions
 
 ### Support
 
@@ -267,3 +247,7 @@ For additional help:
 - API Documentation: https://docs.camelai.com
 - Support Email: support@camelai.com
 - Community Forum: https://community.camelai.com 
+
+<Card title="Next Step: Implement Row Level Security" icon="lock" href="/dev_api/row-level-security/introduction">
+  Restrict which rows of your database are visible to each user, based on their unique identifier
+</Card>
