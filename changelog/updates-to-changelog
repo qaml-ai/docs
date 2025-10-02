@@ -1,0 +1,48 @@
+# Changelog: August 8 - October 2, 2025
+
+## Major Updates
+
+
+### Launched paid tier
+CamelAI is officially out of beta. Billing is $200 per month + API usage. Paying users get $10 credits of API usage per month. Free tier also gets a one time $10 credit so you can test camelAI before purchase.
+
+---
+
+### Databricks Support
+We've added full support for Databricks connections, expanding our database integration capabilities to include one of the most popular data lakehouse platforms.
+
+---
+
+### Sidebar as a component
+We've added the ability to hide the side navigation through a new parameter in Org theme settings.
+
+---
+
+### Download Options for Artifacts
+You can now choose how to download your artifacts with a new dropdown menu offering PNG, SVG, or CSV formats. The menu intelligently shows only when a graph is present - otherwise it downloads directly as CSV.
+
+---
+
+### Usage Monitoring and Alerts
+We've introduced email alerts that notify you when you reach 80% and 100% of your usage limits, helping you stay on top of your account usage. Additionally, the usage tab now includes a subscription management section.
+
+---
+
+### Enhanced Data Source Management
+When deleting a data source, you'll now see exactly how many Knowledge Bases and Reference Queries will be affected. The counts are clickable and deep link to the relevant pages with the connection pre-selected, making it easy to review what will be deleted.
+
+---
+
+## Minor Features
+
+- Increased promotional signup credits from $5 to $10
+- Made the API usage graph more interactive with an improved legend
+- Simplified the search label from "Searching camelAI's Memory" to "Searching Memory"
+
+## Bug Fixes
+
+- Fixed syntax highlighting CSS to properly support both light and dark modes, and updated API key popup to use consistent color variables
+- Corrected z-index layering so the textbox properly appears behind the overlay when the side nav is open
+- Fixed search functionality in Ask Camel
+- Resolved MSSQL connection issues when passwords contain special characters
+- Fixed file upload functionality
