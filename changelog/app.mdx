@@ -4,6 +4,89 @@ description: 'Updates to camelAI Application'
 icon: 'megaphone'
 ---
 
+<Update label="October 2, 2024" description="0.4.0">
+### MCP (Model Context Protocol) Support
+
+- Added universal MCP datasource support for connecting to any MCP-compatible data source
+- Redesigned connection interface with improved styling and streamlined setup process
+
+### Chat History Tab
+
+- Introduced dedicated chat history tab for browsing previous conversations
+- Centralized view of all chat threads with improved navigation and organization
+
+### Connections Page Redesign
+
+- Completely redesigned connections page with improved layout and visual hierarchy
+- Enhanced usability for managing and configuring data source connections
+
+### Team Self-Service Management
+
+- Self-service team management capabilities for creating and managing teams without admin intervention
+- New team invite flow with email notifications and improved onboarding
+
+### SAML SSO Self-Service
+
+- Organization admins can configure SAML SSO settings directly through the admin panel
+- New visual admin panel interface for managing SSO providers without engineering support
+
+### Enhanced Chat Management
+
+- Added chat title bar with delete and rename functionality
+- Easy organization and management of conversations directly from the chat interface
+
+### Databricks Integration
+
+- Full support for Databricks as a data source
+- Schema selection and query capabilities
+
+### Email/Password Authentication
+
+- Traditional email and password login option alongside existing magic link authentication
+
+### Share Chat Feature
+
+- Share chat conversations with team members for better collaboration and knowledge sharing
+
+### Minor Features
+
+- Added support for GPT-5 and O3 models to model selection options
+- Enabled multiple CSV file uploads simultaneously for faster data ingestion
+- Added IPv6 network support for improved connectivity
+- Implemented security headers (CSP, X-Frame-Options, etc.) for enhanced application security
+- Added audit logging for tracking system changes and user actions
+- Team members now automatically skip onboarding when joining an existing team
+- Teams can now view each other's threads for better collaboration
+- Added Mixpanel JQL connector for analytics integration
+- Improved knowledge base modal UX with better navigation and clearer actions
+- Artifact pane now automatically hides on mobile devices
+- Updated "Skip" button to say "Continue" in add context flow
+- Improved help message when knowledge base is empty
+- Added S3 support for file uploads
+- Implemented backend multipart upload without S3 dependency
+- Faster CSV upload processing for large files
+- Updated paywall experience for paid users with manage payment controls
+- Added OpenStreetMap tile support for map visualizations
+- Optimized dashboard artifact refresh behavior
+
+### Bug Fixes
+
+- Fixed Excel file processing that was blocking the application
+- Fixed timeout issues when stopping long-running queries
+- Fixed dashboard reload functionality that was failing to refresh data
+- Fixed Databricks schema selection not displaying available schemas
+- Fixed enterprise billing calculation errors
+- Fixed MongoDB connection and authentication issues
+- Fixed IAM authentication for AWS data sources
+- Fixed last viewed date not updating correctly on dashboards
+- Fixed email login to be case-insensitive
+- Fixed Sonnet model errors causing failed responses
+- Fixed CSV field limit error for Snowflake connections
+- Fixed knowledge base duplication creating multiple copies
+- Improved error handling for file save operations
+- Fixed print statement exceptions in restricted code execution environment
+</Update>
+
 <Update label="August 1, 2025" description="Version 0.3.2">
 ### Claude Opus 4 Support
 
