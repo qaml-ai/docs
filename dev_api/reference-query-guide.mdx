@@ -9,6 +9,76 @@ Reference Queries are pre-defined SQL queries that teach camelAI how to calculat
 
 Reference Queries are SQL queries stored in a vectorized database that camelAI searches when processing user questions. Unlike the Knowledge Base which stores textual context, Reference Queries provide actual SQL implementations of your business logic.
 
+## Persistent vs Session-Specific Reference Queries
+
+CamelAI supports two types of reference queries, each designed for different use cases:
+
+### Persistent (Stateful) Queries
+
+Persistent queries are created through the `/api/v1/reference-queries/` API endpoint and are tied to your connection IDs. These queries:
+
+- **Persist across all iframes** that use the associated connection ID
+- **Apply globally** to all users and sessions
+- Are ideal for **metrics and patterns that apply universally** across your organization
+
+**Use persistent queries for:**
+- Standard business metrics and KPIs
+- Dashboard queries used by all users
+- Common table joins and relationships
+- Shared calculation patterns
+
+### Session-Specific (Stateless) Queries
+
+Session-specific queries are provided directly in the iframe creation request via the `reference_queries` parameter. These queries:
+
+- **Only apply to that specific iframe instance**
+- **Do not persist** beyond the iframe's lifecycle
+- Work alongside any persistent queries you've already created
+
+**Use session-specific queries for:**
+- User-specific data filters (e.g., queries scoped to a specific organization or user)
+- Temporary reference data for specific sessions
+- Custom calculations for individual iframes
+- Multi-tenant scenarios where each tenant needs unique query patterns
+
+### Example: Using Session-Specific Reference Queries
+
+When creating an iframe, you can include temporary reference queries that apply only to that session:
+
+```python
+import requests
+
+payload = {
+    "uid": "<string>",
+    "srcs": ["<string>"],
+    "ttl": 900,
+    "reference_queries": [
+        {
+            "title": "Recent Companies",
+            "query": "SELECT * FROM companies ORDER BY batch DESC LIMIT 500;"
+        },
+        {
+            "title": "Company Status Summary",
+            "query": "SELECT status, COUNT(*) AS company_count FROM companies GROUP BY status ORDER BY company_count DESC;"
+        }
+    ],
+    "model": "gpt-5",
+    "response_mode": "full",
+    "show_sidebar": True
+}
+
+response = requests.post(
+    "https://api.camelai.com/api/v1/iframe/create",
+    headers={
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+    },
+    json=payload
+)
+```
+
+These session-specific queries complement (not replace) any persistent reference queries associated with your connection IDs.
+
 ## Why Use Reference Queries?
 
 Reference Queries help camelAI:

@@ -16,6 +16,70 @@ The knowledge base is a text area where you define important context about your 
 - Handle time periods and date calculations correctly
 - Understand locale-specific requirements (currency, language, regional formats)
 
+## Persistent vs Session-Specific Knowledge Base Entries
+
+CamelAI supports two types of knowledge base entries, each designed for different use cases:
+
+### Persistent (Stateful) Entries
+
+Persistent entries are created through the `/api/v1/knowledge-base/` API endpoint and are tied to your connection IDs. These entries:
+
+- **Persist across all iframes** that use the associated connection ID
+- **Apply globally** to all users and sessions
+- Are ideal for **context that applies universally** across your organization
+
+**Use persistent entries for:**
+- Dataset descriptions and schema information
+- Company-wide terminology and metric definitions
+- Standard table relationships and joins
+- Data quality notes that affect all users
+
+### Session-Specific (Stateless) Entries
+
+Session-specific entries are provided directly in the iframe creation request via the `knowledge_base_entries` parameter. These entries:
+
+- **Only apply to that specific iframe instance**
+- **Do not persist** beyond the iframe's lifecycle
+- Work alongside any persistent entries you've already created
+
+**Use session-specific entries for:**
+- User-specific instructions (e.g., "This user prefers non-technical explanations")
+- Organization-specific context when serving multiple tenants
+- Temporary overrides or custom behavior for specific sessions
+- Locale preferences (e.g., "Please respond in Spanish")
+
+### Example: Using Session-Specific Entries
+
+When creating an iframe, you can include temporary knowledge base entries that apply only to that session:
+
+```python
+import requests
+
+payload = {
+    "uid": "<string>",
+    "srcs": ["<string>"],
+    "ttl": 900,
+    "knowledge_base_entries": [
+        "This user is new to the tool and has never used SQL before. Please keep answers non-technical",
+        "Please speak in Spanish"
+    ],
+    "model": "gpt-5",
+    "response_mode": "full",
+    "show_sidebar": True
+}
+
+response = requests.post(
+    "https://api.camelai.com/api/v1/iframe/create",
+    headers={
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+    },
+    json=payload
+)
+```
+
+These session-specific entries complement (not replace) any persistent knowledge base entries associated with your connection IDs.
+
 ## Best Practices
 
 ### 1. Always Include a Dataset Description
