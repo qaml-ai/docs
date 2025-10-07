@@ -24,11 +24,11 @@ CamelAI supports two types of knowledge base entries, each designed for differen
 
 Persistent entries are created through the `/api/v1/knowledge-base/` API endpoint and are tied to your connection IDs. These entries:
 
-- **Persist across all iframes** that use the associated connection ID
-- **Apply globally** to all users and sessions
-- Are ideal for **context that applies universally** across your organization
+- Persist across all iframes that use the associated connection ID
+- Apply globally to all users and sessions
+- Are ideal for context that applies universally across your organization
 
-**Use persistent entries for:**
+Use persistent entries for:
 - Dataset descriptions and schema information
 - Company-wide terminology and metric definitions
 - Standard table relationships and joins
@@ -38,11 +38,11 @@ Persistent entries are created through the `/api/v1/knowledge-base/` API endpoin
 
 Session-specific entries are provided directly in the iframe creation request via the `knowledge_base_entries` parameter. These entries:
 
-- **Only apply to that specific iframe instance**
-- **Do not persist** beyond the iframe's lifecycle
+- Only apply to that specific iframe instance
+- Do not persist beyond the iframe's lifecycle
 - Work alongside any persistent entries you've already created
 
-**Use session-specific entries for:**
+Use session-specific entries for:
 - User-specific instructions (e.g., "This user prefers non-technical explanations")
 - Organization-specific context when serving multiple tenants
 - Temporary overrides or custom behavior for specific sessions
@@ -192,26 +192,3 @@ completed a transaction. Our churn definition is 90+ days of inactivity, and reg
 ## Managing Your Knowledge Base
 
 You can create, read, update, and delete knowledge base entries through the API or through the developer console. Changes take effect immediately for all new conversations.
-
-### Tips for Maintenance
-
-<CardGroup cols={2}>
-<Card title="Regular Reviews" icon="calendar">
-Review and update your knowledge base quarterly to ensure accuracy
-</Card>
-<Card title="Stay Current" icon="arrow-trend-up">
-Add new definitions as your business evolves
-</Card>
-<Card title="Clean Up" icon="trash">
-Remove outdated information to prevent confusion
-</Card>
-<Card title="Test Changes" icon="flask">
-Test the impact of changes using the preview feature in the developer console
-</Card>
-</CardGroup>
-
-## Next Steps
-
-<Card title="Configure Reference Queries" icon="arrow-right" href="/dev_api/reference-query-guide">
-Learn how to set up complex, frequently-used calculations for better performance
-</Card>

@@ -17,11 +17,11 @@ CamelAI supports two types of reference queries, each designed for different use
 
 Persistent queries are created through the `/api/v1/reference-queries/` API endpoint and are tied to your connection IDs. These queries:
 
-- **Persist across all iframes** that use the associated connection ID
-- **Apply globally** to all users and sessions
-- Are ideal for **metrics and patterns that apply universally** across your organization
+- Persist across all iframes that use the associated connection ID
+- Apply globally to all users and sessions
+- Are ideal for metrics and patterns that apply universally across your organization
 
-**Use persistent queries for:**
+Use persistent queries for:
 - Standard business metrics and KPIs
 - Dashboard queries used by all users
 - Common table joins and relationships
@@ -31,11 +31,11 @@ Persistent queries are created through the `/api/v1/reference-queries/` API endp
 
 Session-specific queries are provided directly in the iframe creation request via the `reference_queries` parameter. These queries:
 
-- **Only apply to that specific iframe instance**
-- **Do not persist** beyond the iframe's lifecycle
+- Only apply to that specific iframe instance
+- Do not persist beyond the iframe's lifecycle
 - Work alongside any persistent queries you've already created
 
-**Use session-specific queries for:**
+Use session-specific queries for:
 - User-specific data filters (e.g., queries scoped to a specific organization or user)
 - Temporary reference data for specific sessions
 - Custom calculations for individual iframes
@@ -202,11 +202,11 @@ Use language your users will use to ask questions.
 - "complicated_join_v2"
 - "SELECT statement for users"
 
-## Implementation Strategy
+## Ideas for Getting Started
 
 <Steps>
   <Step title="Start with Core Metrics">
-    Add queries for your 5-10 most important KPIs
+    Add queries for your 5-10 most important metrics or user questions
   </Step>
   <Step title="Add Dashboard Queries">
     Include all queries powering existing dashboards
@@ -221,34 +221,3 @@ Use language your users will use to ask questions.
     Monitor what users ask and add missing patterns
   </Step>
 </Steps>
-
-## Maintenance and Optimization
-
-<CardGroup cols={3}>
-  <Card title="Version Control" icon="code-branch">
-    Track changes to critical metric definitions
-  </Card>
-  <Card title="Performance Test" icon="gauge-high">
-    Ensure reference queries run efficiently
-  </Card>
-  <Card title="Regular Review" icon="refresh">
-    Update queries as schema evolves
-  </Card>
-</CardGroup>
-
-- **User Feedback**: Add queries for commonly requested analyses
-- **Clean Up**: Remove outdated or unused queries periodically
-
-## Next Steps
-
-<Tip>
-Start small with your most important metrics, then expand based on user needs.
-</Tip>
-
-1. Identify your most important business metrics
-2. Extract SQL from existing dashboards and reports
-3. Create reference queries with descriptive titles
-4. Test by asking camelAI questions about those metrics
-5. Refine based on accuracy and performance
-
-For general context and definitions, see our [Knowledge Base Guide](/dev_api/knowledge-base-guide).
