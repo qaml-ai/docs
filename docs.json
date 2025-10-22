@@ -78,22 +78,6 @@
         ]
       },
       {
-        "tab": "MCP",
-        "groups": [
-          {
-            "group": "MCP Server",
-            "pages": [
-              "mcp_server/introduction",
-              "mcp_server/getting-started",
-              "mcp_server/claude-integration",
-              "mcp_server/cursor-integration",
-              "mcp_server/mircosoft-copilot-integration",
-              "mcp_server/windsurf-integration"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "Self-Hosting",
         "groups": [
           {
