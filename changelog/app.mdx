@@ -4,6 +4,54 @@ description: 'Updates to camelAI Application'
 icon: 'megaphone'
 ---
 
+<Update label="October 22, 2025" description="0.5.0">
+### Inline SQL and Python Code Editing
+
+- Edit SQL queries and Python code directly in both dashboard and chat artifacts
+- Real-time code editor using CodeMirror
+- Save & Refresh artifacts with visual loading states
+
+### Chart.js Enhanced Visualization with Renderer Toggle
+
+- New Chart.js renderer provides enhanced visualization quality for bar and scatter charts
+- Visual toggle control with icons: ✨ "Enhanced View" (Chart.js) and 📊 "Standard View" (Plotly)
+- User preference persists across sessions via local storage
+- Smart defaults: Chart.js when available, otherwise Plotly
+
+### Intelligent Memory Management with Full CRUD Operations
+
+- **Expanded Memory Types:** Memory now stores SQL queries AND knowledge notes (text, business rules, definitions, processes)
+- **Full CRUD Operations:**
+  - Create new SQL queries and knowledge entries from conversations
+  - Search existing memory to avoid duplicates
+  - Delete outdated or incorrect AI-authored entries
+- **Intelligent Agent-Driven Curation:** AI agent automatically identifies valuable insights from conversations and decides what to save or remove
+- **Duplicate Prevention:** Automatically checks for similar entries before creating new ones
+- **Permission Controls:** Only AI-authored entries can be deleted, protecting user-created knowledge
+
+### Manual Artifact Refresh System
+
+- Per-artifact manual refresh button with visual status indicators
+- Shows "last updated" timestamp for each artifact
+- Loading overlay with spinner during refresh operations
+- Client-side polling to track refresh completion
+
+### Minor Features
+
+- **Reference Query Hover State:** Query library now collapses query previews to 1 line with a hover state to show the full query text
+- **Model Update:** Chat model upgraded to Claude Sonnet 4.5 and GPT-5 for improved performance
+- **Clickhouse Connector Update:** Upgraded clickhouse-connect from 0.8.9 to 0.9.2
+
+### Bug Fixes
+
+- **Edit SQL Button Visibility:** Fixed issue where Edit SQL button didn't appear immediately for new artifacts - now shows edit controls right away when permissions allow
+- **Navigation Flash Fix:** Eliminated the flash of open/close sidebar on page load by applying pre-render bootstrap state (#134)
+- **Stale Connection IDs:** Fixed issue where disconnected data source IDs could be sent with new messages by validating and cleansing localStorage
+- **Old Model Chat Loading:** Fixed issue preventing chats from loading when they used deprecated model versions - now falls back gracefully to available models
+- **Magic Link URL Length:** Increased magic-link redirect URL storage limit from default to 2048 characters to prevent truncation of long redirect URLs
+- **Longer Redis Lock:** Increased Redis lock timeout from 5 minutes to 20 minutes to prevent lock expiration during long-running operations
+</Update>
+
 <Update label="October 2, 2024" description="0.4.0">
 ### MCP (Model Context Protocol) Support
 
