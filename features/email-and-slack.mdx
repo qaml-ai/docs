@@ -1,0 +1,86 @@
+---
+title: 'Email & Slack'
+description: 'Talk to your agent from your inbox or Slack'
+---
+
+You don't have to be in camelAI to talk to your agent. Send an email or a Slack
+message — it reads, responds, and takes action on your workspace, just like a
+normal chat.
+
+<Tabs>
+  <Tab title="Email">
+    ## Workspace email
+
+    Every workspace gets a unique email address like:
+
+    ```
+    bright-mountain-river@camelai.dev
+    ```
+
+    Any workspace member can email this address to start or continue a conversation
+    with the agent — directly from their inbox, without opening camelAI.
+
+    ### How it works
+    <Steps>
+      <Step title="Find your workspace email">
+        Go to **Settings → General** in your workspace, or just ask the agent:
+        "What's this workspace's email address?"
+      </Step>
+      <Step title="Send an email">
+        Email the workspace address from your work email. Write your request in the
+        body — the agent processes it as a chat message.
+      </Step>
+      <Step title="Get a reply">
+        The agent reads your email, takes action in your workspace, and replies to
+        your email thread. Reply back to continue the conversation.
+      </Step>
+    </Steps>
+
+    ### Details
+    - **Threading** — standard email threading keeps conversations organized in your
+      email client. Replies continue the same camelAI chat thread.
+    - **Attachments** — file attachments are automatically uploaded to your workspace.
+      The agent can read and use them immediately.
+    - **Members only** — only workspace members can email the inbox. Emails from
+      non-members are ignored (this is also the spam prevention mechanism).
+  </Tab>
+
+  <Tab title="Slack">
+    ## Slack integration
+
+    Connect Slack to your workspace and message the agent directly from your team's
+    Slack.
+
+    ### Setup
+    <Steps>
+      <Step title="Add the Slack connection">
+        Go to **Settings → Connections** and add the Slack integration, or ask the
+        agent to set it up.
+      </Step>
+      <Step title="Authenticate via OAuth">
+        Sign in to your Slack workspace and authorize the camelAI bot.
+      </Step>
+      <Step title="Start chatting">
+        DM the camelAI bot or mention it in a channel. The agent responds in-thread.
+      </Step>
+    </Steps>
+
+    ### Details
+    - **Full agent turns** — Slack messages are processed the same as web chat messages.
+      The agent can read files, run code, query databases, and take any action it could
+      take from the web app.
+    - **Thread continuity** — conversations are maintained across messages in the same
+      Slack thread.
+
+    <Note>
+      The Slack integration is **inbound-only** — the agent responds to your messages
+      but doesn't proactively send messages to Slack. For automated Slack posting, use
+      a [cron job](/features/cron-jobs) with a Slack connection.
+    </Note>
+  </Tab>
+</Tabs>
+
+<Tip>
+  Email and Slack are great for quick asks without context-switching — "what were
+  yesterday's numbers?" or "update the landing page copy to mention the sale."
+</Tip>

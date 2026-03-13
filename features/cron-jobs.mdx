@@ -1,0 +1,73 @@
+---
+title: 'Cron Jobs'
+description: 'Schedule your agent to work autonomously'
+---
+
+Tell your agent what to do and when — it sets up a recurring job and runs it
+without any user interaction. Each run is a full agent turn with access to your
+workspace, files, and connections.
+
+## Setting up a cron job
+
+Just describe the schedule in natural language:
+
+> Every weekday at 8am, pull yesterday's revenue from Stripe, generate a summary,
+> and email it to the team.
+
+or
+
+> Every 15 minutes, check if there are new sign-ups in our database and post them
+> to the #growth Slack channel.
+
+The agent translates this to a cron schedule and sets it up. You never need to write
+cron expressions.
+
+## What happens on each run
+
+Each scheduled job gets its own dedicated chat thread (named "Scheduled: {job name}")
+that appears alongside your regular chats. When a job fires:
+
+- The agent runs with **full access** to your workspace, files, and connections — the
+  same as if you had typed the message yourself
+- **Context accumulates** across runs — the agent remembers what it did last time, can
+  compare against previous results, and builds up a history of its work
+- Results can be emailed, posted to Slack, saved to files, or published to a live dashboard
+
+<Info>
+  Cron jobs are reliable — they're backed by Cloudflare Durable Object alarms and
+  survive even when your workspace container is idle.
+</Info>
+
+## Example use cases
+
+<CardGroup cols={2}>
+  <Card title="Daily reports" icon="chart-line">
+    Pull data from your warehouse every morning, generate a formatted report, and
+    email it to stakeholders
+  </Card>
+  <Card title="Monitoring & alerts" icon="bell">
+    Check metrics hourly, flag anomalies, and page your team when something looks off
+  </Card>
+  <Card title="Data syncing" icon="arrows-rotate">
+    Keep two systems in sync — new Stripe customers automatically become HubSpot
+    contacts every 15 minutes
+  </Card>
+  <Card title="Content generation" icon="pen-nib">
+    Generate weekly newsletter drafts, daily social media posts, or morning news
+    roundups on a schedule
+  </Card>
+</CardGroup>
+
+## Managing cron jobs
+
+Everything is managed through chat. Ask the agent:
+
+- **"List my scheduled jobs"** — see all active cron jobs
+- **"Update the daily report to run at 9am instead"** — modify a schedule or prompt
+- **"Delete the Stripe sync job"** — remove a scheduled job
+- **"Run the daily report now"** — trigger a job immediately without waiting for the next scheduled time
+
+<Tip>
+  You can view the execution history of any cron job by opening its dedicated thread
+  in your chat history. Each run is logged as a message in the thread.
+</Tip>

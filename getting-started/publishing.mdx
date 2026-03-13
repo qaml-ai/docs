@@ -1,0 +1,70 @@
+---
+title: 'Your Apps'
+description: 'How live apps work on camelAI'
+---
+
+When the agent builds an app, it's automatically deployed to a live URL. There's
+no publish button, no deploy pipeline, no CI/CD to configure. Your app is on the
+internet as soon as it's built — and updates go live as you iterate.
+
+## Your app URL
+
+Every app gets a URL at:
+
+```
+{app-name}-{your-org}.camelai.app
+```
+
+For example: `my-dashboard-k7m2p3.camelai.app`
+
+This is a permanent, shareable link. Copy it and send it to anyone.
+
+## Auto-deploy
+
+You don't need to do anything to deploy. As the agent builds and updates your app,
+changes go live automatically. Just keep chatting:
+
+> Add a dark mode toggle to the dashboard
+
+The agent makes the change, and it's live.
+
+## Public vs. private
+
+- **Public** — anyone with the link can access your app
+- **Private** — only your workspace members can access it (requires authentication)
+
+You can toggle visibility anytime from the **Apps** section in workspace settings.
+
+## Managing your apps
+
+Go to **Settings → Apps** in your workspace to:
+
+- View all your live apps with their URLs
+- Toggle public/private visibility
+- Delete apps you no longer need
+
+To update an app, just keep chatting with the agent — ask for changes and they
+go live automatically.
+
+## Under the hood
+
+<Accordion title="Technical details">
+  - Apps run as [Cloudflare Workers](https://workers.cloudflare.com) — zero cold start,
+    globally distributed on Cloudflare's edge network
+  - Every app has a **full backend by default** — not just a static frontend. Your apps
+    can have API routes, server-side logic, and database access from the first line of code
+  - Integration credentials from your workspace connections are automatically injected as
+    environment variables — no manual config needed
+  - AI bindings are available in every deployed app, so your apps can use AI models
+    (Claude, image generation, etc.) without managing API keys
+</Accordion>
+
+<Accordion title="Custom domains">
+  Custom domain support is coming soon. For now, all apps are served from
+  `*.camelai.app`.
+</Accordion>
+
+<Info>
+  Apps stay live even when you're not in camelAI. They're real production services,
+  not previews.
+</Info>

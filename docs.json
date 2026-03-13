@@ -16,7 +16,23 @@
           {
             "group": "Start Here",
             "pages": [
-              "getting-started/overview"
+              "getting-started/overview",
+              "getting-started/quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "getting-started/workspace",
+              "getting-started/publishing",
+              "getting-started/connections"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/cron-jobs",
+              "features/email-and-slack"
             ]
           }
         ]
@@ -27,8 +43,8 @@
           {
             "group": "Updates",
             "pages": [
-              "changelog/app",
-              "changelog/embedded"
+              "changelog/platform",
+              "changelog/legacy"
             ]
           }
         ]
@@ -95,11 +111,6 @@
           "anchor": "Agent App",
           "href": "https://app.camelai.com",
           "icon": "browser"
-        },
-        {
-          "anchor": "Developer Console",
-          "href": "https://console.camelai.com",
-          "icon": "laptop-code"
         },
         {
           "anchor": "Website",

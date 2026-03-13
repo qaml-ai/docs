@@ -1,0 +1,99 @@
+---
+title: 'Connections'
+description: 'Connect to 50+ databases and tools'
+---
+
+Connections let you plug your existing tools into camelAI. Connect a database,
+a SaaS platform, or a cloud provider — then build apps that read from and write
+to them. No API plumbing required.
+
+## Adding a connection
+
+You can add connections two ways:
+
+<Tabs>
+  <Tab title="Through Settings">
+    <Steps>
+      <Step title="Open workspace settings">
+        Go to **Settings → Connections** in your workspace.
+      </Step>
+      <Step title="Pick a service">
+        Choose from the catalog of 50+ integrations.
+      </Step>
+      <Step title="Authenticate">
+        Enter credentials or sign in via OAuth, depending on the service.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Through the agent">
+    Just ask the agent in any chat:
+
+    > Connect my Stripe account
+
+    or
+
+    > I want to pull data from our Snowflake warehouse
+
+    The agent will walk you through setup — it may open a credential entry form
+    for you, or handle the configuration directly.
+  </Tab>
+</Tabs>
+
+## How connections work
+
+- **Encrypted storage** — credentials are encrypted at rest and never exposed in logs or chat
+- **Auto-injected** — credentials are available as environment variables in your workspace and
+  automatically synced to all deployed apps
+- **Any chat, any project** — once connected, the agent can use the integration from any
+  conversation in your workspace
+
+## Available integrations
+
+<Tabs>
+  <Tab title="Databases">
+    PostgreSQL, MySQL, Supabase, MongoDB, Redis, ClickHouse, Snowflake, BigQuery,
+    Neon, PlanetScale, Turso, Databricks, SingleStore, MotherduckDB
+  </Tab>
+  <Tab title="SaaS & Productivity">
+    Notion, Airtable, HubSpot, Salesforce, Jira, Zendesk, Intercom, Asana,
+    Figma, Shopify, Typeform
+  </Tab>
+  <Tab title="Communication">
+    Slack, Discord, Microsoft Teams, Twilio, SendGrid, Mailchimp
+  </Tab>
+  <Tab title="Payments">
+    Stripe, Square
+  </Tab>
+  <Tab title="Developer Tools">
+    GitHub, Linear, Sentry, Vercel, Netlify
+  </Tab>
+  <Tab title="Cloud & Analytics">
+    AWS, Google Cloud, Microsoft Azure, Cloudflare, PostHog, Mixpanel, Segment, Amplitude
+  </Tab>
+  <Tab title="AI Services">
+    OpenAI, Anthropic, OpenRouter
+  </Tab>
+  <Tab title="Custom API">
+    Connect to **any HTTP API** with bearer, basic, or custom authentication.
+    Define up to 10 credential fields. The agent will guide you through setup.
+  </Tab>
+</Tabs>
+
+## Using connections in your apps
+
+Once connected, just describe what you want in plain English:
+
+> Pull my last 30 days of Stripe charges and show them in a sortable table
+
+> Every morning, query our Snowflake warehouse for yesterday's signups and email
+> me a summary
+
+> Build a dashboard that shows our PostHog events alongside Stripe revenue
+
+The agent handles the code. Your credentials are already available — no config files,
+no `.env` management, no API key juggling.
+
+<Tip>
+  You don't need to know how the API works. Just describe what you want and the
+  agent figures out the integration details.
+</Tip>
