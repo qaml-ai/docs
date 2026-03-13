@@ -16,14 +16,25 @@
           {
             "group": "Start Here",
             "pages": [
-              "getting-started/overview",
-              "getting-started/for-developers"
+              "getting-started/overview"
             ]
           }
         ]
       },
       {
-        "tab": "API",
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Updates",
+            "pages": [
+              "changelog/app",
+              "changelog/embedded"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API (Legacy)",
         "groups": [
           {
             "group": "General",
@@ -69,48 +80,11 @@
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "API Reference (Legacy)",
         "groups": [
           {
             "group": "API Reference",
             "openapi": "https://api.camelai.com/api/schema/"
-          }
-        ]
-      },
-      {
-        "tab": "Self-Hosting",
-        "groups": [
-          {
-            "group": "Docker Installation",
-            "pages": [
-              "installation/quickstart",
-              "installation/prerequisites",
-              "installation/docker-compose",
-              "installation/environment-variables",
-              "installation/azure-openai-setup",
-              "installation/creating-superuser",
-              "installation/logging-in",
-              "installation/initial-setup"
-            ]
-          },
-          {
-            "group": "Configuration",
-            "pages": [
-              "setup/rbac",
-              "setup/datasource-setup"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Changelog",
-        "groups": [
-          {
-            "group": "Updates",
-            "pages": [
-              "changelog/app",
-              "changelog/embedded"
-            ]
           }
         ]
       }
@@ -131,11 +105,6 @@
           "anchor": "Website",
           "href": "https://camelai.com",
           "icon": "globe-pointer"
-        },
-        {
-          "anchor": "GitHub",
-          "href": "https://github.com/qaml-ai/camelAI-docker-compose",
-          "icon": "github"
         }
       ]
     }
@@ -158,8 +127,6 @@
     }
   },
   "footer": {
-    "socials": {
-      "github": "https://github.com/qaml-ai/camelAI-docker-compose"
-    }
+    "socials": {}
   }
 }
