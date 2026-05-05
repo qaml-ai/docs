@@ -10,8 +10,14 @@ This is the **docs page** for camelAI — not the product itself.
 
 For additional context on camelAI, our sales site is available in this machine at `/Users/illiana/Projects/camelai-salessite`.
 
-This sales site is a separate Cloudflare Worker deployed at `camelai-salessite.miguel-85b.workers.dev` for staging testing and `camelai.com` in prod.
+If you need in depth Company context (for building content, writing copy, etc.), please read - docs/camelAI-company-context.md
+
+You have complete access to the codebase that these docs cover at /Users/illiana/Projects/chiridion-app. Chiridion is the internal name for camelAI. (live site link is camelai.dev)
+
+We also have 2 legacy offerings covered in these docs that are no longer actively maintained. 
+/Users/illiana/Projects/camel-app - our old product offering was a data analytics chat where users could connect a database and “chat with their data” (live site link is app.camelai.com)
+/Users/illiana/Projects/camel-api - our API product offering that creates an embedded data chat so users can embed our data chat into their own product (live site link is console.camelai.com)
 
 ## Tech Stack
 
-This is a Mintlify docs page
+This is a Mintlify docs page. 

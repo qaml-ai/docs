@@ -108,14 +108,19 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Agent App",
-          "href": "https://app.camelai.com",
+          "anchor": "camelAI",
+          "href": "https://camelai.dev",
           "icon": "browser"
         },
         {
-          "anchor": "Website",
-          "href": "https://camelai.com",
-          "icon": "globe-pointer"
+          "anchor": "Legacy App",
+          "href": "https://app.camelai.com",
+          "icon": "clock-rotate-left"
+        },
+        {
+          "anchor": "Legacy API Console",
+          "href": "https://console.camelai.com",
+          "icon": "code"
         }
       ]
     }
@@ -134,7 +139,7 @@
     "primary": {
       "type": "button",
       "label": "Try camelAI",
-      "href": "https://app.camelai.com"
+      "href": "https://camelai.dev"
     }
   },
   "footer": {
