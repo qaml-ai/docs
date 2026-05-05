@@ -23,6 +23,7 @@
           {
             "group": "Core Concepts",
             "pages": [
+              "getting-started/organizations",
               "getting-started/workspace",
               "getting-started/publishing",
               "getting-started/connections"

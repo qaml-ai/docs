@@ -1,0 +1,141 @@
+---
+title: 'Organizations and workspaces'
+description: 'How camelAI separates billing and access from the actual computer your work lives on.'
+---
+
+camelAI has two layers of structure: **organizations** and **workspaces**. They serve different purposes, and getting them straight up front saves headaches later.
+
+- An **organization** is your billing and access boundary. Your plan, your payment method, your team members, and your LLM provider all attach to the org.
+- A **workspace** is the actual computer your agent works on. Files, chats, apps, and connections all live inside a workspace. You can have more than one workspace inside an org.
+
+If you're a solo user on a single plan, you may never think about this distinction. You sign up, and we provision one org with one workspace, and that's everything. The split matters once you want to keep two projects fully separate, or once you want a teammate to see one workspace but not another.
+
+## What lives where
+
+**At the org level**
+
+- Plan and payment method
+- LLM provider and API key (or camelAI hosted credits)
+- Members, invitations, and roles
+- Admin controls for any custom domains attached to apps in the org
+
+**At the workspace level**
+
+- The agent's persistent computer (files, folders, storage)
+- Chats and chat history
+- Connections (databases, SaaS tools, APIs)
+- Published apps and their `*.camelai.app` URLs
+- The workspace's email address and Slack integration
+- Cron jobs
+
+Anything you create *with* the agent lives in a workspace. Anything that decides *who can do what and who pays for it* lives at the org.
+
+## Organizations
+
+An org is a fully separate entity. Two orgs owned by the same person have nothing to do with each other:
+
+- Separate plans and billing.
+- Separate LLM providers. A key you add to Org A does not work for Org B.
+- Separate members. Adding someone to Org A does not give them any visibility into Org B.
+- Separate workspaces, files, apps, and connections.
+
+You can create a new org any time from [camelai.dev/settings/organizations](https://camelai.dev/settings/organizations). New orgs start on the Free plan and need their own payment setup before you can move to a paid plan.
+
+When to create a second org:
+
+- You want a hard wall between two contexts. Personal projects on one org, client work on another.
+- You're a contractor and a client wants to pay for camelAI directly. They create their own org and invite you.
+- You want completely separate billing for two parts of a company.
+
+<Tip>
+  If you don't need a hard wall, stay on one org and use multiple workspaces instead. That's almost always the right move.
+</Tip>
+
+## Workspaces
+
+A workspace is a real Linux computer your agent lives on. It is persistent: files survive across sessions, chats stay in their threads, deployed apps keep running. ([More on the workspace itself.](/getting-started/workspace))
+
+Every plan includes at least one workspace:
+
+| Plan | Workspaces included |
+|---|---|
+| Free | 1 |
+| Starter | 1 |
+| Pro | 1 |
+| Team | 2 |
+| Enterprise | Unlimited |
+
+Need more than your plan includes? Email **[support@camelai.com](mailto:support@camelai.com)** and we'll add more to your org. Self-serve a la carte workspaces are coming soon.
+
+## Why have more than one workspace
+
+Two reasons.
+
+### 1. Project isolation
+
+Each workspace is its own computer. Files, connections, and chats from one workspace are not visible from another. Use this when you don't want two projects sharing a filesystem or environment.
+
+### 2. Per-workspace access for teams
+
+On the Team plan and above, you can grant individual members access to specific workspaces. The most common use of this is splitting a team by function:
+
+- A **Marketing** workspace, with the Stripe, HubSpot, and Mailchimp connections marketing needs.
+- A **Finance** workspace, with the QuickBooks, BigQuery, and bank connections finance needs.
+- People on the marketing team get access to the marketing workspace. People on the finance team get access to the finance workspace. Admins keep access to both.
+
+Same org, same bill, same team, but the underlying data and connections stay separated by function. If a marketer asks the agent to pull revenue numbers, the agent only has the connections in their workspace to work with. They literally cannot reach finance data, because the credentials aren't in the workspace they're chatting in.
+
+## Roles and team members
+
+Multiple seats are only available on the **Team** and **Enterprise** plans. On Free, Starter, and Pro, you're the only person on your org.
+
+Org roles:
+
+- **Owner.** The person who created the org. Full control, including billing and ownership transfer.
+- **Admin.** Can invite and remove members, manage workspaces, manage connections, manage app custom domains, and adjust billing.
+- **Member.** Can chat with the agent and use any workspace they've been granted access to. Can't invite or remove team members. (We're tightening up the exact list of admin-vs-member gating soon, so the precise boundary may shift.)
+
+Workspace access on Team plans is granted per workspace, per member. An admin chooses which workspaces each member can see. There's no "viewer vs. editor" distinction inside a workspace: if a member has access, they can do anything the agent can do in that workspace.
+
+## Custom domains
+
+**Custom domains are per app.** Each app you publish gets its own `*.camelai.app` URL by default, and you can attach a custom domain to any individual app from its settings. Different apps in the same workspace can have different custom domains, or none at all.
+
+Org admins can see and manage custom domains across every app in the org from a single admin view. The domain itself attaches to the app.
+
+Plan limits on custom domains (Starter: 10, Pro and up: unlimited) refer to the number of apps that can have one attached. ([Full plan details.](/plans/overview))
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Does my LLM provider key work across all my orgs?">
+    No. LLM provider keys are set per org. If you have two orgs, you'll set up a provider for each one separately. This is intentional: the LLM provider determines who pays for model usage, and orgs have separate billing.
+  </Accordion>
+  <Accordion title="If I switch workspaces, does my chat history come with me?">
+    No. Chats live in the workspace they were created in. Switching to a different workspace gives you that workspace's chat history.
+  </Accordion>
+  <Accordion title="Can two workspaces share files or connections?">
+    No. Workspaces are isolated. If you need the same connection in two workspaces, you can clone any connection to a workspace within your org from the [connections page](https://camelai.dev/connections).
+  </Accordion>
+  <Accordion title="Can a connection be at the org level instead?">
+    No. Connections are workspace-scoped. This is what makes per-workspace access useful: you can give marketing access to a workspace with marketing connections without giving them finance connections. You can clone any connection to a workspace within your org from the [connections page](https://camelai.dev/connections).
+  </Accordion>
+  <Accordion title="Are custom domains attached to my org or to my apps?">
+    To your apps. Each published app can have its own custom domain. Org admins manage them all from one place, but the domain itself belongs to the app. See the section above.
+  </Accordion>
+  <Accordion title="Can I move an app from one workspace to another?">
+    Not currently. If you need an app in a different workspace, the cleanest path right now is to ask the agent to zip the file, download the zip, and then upload that to your workspace.
+  </Accordion>
+  <Accordion title="Do I need a separate org for personal vs. work projects?">
+    Only if you want them billed separately or kept fully isolated. If shared billing is fine, two workspaces inside one org will give you all the project separation you need.
+  </Accordion>
+  <Accordion title="Who can create a new workspace?">
+    Owners and admins. Members can't add workspaces. New workspaces beyond what your plan includes require either an upgrade or a request to support@camelai.com.
+  </Accordion>
+  <Accordion title="What does an admin get that a member doesn't?">
+    Admins can invite and remove team members, create new workspaces, manage which members have access to which workspaces, manage connections, and manage billing. Members can chat in workspaces they have access to and use any connection the workspace has.
+  </Accordion>
+  <Accordion title="I created a second org and I don't see my old workspaces. Is that a bug?">
+    No. Orgs are fully separate. Workspaces in your first org aren't visible from your second org. Use the org switcher to jump between them. Go to [your org list](https://camelai.dev/settings/organizations) to see which orgs you are a part of.
+  </Accordion>
+</AccordionGroup>
