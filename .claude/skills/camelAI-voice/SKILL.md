@@ -37,6 +37,34 @@ description: How to channel the brand's voice for our docs page. Use when drafti
 - Incomplete sentences used as lists. Don't drop a series of nouns as a standalone sentence ("Canonical tags, sitemaps, meta descriptions, structured data."). Either use a proper bulleted list with a complete introductory sentence, or fold them into a grammatically complete sentence.
 - Dramatic repetition without added value. Don't restate a point just to make it sound more severe ("Google will stop indexing them. Your landing page just dies."). If you want to restate for emphasis, add the concrete impact on the reader's work ("Google will stop indexing them, which means all the work you put into that content stops contributing to your rankings."). If there's no real-world impact to add, don't restate.
 
+## Writing changelogs
+
+Changelogs go in `changelog/platform.mdx` (current product) or `changelog/legacy.mdx` (old BI product). Each release is a `<Update label="DATE" description="TITLE">` block. New entries go at the top.
+
+**What to include:**
+- User-visible changes only. New features, new models, new integrations, new UI surfaces, billing/plan changes, and tools the agent can now use on the user's behalf.
+- Lead with the items users will be most excited about. Custom domains, team plans, and new model support belong at the top. Settings polish and minor sandbox additions go below.
+- Closing the loop on prior "Coming soon" items is a strong lead — but don't edit prior entries to mark them shipped. The new entry is the source of truth.
+
+**What to cut:**
+- Internal infra: admin endpoints, worker logs, lazy-loading, deploy scripts, schema migrations, SDK bumps, RPC migrations, anything a user can't see or click.
+- Prototypes that were removed before shipping.
+- Implementation details behind a user-visible feature. Surface the feature, not the plumbing.
+
+**Bug fixes — be ruthless.**
+The audit you receive will list every fix. Most don't belong in the changelog. The bar: would a real user have hit this in production and noticed it was broken? If the bug only affected a code path users rarely reached, or if the symptom was invisible (silent failures, edge-case routing, internal auth checks), cut it. A short list of fixes users actually felt is better than a long list that buries them. Three to five is usually right; nine is too many.
+
+**Verify currency before claiming features.**
+Beta-era behavior expires. Free-credit grants, halved spend limits, and other launch-period mechanics may not be true anymore. Before describing how a feature works for users today, confirm it with the user or check the current product code — don't carry forward language from the audit if the policy has changed.
+
+**Pricing in changelogs.**
+When billing changes, name the actual numbers ($10 Starter, $30 Pro, $10 per seat Team). Vague phrasing like "monthly credits included" reads like marketing filler; concrete numbers respect the reader's time.
+
+**Voice in changelogs:**
+- Section headers + short paragraph for each major item. Bullets only for the "Minor Features" and "Bug Fixes" sections at the bottom.
+- One or two sentences per major item. Say what it is and what the user can now do. Skip the marketing wind-up.
+- No "we're excited to announce." No "we've been hard at work." Just ship the news.
+
 ## How to Improve This Skill
 
 After drafting content, show me what you wrote. I will copy your version and apply my edits. You should compare the two. The delta is the signal. Update this skill with new patterns as they emerge.

@@ -53,6 +53,25 @@ Full frontmatter reference: [reference/frontmatter.md](reference/frontmatter.md)
 - Alt text on all images
 - Relative paths for internal links
 
+## Linking to Sections (Anchors)
+
+Mintlify auto-generates an anchor slug from each heading's text — apostrophes and commas are **kept** in the slug (URL-encoded as `%E2%80%99` and `%2C`), not stripped. Don't guess the slug from the heading text.
+
+For any heading you intend to deep-link to, set an explicit, stable anchor with `{#custom-id}` syntax:
+
+```mdx
+## Using a provider we don't support directly (Azure, Vertex, etc.) {#unsupported-providers}
+```
+
+Then link with the clean slug:
+
+```mdx
+[See unsupported providers](#unsupported-providers)
+[See unsupported providers](/plans/model-providers#unsupported-providers)
+```
+
+Benefits: short URLs, stable links if heading text changes later, no encoding gotchas with punctuation.
+
 ## Do Not
 
 - Skip frontmatter on any MDX file

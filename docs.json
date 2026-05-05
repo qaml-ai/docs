@@ -29,6 +29,13 @@
             ]
           },
           {
+            "group": "Plans & Billing",
+            "pages": [
+              "plans/overview",
+              "plans/model-providers"
+            ]
+          },
+          {
             "group": "Features",
             "pages": [
               "features/cron-jobs",

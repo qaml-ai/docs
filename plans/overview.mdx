@@ -1,0 +1,110 @@
+---
+title: 'Plans & Pricing'
+description: "What's included on each plan, how credits work, and how to top up."
+---
+
+camelAI bills two things separately: a monthly subscription for the platform (workspaces, deployed apps, cron jobs, storage, custom domains), and model usage for what the AI actually costs to run. You can cover model usage two ways: prepaid camelAI credits, or by bringing your own API key.
+
+## Plans
+
+<CardGroup cols={3}>
+  <Card title="Free" icon="circle-dot">
+    **$0 / month**
+
+    For trying camelAI out. Bring your own API key.
+  </Card>
+  <Card title="Starter" icon="seedling">
+    **$40 / month**
+
+    For solo builders. Includes $10/mo in model credits.
+  </Card>
+  <Card title="Pro" icon="rocket">
+    **$150 / month** · *Most popular*
+
+    For power users. Includes $30/mo in model credits.
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card title="Team" icon="users">
+    **$50 / seat / month** · 3 seat minimum
+
+    For teams. Includes $10/seat/mo in model credits.
+  </Card>
+  <Card title="Enterprise" icon="building" href="https://book-demo--camelai-team-d9e.camelai.app/">
+    **Custom**
+
+    For larger teams or anything custom. SSO, BYOC, HIPAA/SOC 2.
+  </Card>
+</CardGroup>
+
+### What's included
+
+|                        | Free       | Starter      | Pro              | Team                |
+| ---------------------- | ---------- | ------------ | ---------------- | ------------------- |
+| **Price**              | $0         | $40 / mo     | $150 / mo        | $50 / seat / mo     |
+| **Monthly credits**    | —          | $10          | $30              | $10 / seat          |
+| **Bring your own key** | Required   | Optional     | Optional         | Optional            |
+| **Workspaces**         | 1          | 1            | 1                | 2                   |
+| **Storage**            | 5 GB       | 50 GB        | 100 GB           | 100 GB each         |
+| **Deployed apps**      | 3          | 30           | Unlimited        | Unlimited           |
+| **Custom domains**     | —          | 10           | Unlimited        | Unlimited           |
+| **Cron jobs**          | 2 · daily  | 10 · hourly  | 50 · 5-min       | 50 / user · 5-min   |
+| **Email inbox**        | —          | —            | ✓                | ✓                   |
+| **Workspace roles**    | —          | —            | —                | ✓                   |
+| **Free trial**         | —          | 7 days       | 7 days           | 7 days              |
+
+Free tier requires an API key from one of [our supported providers](/plans/model-providers) before you can chat with the agent. Monthly credits don't carry over.
+
+**Enterprise** adds SSO / SAML, bring your own cloud (deploy apps inside your own Cloudflare account), multiple workspaces, HIPAA / SOC 2, and dedicated support. [Contact sales](https://book-demo--camelai-team-d9e.camelai.app/) to talk through your requirements.
+
+## How model usage works
+
+Every chat with the agent uses an LLM, and someone has to pay for it. camelAI offers two ways to cover that cost.
+
+<Tabs>
+  <Tab title="camelAI credits">
+    Top up a balance with camelAI and we route your requests to the model you pick at the provider's cost, no markup. Paid plans include a monthly credit allowance, and you can top up more anytime.
+  </Tab>
+  <Tab title="Bring your own API key">
+    Add an API key from a provider you already use (Anthropic, OpenAI, OpenRouter, or AWS Bedrock). Your provider bills you directly for usage. This is the only option on the Free tier.
+  </Tab>
+</Tabs>
+
+<Note>
+  You pick one or the other. When a key is set, all of your model usage goes through that provider. We don't currently support a setup where you bring a key for one provider and use camelAI credits for everything else.
+</Note>
+
+For details on which provider to pick and how to add a key, see [Model Providers](/plans/model-providers).
+
+## Why prepaid
+
+If you use camelAI credits, you pay for them up front. This is how OpenAI, Anthropic, and OpenRouter all sell credits, too. Prepaid billing keeps fraud and runaway bills off the table for both sides: you only spend what you put in, and we only run requests against funded accounts.
+
+Subscription fees (the monthly platform fee) are billed normally on a recurring basis through Stripe.
+
+## Topping up credits
+
+To add credits to your account:
+
+<Steps>
+  <Step title="Open billing settings">
+    Open **Settings → Billing** in your workspace.
+  </Step>
+  <Step title="Top up credits">
+    Click **Top up credits.**
+  </Step>
+  <Step title="Check out">
+    Pick a credit pack and check out through Stripe.
+  </Step>
+</Steps>
+
+Available pack sizes are shown in the dialog. Top-up credits don't expire, and they stack on top of your monthly plan credits. Monthly plan credits don't roll over month to month, but anything you top up does.
+
+## Free trial
+
+Starter, Pro, and Team plans include a 7-day free trial. You'll need a payment method to start the trial. Cancel anytime from **Settings → Billing.**
+
+## Changing plans
+
+Upgrade, downgrade, or cancel anytime from **Settings → Billing.** Plan changes go through the Stripe billing portal.

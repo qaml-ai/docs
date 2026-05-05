@@ -1,0 +1,188 @@
+---
+title: 'Model Providers'
+description: 'How to use your own API key with camelAI, and what each provider unlocks.'
+---
+
+camelAI is model-agnostic. By default, paid plans use camelAI's hosted credits to call whichever model you've picked for the thread. If you'd rather use your own API key, you can bring one from any of four providers. This page explains what each option gives you and how to set it up.
+
+The agent can run on Claude (Sonnet, Haiku, or Opus), GPT (GPT-5.4 or GPT-5.4 Mini), Grok, or Kimi. You can switch models any time from the model picker in the chat. Whichever provider you've connected determines which of these models are available to you.
+
+<Warning>
+  Bringing your own key replaces camelAI's hosted credits entirely. You can't mix and match (for example, your own OpenAI key plus camelAI credits for Claude). All requests go through your one chosen provider. If you need access to multiple model families on a single key, use **OpenRouter.**
+</Warning>
+
+## When to use camelAI credits
+
+- You don't already have a provider account.
+- You want one bill, not multiple.
+- You want every supported model available without managing separate keys.
+
+## When to bring your own key
+
+- You're on the Free tier — a key is required.
+- You have OpenAI or Anthropic credits you want to make use of.
+- Your company needs usage on a corporate AWS or Azure bill for compliance or finance reasons.
+- You need a provider we don't support natively (Microsoft Azure, Google Vertex, etc.) — see [Using a provider we don't support directly](#unsupported-providers) below.
+
+## Supported providers
+
+camelAI supports four providers for BYOK. Each unlocks a specific set of models.
+
+<AccordionGroup>
+  <Accordion title="Anthropic — Claude (Sonnet, Haiku, Opus)">
+    **Unlocks:** Claude (Sonnet, Haiku, Opus).
+
+    **Get a key:** [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
+
+    You'll need to add a payment method and prepay for credits in the Anthropic console before your key will run requests. A new key with no credits behind it returns a billing error.
+  </Accordion>
+  <Accordion title="OpenAI — GPT-5.4 and GPT-5.4 Mini">
+    **Unlocks:** GPT-5.4 and GPT-5.4 Mini.
+
+    **Get a key:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
+    Like Anthropic, OpenAI requires you to prepay credits in your OpenAI account before the key will run requests.
+  </Accordion>
+  <Accordion title="OpenRouter — every model camelAI supports, on one key">
+    **Unlocks:** Claude (Sonnet, Haiku, Opus), GPT (GPT-5.4, GPT-5.4 Mini), Grok, and Kimi — all on a single key.
+
+    **Get a key:** [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
+
+    OpenRouter is the most flexible BYOK option. Two reasons to pick it:
+
+    1. You want every model camelAI supports on one key. Anthropic, OpenAI, and Bedrock keys lock you into a subset of our models. OpenRouter gives you all of them.
+    2. You already have an account with a provider we don't connect to natively. OpenRouter supports plugging in your own keys for Microsoft Azure, AWS Bedrock, Google Vertex, and others, then routing requests through your account. So if your company runs AI on Azure OpenAI, you can connect your Azure key to OpenRouter, and then connect OpenRouter to camelAI. Usage runs against your Azure bill.
+
+    OpenRouter charges a 5% fee on requests routed through your own provider keys, but the first 1 million BYOK requests per month are free. See [OpenRouter's BYOK guide](https://openrouter.ai/docs/use-cases/byok) for details.
+  </Accordion>
+  <Accordion title="AWS Bedrock — Claude, served from your AWS account">
+    **Unlocks:** Claude (Sonnet, Haiku, Opus), served from your own AWS account.
+
+    **Get a key:** [console.aws.amazon.com/bedrock](https://console.aws.amazon.com/bedrock)
+
+    You'll need:
+
+    - An AWS access key with Bedrock permissions
+    - The region you want to run in (for example, `us-east-1`)
+
+    Bedrock is a good fit if your team needs Claude usage on an AWS bill, or has compliance requirements that route AI through your own AWS account.
+  </Accordion>
+</AccordionGroup>
+
+## Using a provider we don't support directly (Azure, Vertex, etc.) {#unsupported-providers}
+
+camelAI doesn't connect natively to Microsoft Azure OpenAI or Google Vertex AI. Each cloud provider has its own auth model, billing structure, and quirks, and supporting them all directly would slow down our work on the rest of the platform. The good news: if your company is on one of those providers, you can still run camelAI through your existing account by routing through **OpenRouter**.
+
+### How it works
+
+OpenRouter supports plugging in your own keys for a long list of cloud providers, including:
+
+- **Microsoft Azure OpenAI**
+- **Google Vertex AI**
+- **AWS Bedrock** (alternative to our direct Bedrock integration)
+- Others — see [OpenRouter's BYOK guide](https://openrouter.ai/docs/use-cases/byok) for the current list.
+
+When you connect those keys to OpenRouter, OpenRouter forwards your requests to that provider. Usage runs against your Azure (or Vertex, or Bedrock) bill, and OpenRouter charges a 5% fee on top — waived for the first 1 million BYOK requests per month.
+
+### Setup with Azure as the example
+
+<Steps>
+  <Step title="Set up Azure OpenAI">
+    In your Azure portal: deploy a model, note the endpoint URL, deployment name, and API key.
+  </Step>
+  <Step title="Sign up for OpenRouter">
+    Sign up at [openrouter.ai](https://openrouter.ai) and go to **Integrations → Bring Your Own Key.**
+  </Step>
+  <Step title="Add Azure as a provider in OpenRouter">
+    Paste the endpoint URL, model ID, and API key per OpenRouter's [Azure setup instructions](https://openrouter.ai/docs/use-cases/byok).
+  </Step>
+  <Step title="Generate an OpenRouter API key">
+    Generate a key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+  </Step>
+  <Step title="Add the OpenRouter key to camelAI">
+    Add the key under **Settings → AI Provider → OpenRouter.**
+  </Step>
+</Steps>
+
+The same flow works for Google Vertex (Google Cloud service account JSON) or AWS Bedrock through OpenRouter (AWS access key + region).
+
+<Note>
+  Native Azure or Vertex support in camelAI isn't on the near-term roadmap. The OpenRouter pass-through is the recommended path for the foreseeable future, and it's how most of our customers in this situation are running today.
+</Note>
+
+## Adding a key
+
+<Steps>
+  <Step title="Open AI Provider settings">
+    Open **Settings → AI Provider** in your workspace.
+  </Step>
+  <Step title="Pick a provider">
+    Choose Anthropic, OpenAI, OpenRouter, or AWS Bedrock.
+  </Step>
+  <Step title="Paste your API key">
+    Paste your API key (and select a region, if you're using Bedrock).
+  </Step>
+  <Step title="Save">
+    Save the form.
+  </Step>
+</Steps>
+
+The form has a "Get a key" link next to each provider that takes you to the right page on the provider's site.
+
+You can switch providers any time from the same screen, or remove your key and switch to camelAI hosted credits (paid plans only).
+
+## Using camelAI on the cheap
+
+<Tip>
+  Model costs vary widely. The cheapest models on camelAI are 10–50× less expensive per request than the flagship models, and they handle most everyday work just as well. Pairing a cheaper model with a small OpenRouter top-up is the lowest-cost way to use the platform.
+</Tip>
+
+The playbook:
+
+<Steps>
+  <Step title="Sign up for OpenRouter">
+    Sign up and add the minimum in credits at [openrouter.ai/credits](https://openrouter.ai/credits). A small top-up goes a long way with cheap models.
+  </Step>
+  <Step title="Generate an OpenRouter API key">
+    Generate a key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+  </Step>
+  <Step title="Add the key to camelAI">
+    Add the key under **Settings → AI Provider → OpenRouter.**
+  </Step>
+  <Step title="Pick a cheap model in the chat">
+    The most cost-efficient options are:
+
+    - **Claude Haiku** — fast, cheap, strong for everyday code and copy work.
+    - **GPT-5.4 Mini** — comparable price to Haiku, slightly different strengths.
+    - **Kimi** — competitive on price with Haiku and Mini, particularly strong on long-context tasks.
+    - **Grok** — flexible across general work, often cheaper than the flagship Claude or GPT models.
+  </Step>
+  <Step title="Reserve flagship models for hard problems">
+    Switch to Sonnet, Opus, or GPT-5.4 only when a task is genuinely hard (complex reasoning, multi-step debugging, careful design work). Most chat turns don't need them.
+  </Step>
+</Steps>
+
+OpenRouter shows the live per-token cost for every model on its [models page](https://openrouter.ai/models). Sort by price to compare.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Can I use my own API key for one model and camelAI credits for another?">
+    No. When a BYOK key is set, all of your model usage runs through that one provider. If you want broad model coverage on a single key, use OpenRouter.
+  </Accordion>
+  <Accordion title="Do my plan credits roll over month to month?">
+    No. Monthly plan credits reset each billing cycle. Credits you've topped up on top of your plan credits do roll over and don't expire.
+  </Accordion>
+  <Accordion title='Why does my new API key say "billing error" or "insufficient credits"?'>
+    Anthropic, OpenAI, and OpenRouter all let you create an API key without adding any credits. The key won't work until you prepay credits in their billing settings. This is on the provider's side, not ours.
+  </Accordion>
+  <Accordion title="Does camelAI charge a markup on hosted credits?">
+    No. We pass through the provider rates at cost. The monthly subscription covers the platform; credits cover model usage at the provider's rate.
+  </Accordion>
+  <Accordion title="Can I see how much I've spent?">
+    Yes. **Settings → Billing** shows your current plan, credit balance, and usage history.
+  </Accordion>
+  <Accordion title="Do you support Microsoft Azure OpenAI or Google Vertex AI?">
+    Not directly, but you can route through OpenRouter to use them. See [Using a provider we don't support directly](#unsupported-providers) above for the setup walk-through.
+  </Accordion>
+</AccordionGroup>
