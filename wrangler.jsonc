@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "docsflare",
+  "name": "camelai-docs",
   "main": ".docsflare/worker.ts",
   "compatibility_date": "2026-03-27",
   "workers_dev": true,
@@ -10,7 +10,7 @@
   },
   "env": {
     "production": {
-      "name": "docsflare",
+      "name": "camelai-docs",
       "routes": [
         {
           "pattern": "camelai.com/docs*",
