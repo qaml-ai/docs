@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "dev": "docsflare dev",
+    "build": "docsflare build",
+    "deploy": "docsflare deploy",
+    "search:sync": "docsflare search sync",
+    "doctor": "docsflare doctor"
+  },
+  "devDependencies": {
+    "docsflare": "github:qaml-ai/docsflare#main",
+    "wrangler": "^4.16.0"
+  }
+}
