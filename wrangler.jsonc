@@ -3,6 +3,8 @@
   "name": "docsflare",
   "main": ".docsflare/worker.ts",
   "compatibility_date": "2026-03-27",
+  "workers_dev": true,
+  "preview_urls": true,
   "observability": {
     "enabled": true
   },
@@ -10,7 +12,10 @@
     "production": {
       "name": "docsflare",
       "routes": [
-        "camelai.com/docs*"
+        {
+          "pattern": "camelai.com/docs*",
+          "zone_name": "camelai.com"
+        }
       ],
       "ai_search": [
         {
