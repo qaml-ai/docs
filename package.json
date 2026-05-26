@@ -3,11 +3,13 @@
     "dev": "docsflare dev",
     "build": "docsflare build",
     "deploy": "docsflare deploy",
+    "ci:deploy": "npm run search:sync && npx wrangler deploy --env production",
+    "ci:preview": "npx wrangler versions upload --env production",
     "search:sync": "docsflare search sync",
     "doctor": "docsflare doctor"
   },
   "devDependencies": {
-    "docsflare": "github:qaml-ai/docsflare#main",
+    "docsflare": "https://github.com/qaml-ai/docsflare/archive/0bf150e873e62bee033a86c38654baa45db30258.tar.gz",
     "wrangler": "^4.16.0"
   }
 }
