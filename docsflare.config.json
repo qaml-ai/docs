@@ -1,7 +1,4 @@
 {
   "basePath": "/docs",
-  "search": {
-    "instance": "docsflare-docs",
-    "namespace": "default"
-  }
+  "searchSyncUrl": "https://camelai.com/docs"
 }

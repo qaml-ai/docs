@@ -19,9 +19,7 @@ should_sync_search() {
 }
 
 trigger_lazy_sync() {
-  local url="${DOCSFLARE_SEARCH_SYNC_URL:-https://camelai.com/docs/api/search/sync}"
-  curl -fsS -X POST --retry 5 --retry-delay 2 --retry-all-errors "$url"
-  echo
+  docsflare search sync
 }
 
 if ! command -v git >/dev/null 2>&1 || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
