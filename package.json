@@ -3,13 +3,14 @@
     "dev": "docsflare dev",
     "build": "docsflare build",
     "deploy": "docsflare deploy",
-    "ci:deploy": "npm run search:sync && npx wrangler deploy --env production",
+    "ci:deploy": "npx wrangler deploy --env production && npm run ci:search",
     "ci:preview": "npx wrangler versions upload --env production",
+    "ci:search": "bash scripts/ci-search-sync.sh",
     "search:sync": "docsflare search sync",
     "doctor": "docsflare doctor"
   },
   "devDependencies": {
-    "docsflare": "https://github.com/qaml-ai/docsflare/archive/384a81e0bc27ff2d84fc11028220ae8f7c5edc2f.tar.gz",
+    "docsflare": "https://github.com/qaml-ai/docsflare/archive/3361555648200eaf3f4097fe92124088be1518ff.tar.gz",
     "wrangler": "^4.16.0"
   }
 }
