@@ -20,7 +20,7 @@ should_sync_search() {
 
 trigger_lazy_sync() {
   local url="${DOCSFLARE_SEARCH_SYNC_URL:-https://camelai.com/docs/api/search/sync}"
-  curl -fsS --retry 5 --retry-delay 2 --retry-all-errors "$url"
+  curl -fsS -X POST --retry 5 --retry-delay 2 --retry-all-errors "$url"
   echo
 }
 

@@ -10,7 +10,7 @@
     "doctor": "docsflare doctor"
   },
   "devDependencies": {
-    "docsflare": "https://github.com/qaml-ai/docsflare/archive/af1f60ec9cb654d30a4b4c67987b96852cc5620a.tar.gz",
+    "docsflare": "https://github.com/qaml-ai/docsflare/archive/5de12547cf6688a8bcf621fcd30a0854b06e997d.tar.gz",
     "wrangler": "^4.16.0"
   }
 }
