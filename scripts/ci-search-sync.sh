@@ -25,7 +25,15 @@ if ! command -v git >/dev/null 2>&1 || ! git rev-parse --is-inside-work-tree >/d
 fi
 
 if ! git rev-parse HEAD^ >/dev/null 2>&1; then
-  echo "No parent commit available; syncing search."
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  if [[ -z "$branch" || "$branch" == "HEAD" ]]; then
+    branch="main"
+  fi
+  git fetch --depth=2 origin "$branch" >/dev/null 2>&1 || true
+fi
+
+if ! git rev-parse HEAD^ >/dev/null 2>&1; then
+  echo "No parent commit available after fetching history; syncing search."
   npm run search:sync
   exit 0
 fi
