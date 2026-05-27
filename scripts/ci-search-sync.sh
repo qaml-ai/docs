@@ -18,9 +18,15 @@ should_sync_search() {
   return 1
 }
 
+trigger_lazy_sync() {
+  local url="${DOCSFLARE_SEARCH_SYNC_URL:-https://camelai.com/docs/api/search/sync}"
+  curl -fsS --retry 5 --retry-delay 2 --retry-all-errors "$url"
+  echo
+}
+
 if ! command -v git >/dev/null 2>&1 || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  echo "Git metadata unavailable; syncing search."
-  npm run search:sync
+  echo "Git metadata unavailable; triggering lazy search sync."
+  trigger_lazy_sync
   exit 0
 fi
 
@@ -33,8 +39,8 @@ if ! git rev-parse HEAD^ >/dev/null 2>&1; then
 fi
 
 if ! git rev-parse HEAD^ >/dev/null 2>&1; then
-  echo "No parent commit available after fetching history; syncing search."
-  npm run search:sync
+  echo "No parent commit available after fetching history; triggering lazy search sync."
+  trigger_lazy_sync
   exit 0
 fi
 
@@ -45,8 +51,8 @@ if [[ -z "$changed_files" ]]; then
 fi
 
 if should_sync_search "$changed_files"; then
-  echo "Docs content changed; syncing search."
-  npm run search:sync
+  echo "Docs content changed; triggering lazy search sync."
+  trigger_lazy_sync
 else
   echo "No docs content changes detected; skipping search sync."
 fi
