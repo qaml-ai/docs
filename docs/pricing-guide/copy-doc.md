@@ -226,16 +226,16 @@ description: 'How to use your own API key with camelAI, and what each provider u
 
 camelAI is model-agnostic. By default, paid plans use camelAI's hosted credits to call whichever model you've picked for the thread. If you'd rather use your own API key, you can bring one from any of four providers. This page explains what each option gives you and how to set it up.
 
-The agent can run on Claude (Sonnet, Haiku, or Opus), GPT (GPT-5.4 or GPT-5.4 Mini), Grok, or Kimi. You can switch models any time from the model picker in the chat. Whichever provider you've connected determines which of these models are available to you.
+The agent can run on the major model families camelAI supports: GPT, Gemini, Grok, Kimi, DeepSeek, and Claude. You can switch models any time from the model picker in the chat. Whichever provider you've connected determines which models are available to you.
 
 [FORMATTER NOTE: render the next paragraph as a `<Warning>` callout.]
 
-> Bringing your own key replaces camelAI's hosted credits entirely. You can't mix and match (for example, your own OpenAI key plus camelAI credits for Claude). All requests go through your one chosen provider. If you need access to multiple model families on a single key, use **OpenRouter.**
+> Bringing your own key replaces camelAI's hosted credits entirely. You can't mix and match your own key for one model family with camelAI credits for another. All requests go through your one chosen provider. If you need access to multiple model families on a single key, use **OpenRouter.**
 
 ## When to bring your own key
 
 - You're on the Free tier. A key is required.
-- You already have provider credits. If you're an existing OpenAI or Anthropic customer, using your key avoids paying us for what you're already paying them for.
+- You already have provider credits. If you're an existing customer with a supported provider, using your key avoids paying us for what you're already paying them for.
 - Your company requires it. Some teams need usage to flow through a corporate AWS or Azure account for compliance or billing reasons.
 - You want a provider we don't support natively (Microsoft Azure, Google Vertex, etc.). See [Using a provider we don't support directly](#using-a-provider-we-dont-support-directly-azure-vertex-etc) below.
 
@@ -253,7 +253,7 @@ camelAI supports four providers for BYOK. Each unlocks a specific set of models.
 
 ### Anthropic
 
-**Unlocks:** Claude (Sonnet, Haiku, Opus).
+**Unlocks:** Claude models, including Opus, Sonnet, and Haiku.
 
 **Get a key:** [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
 
@@ -261,7 +261,7 @@ You'll need to add a payment method and prepay for credits in the Anthropic cons
 
 ### OpenAI
 
-**Unlocks:** GPT-5.4 and GPT-5.4 Mini.
+**Unlocks:** GPT-5.5, GPT-5.4, and GPT-5.4 Mini.
 
 **Get a key:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
@@ -269,7 +269,7 @@ Like Anthropic, OpenAI requires you to prepay credits in your OpenAI account bef
 
 ### OpenRouter
 
-**Unlocks:** Claude (Sonnet, Haiku, Opus), GPT (GPT-5.4, GPT-5.4 Mini), Grok, and Kimi — all on a single key.
+**Unlocks:** GPT, Gemini, Grok, Kimi, DeepSeek, and Claude models, all on a single key.
 
 **Get a key:** [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
 
@@ -282,7 +282,7 @@ OpenRouter charges a 5% fee on requests routed through your own provider keys, b
 
 ### AWS Bedrock
 
-**Unlocks:** Claude (Sonnet, Haiku, Opus), served from your own AWS account.
+**Unlocks:** Claude models served from your own AWS account.
 
 **Get a key:** [console.aws.amazon.com/bedrock](https://console.aws.amazon.com/bedrock)
 
@@ -291,7 +291,7 @@ You'll need:
 - An AWS access key with Bedrock permissions
 - The region you want to run in (for example, `us-east-1`)
 
-Bedrock is a good fit if your team needs Claude usage on an AWS bill, or has compliance requirements that route AI through your own AWS account.
+Bedrock is a good fit if your team needs model usage on an AWS bill, or has compliance requirements that route AI through your own AWS account.
 
 ## Using a provider we don't support directly (Azure, Vertex, etc.)
 
@@ -345,11 +345,12 @@ The playbook:
 2. **Generate an OpenRouter API key** at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
 3. **Add the key to camelAI** under **Settings → AI Provider → OpenRouter.**
 4. **Pick a cheap model in the chat.** The most cost-efficient options are:
-   - **Claude Haiku** — fast, cheap, strong for everyday code and copy work.
-   - **GPT-5.4 Mini** — comparable price to Haiku, slightly different strengths.
-   - **Kimi** — competitive on price with Haiku and Mini, particularly strong on long-context tasks.
-   - **Grok** — flexible across general work, often cheaper than the flagship Claude or GPT models.
-5. **Reserve flagship models for hard problems.** Switch to Sonnet, Opus, or GPT-5.4 only when a task is genuinely hard (complex reasoning, multi-step debugging, careful design work). Most chat turns don't need them.
+   - **GPT-5.4 Mini:** fast and cost-effective for everyday code and copy work.
+   - **Kimi:** competitive on price, particularly strong on long-context tasks.
+   - **Gemini Flash:** fast, low-cost, and useful for general iteration.
+   - **DeepSeek Flash:** a low-cost option for straightforward coding tasks.
+   - **Grok:** flexible across general work, often cheaper than flagship models.
+5. **Reserve flagship models for hard problems.** Switch to a flagship model only when a task is genuinely hard (complex reasoning, multi-step debugging, careful design work). Most chat turns don't need one.
 
 OpenRouter shows the live per-token cost for every model on its [models page](https://openrouter.ai/models). Sort by price to compare.
 

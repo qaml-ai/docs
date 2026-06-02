@@ -6,7 +6,7 @@
 
 This is the **docs page** for camelAI — not the product itself.
 
-**What is camelAI?** An AI coding assistant built on Cloudflare's edge infrastructure. Users chat with an agent powered by their selected model, with a persistent workspace where files survive across sessions. Users create applications by having the agent write code, then publish them to live `*.camelai.app` URLs. The product repo is at `/Users/illiana/Projects/chiridion-app` (internal codename: chiridion). Please feel free to access and explore the repo at anytime to research, plan, or audit how we do things in that codebase.
+**What is camelAI?** An AI coding assistant built on Cloudflare's edge infrastructure. Users chat with a Codex-powered agent that has a persistent workspace where files survive across sessions. Users create applications by having the agent write code, then publish them to live `*.camelai.app` URLs. The product repo is at `/Users/illiana/Projects/chiridion-app` (internal codename: chiridion). Please feel free to access and explore the repo at anytime to research, plan, or audit how we do things in that codebase.
 
 For additional context on camelAI, our sales site is available in this machine at `/Users/illiana/Projects/camelai-salessite`.
 
@@ -20,4 +20,4 @@ We also have 2 legacy offerings covered in these docs that are no longer activel
 
 ## Tech Stack
 
-This is a Mintlify docs page.
+This is a Mintlify docs page. 

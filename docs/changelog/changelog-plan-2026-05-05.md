@@ -41,7 +41,7 @@ camelAI now has a Team plan with per-seat billing. Admins can invite teammates i
 
 ### GPT Models in Chat
 
-GPT models are now available in the model picker alongside Claude. They run on the same workspace, with the same MCP tools and the same prompt setup. Default model for new chats is Claude Sonnet.
+Additional model families are now available in the model picker. GPT, Gemini, Grok, Kimi, DeepSeek, and Claude models run on the same workspace, with the same MCP tools and the same prompt setup.
 
 ### Public MCP Server
 

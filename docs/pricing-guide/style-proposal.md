@@ -169,10 +169,10 @@ Each tier card uses this shape so they're visually consistent:
 │  └──────────────────────────────┘  └──────────────────────────────┘  │
 │                                                                       │
 │  ## Supported providers                                               │
-│  ▸ Anthropic       (Claude Sonnet/Haiku/Opus)                         │
-│  ▸ OpenAI          (GPT-5.4, GPT-5.4 Mini)                            │
+│  ▸ Anthropic       (Claude models)                                     │
+│  ▸ OpenAI          (GPT-5.5, GPT-5.4, GPT-5.4 Mini)                   │
 │  ▸ OpenRouter      (everything camelAI supports, on one key)          │
-│  ▸ AWS Bedrock     (Claude, served from your AWS)                     │
+│  ▸ AWS Bedrock     (models served from your AWS account)              │
 │  [each row is an Accordion that expands to show key URL + notes]      │
 │                                                                       │
 │  ## Using a provider we don't support directly (Azure, Vertex, etc.) │
@@ -220,7 +220,7 @@ Each tier card uses this shape so they're visually consistent:
 | Intro + model list paragraph | Plain prose | |
 | "Bringing your own key replaces…" | `<Warning>` | Verbatim from copy doc. |
 | **When to BYOK** + **When credits are simpler** | Two `<Card>` side-by-side inside a `<CardGroup cols={2}>` | See **Deviations** — copy doc suggests two prose blocks or Tabs; I'm proposing parallel Cards because the comparison is the whole point of the section. Tabs hide one side; prose buries it. |
-| "Supported providers" | `<AccordionGroup>` of four `<Accordion>` | Title pattern: `title="Anthropic — Claude (Sonnet, Haiku, Opus)"` so the user sees what each unlocks without expanding. |
+| "Supported providers" | `<AccordionGroup>` of four `<Accordion>` | Title pattern: `title="OpenRouter — every model camelAI supports, on one key"` so the user sees what each unlocks without expanding. |
 | Inside each provider Accordion | Plain prose + bold "Get a key" link | Keep tight. No nested components. |
 | **Using a provider we don't support directly** intro | Plain prose | |
 | Provider list (Azure / Vertex / Bedrock / Others) | Plain bulleted list | Matches copy doc. |
@@ -234,7 +234,7 @@ Each tier card uses this shape so they're visually consistent:
 ### Deviations from the copy doc (Page 2)
 
 1. **BYOK-vs-credits decision rendered as parallel Cards** rather than two prose blocks or Tabs. Reason: the whole section exists to help users compare the two options. Tabs require a click to see the other side; stacked prose makes the comparison hard. Two Cards side-by-side put the trade-off in one glance. This deviation is the one I'd most like your sign-off on.
-2. **"Supported providers" Accordion titles include what each unlocks.** E.g., `Anthropic — Claude (Sonnet, Haiku, Opus)` rather than just `Anthropic`. Lets users skim and pick without expanding every accordion. The detail prose inside stays the same.
+2. **"Supported providers" Accordion titles include what each unlocks.** E.g., `OpenRouter — every model camelAI supports, on one key` rather than just `OpenRouter`. Lets users skim and pick without expanding every accordion. The detail prose inside stays the same.
 
 Everything else on Page 2 follows the copy doc's component plan exactly.
 

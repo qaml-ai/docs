@@ -6,7 +6,7 @@
 
 ## Summary of What's Changing
 
-camelAI was a BI/analytics product (text-to-SQL, dashboards, embedded iframe analytics). It is now a **coding agent with a persistent computer** — users chat with a Claude-powered agent that builds, deploys, and maintains web applications on Cloudflare's edge infrastructure.
+camelAI was a BI/analytics product (text-to-SQL, dashboards, embedded iframe analytics). It is now a **coding agent with a persistent computer** — users chat with an agent powered by their selected model that builds, deploys, and maintains web applications on Cloudflare's edge infrastructure.
 
 **DELETE entirely (no active users):**
 - **MCP Server** (all integration pages)
@@ -213,7 +213,7 @@ The API Reference tab is auto-generated from the OpenAPI spec at `https://api.ca
 
 **New content should:**
 - Update title/description: "camelAI — A coding agent with a persistent computer"
-- Describe the new product: chat with a Claude-powered agent, build apps, publish to live URLs
+- Describe the new product: chat with an agent powered by your selected model, build apps, publish to live URLs
 - Hero CTA: "Try camelAI" → `https://app.camelai.com` (keep this)
 - Replace "What We Offer" cards with cards highlighting new platform capabilities
 - Remove the Note about starting with the web app before integrating (no longer relevant)
@@ -227,9 +227,9 @@ title: 'What is camelAI?'
 description: 'A coding agent with a persistent computer'
 ---
 
-camelAI is a coding agent with a persistent computer. Chat with a Claude-powered
-agent that builds, deploys, and maintains web applications — connected to your data,
-your tools, and AI models.
+camelAI is a coding agent with a persistent computer. Pick the model you want to
+use, then chat with an agent that builds, deploys, and maintains web applications
+connected to your data, your tools, and AI models.
 
 <Card
   title="Try camelAI"
@@ -244,8 +244,8 @@ your tools, and AI models.
 
 <CardGroup cols={2}>
   <Card title="Build Full-Stack Apps" icon="code">
-    Chat with Claude to build complete web applications with React, TypeScript,
-    and Tailwind — production-quality UI out of the box.
+    Chat with the agent to build complete web applications with React,
+    TypeScript, and Tailwind. Production-quality UI is included from the start.
   </Card>
   <Card title="Publish Instantly" icon="globe">
     Deploy any project to a live URL with one click. DNS, SSL, and CDN handled
