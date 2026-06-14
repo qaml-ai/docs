@@ -1,6 +1,6 @@
 # Style Proposal — Organizations and Workspaces
 
-> **For the next agent (me, on implementation pass):** This plan turns [copy-plan.md](copy-plan.md) into a Mintlify MDX page. Copy lands mostly verbatim from the source. Component choices below are deliberate — keep formatting light, since this page is conceptual and mostly text. Don't add components that aren't in this plan.
+> **For the next agent (me, on implementation pass):** This plan turns `copy-plan.md` into a Mintlify MDX page. Copy lands mostly verbatim from the source. Component choices below are deliberate — keep formatting light, since this page is conceptual and mostly text. Don't add components that aren't in this plan.
 
 ---
 

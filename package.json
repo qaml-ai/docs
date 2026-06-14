@@ -1,16 +1,16 @@
 {
   "scripts": {
-    "dev": "docsflare dev",
-    "build": "docsflare build",
-    "deploy": "docsflare deploy",
-    "ci:deploy": "npx wrangler deploy --env production && npm run ci:search",
+    "dev": "mint dev",
+    "deploy": "npx wrangler deploy --env production",
+    "ci:deploy": "npx wrangler deploy --env production",
     "ci:preview": "npx wrangler versions upload --env production",
-    "ci:search": "bash scripts/ci-search-sync.sh",
-    "search:sync": "docsflare search sync",
-    "doctor": "docsflare doctor"
+    "broken-links": "mint broken-links"
   },
   "devDependencies": {
-    "docsflare": "https://github.com/qaml-ai/docsflare/archive/9db80405ebfd56611712530ef8927eebd4fff1eb.tar.gz",
+    "mint": "^4.2.616",
     "wrangler": "^4.16.0"
+  },
+  "overrides": {
+    "react": "19.2.6"
   }
 }

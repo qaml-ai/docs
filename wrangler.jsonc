@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "camelai-docs",
-  "main": ".docsflare/worker.ts",
+  "main": "worker.ts",
   "compatibility_date": "2026-03-27",
   "workers_dev": true,
   "preview_urls": true,
@@ -11,16 +11,14 @@
   "env": {
     "production": {
       "name": "camelai-docs",
+      "vars": {
+        "MINTLIFY_HOST": "camelai.mintlify.dev",
+        "CUSTOM_HOST": "camelai.com"
+      },
       "routes": [
         {
           "pattern": "camelai.com/docs*",
           "zone_name": "camelai.com"
-        }
-      ],
-      "ai_search": [
-        {
-          "binding": "DOCS_SEARCH",
-          "instance_name": "docsflare-docs"
         }
       ]
     }
