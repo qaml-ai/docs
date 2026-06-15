@@ -22,7 +22,7 @@ The agent can run on the major model families camelAI supports: GPT, Gemini, Gro
 - You're on the Free tier — a key is required.
 - You have provider credits you want to make use of.
 - Your company needs usage on a corporate AWS or Azure bill for compliance or finance reasons.
-- You need a provider we don't support natively (Microsoft Azure, Google Vertex, etc.) — see [Using a provider we don't support directly](#unsupported-providers) below.
+- You need a provider we don't support natively (Microsoft Azure, Google Vertex, etc.) — see [Using an unsupported provider through OpenRouter](#using-an-unsupported-provider-through-openrouter) below.
 
 ## Supported providers
 
@@ -69,7 +69,7 @@ camelAI supports four providers for BYOK. Each unlocks a specific set of models.
   </Accordion>
 </AccordionGroup>
 
-## Using a provider we don't support directly (Azure, Vertex, etc.) {#unsupported-providers}
+## Using an unsupported provider through OpenRouter
 
 camelAI doesn't connect natively to Microsoft Azure OpenAI or Google Vertex AI. Each cloud provider has its own auth model, billing structure, and quirks, and supporting them all directly would slow down our work on the rest of the platform. The good news: if your company is on one of those providers, you can still run camelAI through your existing account by routing through **OpenRouter**.
 
@@ -187,6 +187,6 @@ OpenRouter shows the live per-token cost for every model on its [models page](ht
     Yes. **Settings → Billing** shows your current plan, credit balance, and usage history.
   </Accordion>
   <Accordion title="Do you support Microsoft Azure OpenAI or Google Vertex AI?">
-    Not directly, but you can route through OpenRouter to use them. See [Using a provider we don't support directly](#unsupported-providers) above for the setup walk-through.
+    Not directly, but you can route through OpenRouter to use them. See [Using an unsupported provider through OpenRouter](#using-an-unsupported-provider-through-openrouter) above for the setup walk-through.
   </Accordion>
 </AccordionGroup>

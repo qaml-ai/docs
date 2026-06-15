@@ -55,22 +55,31 @@ Full frontmatter reference: [reference/frontmatter.md](reference/frontmatter.md)
 
 ## Linking to Sections (Anchors)
 
-Mintlify auto-generates an anchor slug from each heading's text — apostrophes and commas are **kept** in the slug (URL-encoded as `%E2%80%99` and `%2C`), not stripped. Don't guess the slug from the heading text.
+Mintlify auto-generates an anchor slug from each heading's text. It lowercases, replaces
+spaces with hyphens, and **keeps** punctuation — apostrophes and commas survive in the slug
+(URL-encoded as `%E2%80%99` and `%2C`), they aren't stripped.
 
-For any heading you intend to deep-link to, set an explicit, stable anchor with `{#custom-id}` syntax:
+**Do not use `{#custom-id}` heading-anchor syntax.** Real Mintlify renders MDX, where `{...}`
+is a JavaScript expression — so `## Heading {#my-id}` fails to compile with
+`Could not parse expression with acorn` and the whole page shows a parsing error. (A
+Mintlify-*clone* may have accepted this; the live Mintlify build does not.)
+
+To get a clean, stable deep-link target, write the heading itself with no punctuation so its
+auto-slug is predictable:
 
 ```mdx
-## Using a provider we don't support directly (Azure, Vertex, etc.) {#unsupported-providers}
+## Using an unsupported provider through OpenRouter
 ```
 
-Then link with the clean slug:
+Then link with the matching slug:
 
 ```mdx
-[See unsupported providers](#unsupported-providers)
-[See unsupported providers](/plans/model-providers#unsupported-providers)
+[See unsupported providers](#using-an-unsupported-provider-through-openrouter)
+[See unsupported providers](/plans/model-providers#using-an-unsupported-provider-through-openrouter)
 ```
 
-Benefits: short URLs, stable links if heading text changes later, no encoding gotchas with punctuation.
+When in doubt about a slug, run `mint dev` and grep the rendered HTML for the heading's
+`id="..."` rather than guessing.
 
 ## Do Not
 
