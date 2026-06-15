@@ -1,0 +1,214 @@
+---
+title: 'Resend'
+description: 'Send email from your camelAI apps, workflows, and agent with Resend'
+---
+
+[Resend](https://resend.com) is an email API for sending transactional and marketing
+email. Connect it to camelAI — the agent that builds and deploys your apps — and the
+agent, your scheduled workflows, and your deployed apps can all send email through
+your own Resend account. You describe what you want; the agent writes the code and
+uses your connection to send it.
+
+<Note>
+  This connection is for email **your** apps and workflows send. It isn't used for
+  camelAI's own platform emails (invites, password resets), and it's separate from the
+  [workspace email inbox](/features/email-and-slack) you use to talk to the agent.
+</Note>
+
+## What you can build
+
+Describe any of these in a chat and the agent builds it against your Resend connection:
+
+> When a new row lands in our Stripe connection, send the customer an order
+> confirmation email with Resend.
+
+> Every night, check for records pending review longer than 30 days and email a
+> summary to dev-alerts@company.com via Resend.
+
+> After someone signs up in our React app, send them a welcome email through Resend.
+
+> Query our active subscriber table and send this newsletter to everyone with Resend.
+
+The prompt is the work. The agent writes the sending code, wires it to the right
+trigger, and uses your connection for credentials.
+
+## Connect Resend
+
+<Steps>
+  <Step title="Create a Resend API key">
+    In your [Resend dashboard](https://resend.com), go to **API Keys → Create API Key**.
+    Give it a name, and assign the **Sending Access** permission (choose **Full Access**
+    only if your app needs Resend's read or admin endpoints). Copy the key — it starts
+    with `re_`.
+  </Step>
+  <Step title="Add the connection in camelAI">
+    You can do this two ways:
+
+    <Tabs>
+      <Tab title="Through Connections">
+        Open **Connections** in your workspace and click **Add connection**. Search for
+        **Resend** and select it. Give the connection a name (for example
+        `Resend Production`), paste your `re_...` key into the **API Key** field, and
+        click **Create Connection**.
+      </Tab>
+      <Tab title="Through the agent">
+        Ask the agent in any chat:
+
+        > Connect my Resend account
+
+        It opens the credential form for you to paste your API key.
+      </Tab>
+    </Tabs>
+
+    <Note>
+      Resend is a native connection, so the base URL and Bearer authentication are
+      built in. There's nothing else to configure — just a name and the API key.
+    </Note>
+  </Step>
+</Steps>
+
+<Info>
+  **Who can connect it.** Organization Owners and Admins create, update, and delete
+  connections. Members can use a connection in their workspace, but can't manage it.
+  Available on all plans. Resend bills your email volume, not camelAI.
+</Info>
+
+<Tip>
+  While you're testing, send from Resend's shared `onboarding@resend.dev` address so you
+  don't need a verified domain yet. Verify your own sending domain in Resend before you
+  send production volume.
+</Tip>
+
+## Use it
+
+The simplest path is to not write any code. Ask the agent:
+
+> Email me a summary of yesterday's signups every morning at 8am via Resend.
+
+The agent builds the app or [scheduled workflow](/features/cron-jobs) and sends through
+your connection.
+
+If you're writing the code yourself, resolve the connection by type and call its `fetch`
+method. Don't hard-code an alias — camelAI derives it from the connection's type and name.
+
+<CodeGroup>
+```typescript Deployed app (server code)
+import { createConnections } from "~/lib/connections";
+
+export async function action({ context }) {
+  const connections = createConnections(context.cloudflare.env);
+  const resend = await context.cloudflare.env.CONNECTIONS.find({ type: "resend" });
+
+  const res = await connections[resend.alias].fetch("/emails", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: "Onboarding <onboarding@yourdomain.com>",
+      to: ["recipient@example.com"],
+      subject: "Welcome aboard!",
+      html: "<p>Thanks for signing up!</p>",
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Resend failed: ${res.status} ${await res.text()}`);
+  }
+
+  return await res.json();
+}
+```
+
+```javascript Agent workflow
+const resend = await env.CONNECTIONS.find({ type: "resend" });
+
+const res = await connections[resend.alias].fetch("/emails", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    from: "Onboarding <onboarding@yourdomain.com>",
+    to: ["recipient@example.com"],
+    subject: "Welcome aboard!",
+    html: "<p>Thanks for signing up!</p>",
+  }),
+});
+
+return { status: res.status, body: await res.text() };
+```
+</CodeGroup>
+
+<Warning>
+  Connection calls run **server-side only** — in loaders and actions, the agent's
+  JavaScript runtime, or scheduled workflows. Never call a connection from browser/client
+  code. Your API key is never exposed to app code, logs, or chat; camelAI injects the
+  Bearer token at the gateway.
+</Warning>
+
+## How it works
+
+- **Native Communication connection** — Resend is built in, with a fixed base URL and a
+  single API key field. No base URL or auth type to set up.
+- **Encrypted storage** — your key is encrypted at rest. Connection listings show only
+  that credentials exist, never the key itself.
+- **Authenticated proxy** — calls go through an authenticated `fetch` to
+  `https://api.resend.com`. Relative paths resolve against that base; absolute URLs are
+  restricted to that origin. camelAI adds the `Authorization: Bearer` header server-side.
+- **Server-side execution** — the connection is available to the agent, workflows, and
+  your apps' server code, never to client code.
+
+## Staging and production
+
+You can add more than one Resend connection to a workspace — for example one named
+`Production` and one named `Staging` — and resolve the one you want by name:
+
+```javascript
+const resend = await env.CONNECTIONS.find({ type: "resend", name: "Production" });
+```
+
+Because your code resolves the connection by type and name rather than by an embedded
+key, rotating a key in Resend doesn't require any code changes.
+
+## FAQ
+
+<AccordionGroup>
+  <Accordion title="Does camelAI charge for sending email?">
+    No. Resend bills your email volume under your own Resend account. camelAI doesn't
+    charge per email or spend credits when you send through your connection.
+  </Accordion>
+  <Accordion title="Can I use multiple keys or environments?">
+    Yes. Add a separate named connection for each key — for example `Production` and
+    `Staging` — and resolve the one you want with
+    `CONNECTIONS.find({ type: "resend", name: "Production" })`.
+  </Accordion>
+  <Accordion title="What happens when I rotate my Resend key?">
+    Update the API key on the connection. Your app code doesn't change, because it
+    resolves the connection by type and name rather than by the embedded key.
+  </Accordion>
+  <Accordion title="My emails aren't sending. What should I check?">
+    1. Check your app logs for the response status from the Resend call.
+    2. Confirm the `from` domain is verified in your Resend dashboard.
+    3. Check the Resend dashboard for rate limits or account restrictions.
+  </Accordion>
+</AccordionGroup>
+
+## Stop using or remove Resend
+
+There's no per-app "unlink" — connections are scoped to a workspace, not granted app by
+app. To stop one app from sending email, change or remove the code that calls the
+connection.
+
+To cut off everything, either rotate the API key in Resend (then update the connection)
+or delete the connection:
+
+<Steps>
+  <Step title="Open Connections">
+    Go to **Connections** in your workspace and find the Resend connection.
+  </Step>
+  <Step title="Delete it">
+    Open the connection's actions menu, choose **Delete**, and confirm **Delete connection**.
+  </Step>
+</Steps>
+
+<Warning>
+  Deletion is permanent. Any app code or workflow that still resolves this connection
+  will fail until you update the code or create a replacement.
+</Warning>

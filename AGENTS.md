@@ -20,4 +20,18 @@ We also have 2 legacy offerings covered in these docs that are no longer activel
 
 ## Tech Stack
 
-This is a Mintlify docs page. 
+This is a Mintlify docs page.
+
+## Partner guides
+
+Per-tool integration guides live in the **Partners** group under the Getting Started tab
+(one `getting-started/partners/<tool>.mdx` page per guide). The first guide is Resend;
+OpenRouter is planned next.
+
+Every partner page follows the same structure so the next one is quick to add and the
+section stays consistent: **Intro + disambiguation → What you can build (agent prompts) →
+Connect (Steps, both Settings and agent paths) → Use it (no-code prompt first, code second)
+→ How it works → FAQ → Stop using or remove.** When you add a guide, register it in the
+Partners group in `docs.json` and link it from the relevant tab in
+`getting-started/connections.mdx`. Verify connection details (UI labels, the
+`CONNECTIONS.find()` signature, code examples) against the product repo before publishing.

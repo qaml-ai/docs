@@ -30,6 +30,12 @@
             ]
           },
           {
+            "group": "Partners",
+            "pages": [
+              "getting-started/partners/resend"
+            ]
+          },
+          {
             "group": "Plans & Billing",
             "pages": [
               "plans/overview",

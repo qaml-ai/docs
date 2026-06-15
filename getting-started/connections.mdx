@@ -42,8 +42,9 @@ You can add connections two ways:
 ## How connections work
 
 - **Encrypted storage** — credentials are encrypted at rest and never exposed in logs or chat
-- **Auto-injected** — credentials are available as environment variables in your workspace and
-  automatically synced to all deployed apps
+- **Auto-injected** — once connected, the integration is available to the agent and to
+  your deployed apps' server-side code through a secure connection binding. camelAI adds
+  the credentials when your app calls out, so raw keys never appear in your code, logs, or chat
 - **Any chat, any project** — once connected, the agent can use the integration from any
   conversation in your workspace
 
@@ -59,7 +60,8 @@ You can add connections two ways:
     Figma, Shopify, Typeform
   </Tab>
   <Tab title="Communication">
-    Slack, Discord, Microsoft Teams, Twilio, SendGrid, Mailchimp
+    Slack, Discord, Microsoft Teams, Twilio, SendGrid, Mailchimp,
+    [Resend](/getting-started/partners/resend)
   </Tab>
   <Tab title="Payments">
     Stripe, Square
