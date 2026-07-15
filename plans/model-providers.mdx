@@ -3,12 +3,12 @@ title: 'Model Providers'
 description: 'How to use your own API key with camelAI, and what each provider unlocks.'
 ---
 
-camelAI is model-agnostic. By default, paid plans use camelAI's hosted credits to call whichever model you've picked for the thread. If you'd rather use your own API key, you can bring one from any of four providers. This page explains what each option gives you and how to set it up.
+camelAI is model-agnostic. By default, camelAI's hosted credits (included with paid plans, or topped up on any plan) call whichever model you've picked for the thread, and the Camel Free model is included on every plan with no credits or key at all. If you'd rather use your own API key, you can bring one instead. This page explains what each option gives you and how to set it up.
 
 The agent can run on the major model families camelAI supports: GPT, Gemini, Grok, Kimi, DeepSeek, and Claude. You can switch models any time from the model picker in the chat. Whichever provider you've connected determines which models are available to you.
 
 <Warning>
-  Bringing your own key replaces camelAI's hosted credits entirely. You can't mix and match your own key for one model family with camelAI credits for another. All requests go through your one chosen provider. If you need access to multiple model families on a single key, use **OpenRouter.**
+  Bringing your own key replaces camelAI's hosted models entirely, including Camel Free. You can't mix and match your own key for one model family with camelAI credits for another. All requests go through your one chosen provider. If you need access to multiple model families on a single key, use **OpenRouter.** The one exception is **Sign in with OpenAI** (below), which works alongside any setup for GPT models.
 </Warning>
 
 ## When to use camelAI credits
@@ -19,31 +19,31 @@ The agent can run on the major model families camelAI supports: GPT, Gemini, Gro
 
 ## When to bring your own key
 
-- You're on the Free tier — a key is required.
+- You're on the Free plan and would rather use your provider account than prepay camelAI credits.
 - You have provider credits you want to make use of.
 - Your company needs usage on a corporate AWS or Azure bill for compliance or finance reasons.
-- You need a provider we don't support natively (Microsoft Azure, Google Vertex, etc.) — see [Using an unsupported provider through OpenRouter](#using-an-unsupported-provider-through-openrouter) below.
+- You need a provider we don't support natively (Microsoft Azure, Google Vertex, etc.). See [Using an unsupported provider through OpenRouter](#using-an-unsupported-provider-through-openrouter) below.
 
 ## Supported providers
 
 camelAI supports four providers for BYOK. Each unlocks a specific set of models.
 
 <AccordionGroup>
-  <Accordion title="Anthropic — Claude models">
+  <Accordion title="Anthropic: Claude models">
     **Unlocks:** Claude models, including Opus, Sonnet, and Haiku.
 
     **Get a key:** [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)
 
     You'll need to add a payment method and prepay for credits in the Anthropic console before your key will run requests. A new key with no credits behind it returns a billing error.
   </Accordion>
-  <Accordion title="OpenAI — GPT models">
-    **Unlocks:** GPT-5.5, GPT-5.4, and GPT-5.4 Mini.
+  <Accordion title="OpenAI: GPT models">
+    **Unlocks:** GPT models, including GPT-5.6 Sol, GPT-5.6 Terra, and GPT-5.5.
 
     **Get a key:** [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
     Like Anthropic, OpenAI requires you to prepay credits in your OpenAI account before the key will run requests.
   </Accordion>
-  <Accordion title="OpenRouter — every model camelAI supports, on one key">
+  <Accordion title="OpenRouter: every model camelAI supports, on one key">
     **Unlocks:** GPT, Gemini, Grok, Kimi, DeepSeek, and Claude models, all on a single key.
 
     **Get a key:** [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)
@@ -55,7 +55,7 @@ camelAI supports four providers for BYOK. Each unlocks a specific set of models.
 
     OpenRouter charges a 5% fee on requests routed through your own provider keys, but the first 1 million BYOK requests per month are free. See [OpenRouter's BYOK guide](https://openrouter.ai/docs/use-cases/byok) for details.
   </Accordion>
-  <Accordion title="AWS Bedrock — models served from your AWS account">
+  <Accordion title="AWS Bedrock: models served from your AWS account">
     **Unlocks:** Claude models served from your own AWS account.
 
     **Get a key:** [console.aws.amazon.com/bedrock](https://console.aws.amazon.com/bedrock)
@@ -80,9 +80,9 @@ OpenRouter supports plugging in your own keys for a long list of cloud providers
 - **Microsoft Azure OpenAI**
 - **Google Vertex AI**
 - **AWS Bedrock** (alternative to our direct Bedrock integration)
-- Others — see [OpenRouter's BYOK guide](https://openrouter.ai/docs/use-cases/byok) for the current list.
+- Others. See [OpenRouter's BYOK guide](https://openrouter.ai/docs/use-cases/byok) for the current list.
 
-When you connect those keys to OpenRouter, OpenRouter forwards your requests to that provider. Usage runs against your Azure (or Vertex, or Bedrock) bill, and OpenRouter charges a 5% fee on top — waived for the first 1 million BYOK requests per month.
+When you connect those keys to OpenRouter, OpenRouter forwards your requests to that provider. Usage runs against your Azure (or Vertex, or Bedrock) bill, and OpenRouter charges a 5% fee on top, waived for the first 1 million BYOK requests per month.
 
 ### Setup with Azure as the example
 
@@ -129,12 +129,23 @@ The same flow works for Google Vertex (Google Cloud service account JSON) or AWS
 
 The form has a "Get a key" link next to each provider that takes you to the right page on the provider's site.
 
-You can switch providers any time from the same screen, or remove your key and switch to camelAI hosted credits (paid plans only).
+You can switch providers any time from the same screen, or remove your key and switch to camelAI hosted credits (included with paid plans, or topped up on any plan).
+
+## Sign in with OpenAI
+
+If you have a ChatGPT subscription, you can connect it under **Settings → AI Provider** with a short sign-in flow. There's no API key to copy. GPT model usage then runs against the allowance already included in your ChatGPT plan, at no extra cost.
+
+Two things make this different from a regular API key:
+
+- It covers **GPT models only**.
+- It **combines** with everything else. Unlike an API key, it doesn't replace your other setup. Keep using camelAI credits or another provider's key for non-GPT models, and your connected OpenAI account handles GPT traffic.
+
+If you already pay for ChatGPT, this is by far the most cost-effective way to run GPT models on camelAI.
 
 ## Using camelAI on the cheap
 
 <Tip>
-  Model costs vary widely. The cheapest models on camelAI are 10–50× less expensive per request than the flagship models, and they handle most everyday work just as well. Pairing a cheaper model with a small OpenRouter top-up is the lowest-cost way to use the platform.
+  The cheapest model on camelAI is **Camel Free**, included on every plan at no cost (see [Plans & Pricing](/plans/overview)). Beyond that, model costs vary widely: the cheapest premium models are 10 to 50 times less expensive per request than the flagships, and they handle most everyday work just as well. Pairing a cheaper model with a small OpenRouter top-up is the lowest-cost way to run premium models.
 </Tip>
 
 The playbook:
@@ -152,11 +163,11 @@ The playbook:
   <Step title="Pick a cheap model in the chat">
     The most cost-efficient options are:
 
-    - **GPT-5.4 Mini:** fast and cost-effective for everyday code and copy work.
-    - **Kimi:** competitive on price, particularly strong on long-context tasks.
-    - **Gemini Flash:** fast, low-cost, and useful for general iteration.
-    - **DeepSeek Flash:** a low-cost option for straightforward coding tasks.
-    - **Grok:** flexible across general work, often cheaper than flagship models.
+    - **DeepSeek V4 Flash:** a low-cost option for straightforward coding tasks.
+    - **DeepSeek V4 Pro:** stronger reasoning at a still-low price.
+    - **Haiku 4.5:** fast and cost-effective for everyday code and copy work.
+    - **Gemini 3 Flash Preview:** fast, low-cost, and useful for general iteration.
+    - **Kimi K2.7 Code:** competitive on price, particularly strong on long-context tasks.
   </Step>
   <Step title="Reserve flagship models for hard problems">
     Switch to a flagship model only when a task is genuinely hard (complex reasoning, multi-step debugging, careful design work). Most chat turns don't need one.
@@ -169,13 +180,13 @@ OpenRouter shows the live per-token cost for every model on its [models page](ht
 
 <AccordionGroup>
   <Accordion title="Can I use my own API key for one model and camelAI credits for another?">
-    No. When a BYOK key is set, all of your model usage runs through that one provider. If you want broad model coverage on a single key, use OpenRouter.
+    No. When a BYOK key is set, all of your model usage runs through that one provider. If you want broad model coverage on a single key, use OpenRouter. The one exception is **Sign in with OpenAI**, which layers on top of any setup and covers GPT models only.
   </Accordion>
   <Accordion title="Does my API key work across multiple orgs?">
     No. LLM provider keys are scoped to one org. If you have more than one org, set up a key for each. See [Organizations and workspaces](/getting-started/organizations) for the full breakdown.
   </Accordion>
-  <Accordion title="Do my plan credits roll over month to month?">
-    No. Monthly plan credits reset each billing cycle. Credits you've topped up on top of your plan credits do roll over and don't expire.
+  <Accordion title="Do my credits expire?">
+    Top-up credits never expire. Plan credits arrive fresh every month with your subscription.
   </Accordion>
   <Accordion title='Why does my new API key say "billing error" or "insufficient credits"?'>
     Anthropic, OpenAI, and OpenRouter all let you create an API key without adding any credits. The key won't work until you prepay credits in their billing settings. This is on the provider's side, not ours.

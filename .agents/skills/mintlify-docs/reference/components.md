@@ -97,7 +97,7 @@ Collapsible content sections.
 
 Multiple code blocks with language tabs.
 
-```mdx
+````mdx
 <CodeGroup>
 ```python Python
 print("hello")
@@ -106,7 +106,7 @@ print("hello")
 console.log("hello")
 ```
 </CodeGroup>
-```
+````
 
 | Prop | Type | Description |
 |------|------|-------------|

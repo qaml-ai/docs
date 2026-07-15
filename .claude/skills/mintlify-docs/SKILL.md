@@ -150,7 +150,7 @@ Visual diffs in code: `// [!code ++]` and `// [!code --]` comments.
 
 Use `<CodeGroup>` to show multiple languages:
 
-```mdx
+````mdx
 <CodeGroup>
 ```python Python
 print("hello")
@@ -159,7 +159,7 @@ print("hello")
 console.log("hello")
 ```
 </CodeGroup>
-```
+````
 
 ## Reusable Snippets
 
