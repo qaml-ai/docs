@@ -1,16 +1,9 @@
 {
-  "scripts": {
-    "dev": "mint dev",
-    "deploy": "npx wrangler deploy --env production",
-    "ci:deploy": "npx wrangler deploy --env production",
-    "ci:preview": "npx wrangler versions upload --env production",
-    "broken-links": "mint broken-links"
-  },
-  "devDependencies": {
-    "mint": "^4.2.616",
-    "wrangler": "^4.16.0"
-  },
-  "overrides": {
-    "react": "19.2.6"
-  }
+	"name": "camelai-docs-content",
+	"private": true,
+	"scripts": {
+		"dev": "echo 'Use open-mdx-docs: DOCS_DIR=$PWD BASE_PATH=/docs bun run dev' && exit 1",
+		"deploy": "echo 'Deploy from https://github.com/Vercantez/open-mdx-docs (see DEPLOY.md)' && exit 1",
+		"ci:deploy": "echo 'Deploy from open-mdx-docs, not this repo' && exit 1"
+	}
 }
