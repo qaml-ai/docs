@@ -6,6 +6,7 @@
       "name": "camelai-docs",
       "devDependencies": {
         "open-mdx-docs": "github:Vercantez/open-mdx-docs",
+        "wrangler": "4.112.0",
       },
     },
   },

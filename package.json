@@ -7,10 +7,11 @@
 		"build": "open-mdx-docs build",
 		"start": "open-mdx-docs start",
 		"deploy": "open-mdx-docs deploy",
-		"ci:deploy": "npx --yes wrangler deploy -c .open-mdx-docs/wrangler.json --keep-vars",
+		"ci:deploy": "wrangler deploy -c .open-mdx-docs/wrangler.json --keep-vars",
 		"doctor": "open-mdx-docs doctor"
 	},
 	"devDependencies": {
-		"open-mdx-docs": "github:Vercantez/open-mdx-docs"
+		"open-mdx-docs": "github:Vercantez/open-mdx-docs",
+		"wrangler": "4.112.0"
 	}
 }
