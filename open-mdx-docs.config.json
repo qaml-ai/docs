@@ -1,0 +1,12 @@
+{
+	"basePath": "/docs",
+	"docsDir": ".",
+	"name": "camelai-docs",
+	"aiSearchInstance": "camelai-docs",
+	"routes": [
+		{
+			"pattern": "camelai.com/docs*",
+			"zone_name": "camelai.com"
+		}
+	]
+}

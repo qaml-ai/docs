@@ -1,9 +1,15 @@
 {
-	"name": "camelai-docs-content",
+	"name": "camelai-docs",
 	"private": true,
+	"type": "module",
 	"scripts": {
-		"dev": "echo 'Use open-mdx-docs: DOCS_DIR=$PWD BASE_PATH=/docs bun run dev' && exit 1",
-		"deploy": "echo 'Deploy from https://github.com/Vercantez/open-mdx-docs (see DEPLOY.md)' && exit 1",
-		"ci:deploy": "echo 'Deploy from open-mdx-docs, not this repo' && exit 1"
+		"dev": "open-mdx-docs dev",
+		"build": "open-mdx-docs build",
+		"start": "open-mdx-docs start",
+		"deploy": "open-mdx-docs deploy",
+		"doctor": "open-mdx-docs doctor"
+	},
+	"devDependencies": {
+		"open-mdx-docs": "github:Vercantez/open-mdx-docs"
 	}
 }

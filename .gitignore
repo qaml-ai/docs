@@ -4,3 +4,6 @@ node_modules/
 .wrangler/
 docsflare.config.local.json
 npm-debug.log*
+
+.open-mdx-docs
+node_modules
