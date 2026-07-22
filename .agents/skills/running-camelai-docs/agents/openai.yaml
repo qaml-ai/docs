@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run camelAI Docs"
+  short_description: "Run and verify the local docs preview"
+  default_prompt: "Use $running-camelai-docs to start and verify the camelAI docs locally."

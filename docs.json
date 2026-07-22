@@ -2,12 +2,11 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "camelAI Documentation",
-  "colors": {
-    "primary": "#3F60C1",
-    "light": "#5F83F0",
-    "dark": "#3F60C1"
+  "fonts": {
+    "family": "Figtree",
+    "mono": "Geist Mono"
   },
-  "favicon": "/favicon.png",
+  "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
@@ -140,8 +139,8 @@
     }
   },
   "logo": {
-    "light": "/logo/light.png",
-    "dark": "/logo/dark.png"
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
   },
   "navbar": {
     "links": [
