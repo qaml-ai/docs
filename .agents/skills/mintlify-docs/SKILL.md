@@ -1,6 +1,6 @@
 ---
 name: mintlify-docs
-description: Write and maintain Mintlify documentation sites. Use when creating or editing MDX pages, configuring docs.json, using Mintlify components, setting up navigation, or working with OpenAPI specs in a Mintlify project.
+description: Writes and maintains Mintlify-compatible documentation content. Use when creating or editing MDX pages, configuring docs.json, using supported Mintlify components, setting up navigation, or working with OpenAPI specs. This skill covers content structure, not running the camelAI docs preview.
 ---
 
 # Mintlify Documentation
@@ -13,6 +13,8 @@ description: Write and maintain Mintlify documentation sites. Use when creating 
 
 - Format: MDX files with YAML frontmatter
 - Config: `docs.json` for navigation, theme, settings
+- Renderer: `open-mdx-docs`; use the `running-camelai-docs` skill for local preview
+- Never run `mint dev` or `mintlify dev` in this repository; those launch the retired site experience
 - Schema reference: `https://mintlify.com/docs.json`
 
 ## Content Strategy

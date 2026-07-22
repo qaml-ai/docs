@@ -3,7 +3,8 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "open-mdx-docs dev",
+		"postinstall": "node scripts/prepare-open-mdx-docs.mjs",
+		"dev": "node scripts/prepare-open-mdx-docs.mjs && open-mdx-docs dev",
 		"build": "open-mdx-docs build",
 		"start": "open-mdx-docs start",
 		"deploy": "open-mdx-docs deploy",
@@ -13,5 +14,9 @@
 	"devDependencies": {
 		"open-mdx-docs": "github:Vercantez/open-mdx-docs",
 		"wrangler": "4.112.0"
+	},
+	"overrides": {
+		"@react-router/dev": "7.16.0",
+		"react-router": "7.16.0"
 	}
 }

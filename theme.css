@@ -1,0 +1,11 @@
+/* camelAI docs theme — sky accent on zinc neutrals */
+:root {
+  --primary: oklch(0.5 0.134 242.749);   /* sky-700 — AA on white for links/pills */
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.5 0.134 242.749);
+}
+.dark {
+  --primary: oklch(0.746 0.16 232.661);  /* sky-400 — pops on zinc-950 */
+  --primary-foreground: oklch(0.141 0.005 285.823);
+  --ring: oklch(0.746 0.16 232.661);
+}

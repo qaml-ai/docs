@@ -1,4 +1,4 @@
-# camelAI Sales Site - Agent Documentation
+# camelAI Docs - Agent Documentation
 
 > **Note to agents:** Keep this file up to date. When you add new features, routes, components, or make significant architectural changes, update the relevant sections of this document.
 
@@ -20,7 +20,22 @@ We also have 2 legacy offerings covered in these docs that are no longer activel
 
 ## Tech Stack
 
-This is a Mintlify docs page.
+The content uses Mintlify-compatible `docs.json` and MDX, but the current renderer is
+`open-mdx-docs`. Mintlify hosting and the Mintlify CLI preview are legacy. Never use
+`mint dev` or `mintlify dev` to run this site.
+
+Site-specific shadcn tokens live in `theme.css` next to `docs.json`. The header wordmarks
+are `logo/light.svg` and `logo/dark.svg`; the boxed brand mark is `favicon.svg`.
+
+For local setup, preview, verification, and troubleshooting, use the project-local
+`running-camelai-docs` skill. The normal Conductor command is:
+
+```bash
+bun install --frozen-lockfile
+bun run dev -- --port "$CONDUCTOR_PORT"
+```
+
+Open `http://localhost:$CONDUCTOR_PORT/docs/`.
 
 ## Partner guides
 
