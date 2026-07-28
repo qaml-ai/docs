@@ -1,0 +1,213 @@
+---
+title: 'Enterprise SSO'
+description: 'Connect your camelAI organization to Google Workspace or another OpenID Connect provider.'
+---
+
+Enterprise SSO lets people sign in to a camelAI organization through your
+identity provider. camelAI supports OpenID Connect (OIDC), including Google
+Workspace.
+
+SSO is available on the Enterprise plan. Organization owners and admins can
+configure and manage it.
+
+## Before you start
+
+You need:
+
+- Permission to create an OAuth or OIDC client in your identity provider
+- Owner or admin access to your camelAI organization
+- A regular user account in your identity provider for testing
+
+<Warning>
+  Use a regular member account for the connection test. camelAI platform
+  superusers cannot sign in through organization SSO.
+</Warning>
+
+## Choose who can join
+
+The **Allow uninvited SSO users** setting controls whether an identity provider
+login can create a member without a camelAI invitation.
+
+| Setting | What happens on the first SSO sign-in |
+| --- | --- |
+| Off | Existing organization members and users with an active invitation can sign in. An invited user is created automatically with the role and workspace access selected in the invitation. |
+| On | Any user allowed by the identity provider and camelAI domain rules can join. camelAI creates them as a regular member with access to the first active workspace. |
+
+Leaving this setting off is the more controlled option. Invite each person from
+your organization Team settings, then send them the SSO sign-in URL. They do not
+need to create a password-based camelAI account or accept the invitation link
+first. Their verified SSO login consumes the invitation.
+
+## Set up Google Workspace
+
+<Steps>
+  <Step title="Copy the camelAI callback URL">
+    In camelAI, open **Settings → Organization → Single sign-on** and copy the
+    callback URL shown on the page.
+
+    Use the displayed value exactly. It normally looks like:
+
+    ```text
+    https://camelai.dev/api/auth/enterprise-oidc/callback
+    ```
+  </Step>
+  <Step title="Configure the Google OAuth consent screen">
+    Open the [Google Auth Platform](https://console.cloud.google.com/auth/overview)
+    in a Google Cloud project owned by your organization.
+
+    Set the app audience to **Internal** so only users in your Google Workspace
+    organization can authorize it.
+  </Step>
+  <Step title="Create a web OAuth client">
+    Create an OAuth client with the application type **Web application**.
+
+    Add the camelAI callback URL under **Authorized redirect URIs**. You can
+    leave **Authorized JavaScript origins** blank.
+
+    Google may take a few minutes to apply a newly added redirect URI.
+  </Step>
+  <Step title="Enter the connection in camelAI">
+    Copy the client ID and client secret into camelAI, then use these values:
+
+    | camelAI field | Google Workspace value |
+    | --- | --- |
+    | Issuer URL | `https://accounts.google.com` |
+    | Token endpoint authentication | **Client secret POST** |
+    | Email claim | **email** |
+    | Allowed email domains | Leave blank for the first test, or enter your exact Workspace domain |
+
+    camelAI requests the `openid`, `email`, and `profile` scopes. It does not
+    request access to Gmail, Drive, or other Workspace data.
+  </Step>
+  <Step title="Test the connection">
+    Click **Test connection** and complete the Google login with a regular
+    Workspace user.
+
+    camelAI checks the discovery document, authorization and token endpoints,
+    signing keys, token exchange, verified email, and Google Workspace domain.
+    The test does not create a user, link an account, or enable SSO.
+  </Step>
+  <Step title="Enable SSO">
+    When every connection check passes, click **Enable SSO**.
+
+    camelAI shows an organization-specific sign-in URL. Test it in a private
+    browser window before sharing it with your team or adding it to your
+    internal app launcher.
+  </Step>
+</Steps>
+
+## Set up another OIDC provider
+
+Your provider must publish a standard discovery document from:
+
+```text
+<issuer>/.well-known/openid-configuration
+```
+
+The document must include HTTPS authorization, token, and JWKS endpoints.
+Create a web application in your provider, register the callback URL shown in
+camelAI, and configure it to return a stable subject identifier and email
+claim.
+
+Enter the issuer URL, client credentials, token endpoint authentication method,
+and email claim in camelAI. camelAI discovers the remaining endpoints
+automatically.
+
+<Note>
+  The issuer URL is the provider's exact issuer value, not the discovery
+  document URL. For example, enter `https://accounts.google.com`, not a URL
+  ending in `/.well-known/openid-configuration`.
+</Note>
+
+## Allowed email domains
+
+Allowed domains are an additional camelAI-side boundary. They protect the
+organization if the identity provider application is accidentally assigned too
+broadly or its policy changes later.
+
+Enter domains without `@`, for example:
+
+```text
+example.com
+```
+
+For Google Workspace, camelAI also requires a verified email and a matching
+Google hosted-domain (`hd`) claim.
+
+## Add and remove users
+
+### Add a user
+
+If uninvited users are not allowed:
+
+1. Invite the exact email address from your camelAI Team settings.
+2. Choose the user's organization role and workspace access.
+3. Send the user your organization-specific SSO sign-in URL.
+
+The first successful SSO login creates the account, consumes the invitation,
+applies its access, and signs the user in.
+
+If uninvited users are allowed, permit the user in your identity provider and
+send them the same SSO sign-in URL. No camelAI invitation is required.
+
+### Remove a user
+
+Remove the member from the camelAI organization and disable or unassign them in
+your identity provider. Removing the camelAI membership revokes that
+organization's SSO access even if the provider still authenticates the user.
+
+To restore a removed user, send a new invitation to the exact same email. Their
+next SSO login restores the membership with the new invitation's role and
+workspace access.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Could not validate the OIDC issuer and discovery document">
+    Confirm that the issuer is an HTTPS URL and matches the provider's issuer
+    exactly. Do not paste the discovery document URL itself.
+
+    Open `<issuer>/.well-known/openid-configuration` in a browser and confirm it
+    returns JSON. Its issuer must exactly match the value entered in camelAI,
+    and its authorization, token, and JWKS endpoints must be valid HTTPS URLs.
+  </Accordion>
+  <Accordion title="Google reports redirect_uri_mismatch">
+    Confirm that the callback URL shown in camelAI appears exactly under
+    **Authorized redirect URIs** on the correct Google **Web application**
+    client. Check the scheme, hostname, path, and trailing slash.
+
+    If you just added the URI, wait a few minutes and try again.
+  </Accordion>
+  <Accordion title="No organization member or active invitation matches this enterprise identity">
+    Uninvited SSO users are not allowed, and camelAI could not find an active
+    invitation for the exact email returned by the provider.
+
+    Send a new invitation to that email, or turn on **Allow uninvited SSO
+    users** if everyone permitted by the identity provider should be able to
+    join.
+  </Accordion>
+  <Accordion title="This email is already bound to a different enterprise identity">
+    The email was previously linked to a different provider subject or SSO
+    connection. camelAI blocks automatic rebinding to protect the existing
+    account. Sign in normally and use the explicit account-link flow, or
+    contact [support@camelai.com](mailto:support@camelai.com).
+  </Accordion>
+  <Accordion title="Google Workspace did not verify this email and hosted domain">
+    Use a managed Google Workspace account, confirm its email is verified, and
+    check that the Google hosted domain matches your camelAI allowed-domain
+    configuration.
+  </Accordion>
+</AccordionGroup>
+
+## Security notes
+
+- camelAI binds each login to the provider's stable OIDC subject, not email
+  alone.
+- The provider must return the configured email claim. Google Workspace logins
+  must also include a verified email and matching hosted domain.
+- Invitation-gated account creation requires an active invitation for the exact
+  asserted email.
+- New SSO-created accounts are scoped to the organization and cannot become
+  camelAI platform superusers.
+- SSO sessions are restricted to the organization that issued them.
+- Client secrets are encrypted at rest and are never shown again after saving.
