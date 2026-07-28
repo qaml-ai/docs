@@ -1,11 +1,11 @@
 ---
 title: 'Enterprise SSO'
-description: 'Connect your camelAI organization to Google Workspace or another OpenID Connect provider.'
+description: 'Connect your camelAI organization to Google Workspace, Microsoft Entra ID, Okta, Auth0, or another OpenID Connect provider.'
 ---
 
 Enterprise SSO lets people sign in to a camelAI organization through your
 identity provider. camelAI supports OpenID Connect (OIDC), including Google
-Workspace.
+Workspace, Microsoft Entra ID, Okta, and Auth0.
 
 SSO is available on the Enterprise plan. Organization owners and admins can
 configure and manage it.
@@ -33,53 +33,197 @@ your organization Team settings, then send them the SSO sign-in URL. They do not
 need to create a password-based camelAI account or accept the invitation link
 first. Their verified SSO login consumes the invitation.
 
-## Set up Google Workspace
+## Configure your identity provider
 
-<Steps>
-  <Step title="Copy the camelAI callback URL">
-    In camelAI, open **Settings → Organization → Single sign-on** and copy the
-    callback URL shown on the page.
+Start in camelAI under **Settings → Organization → Single sign-on**. Copy the
+callback URL shown on the page and use it exactly in your identity provider. It
+normally looks like:
 
-    Use the displayed value exactly. It normally looks like:
+```text
+https://camelai.dev/api/auth/enterprise-oidc/callback
+```
+
+Choose your provider below. camelAI uses the issuer, client credentials, token
+authentication method, and email claim. It automatically discovers the
+authorization, token, user info, and signing-key endpoints.
+
+<Tabs>
+  <Tab title="Google Workspace">
+    <Steps>
+      <Step title="Configure the consent screen">
+        Open the [Google Auth Platform](https://console.cloud.google.com/auth/overview)
+        in a Google Cloud project owned by your organization.
+
+        Set the app audience to **Internal** so only users in your Google
+        Workspace organization can authorize it.
+      </Step>
+      <Step title="Create a web OAuth client">
+        Create an OAuth client with the application type **Web application**.
+        Add the camelAI callback URL under **Authorized redirect URIs**. You can
+        leave **Authorized JavaScript origins** blank.
+
+        Google may take a few minutes to apply a newly added redirect URI.
+      </Step>
+      <Step title="Enter the connection in camelAI">
+        Copy the client ID and client secret, then use:
+
+        | camelAI field | Value |
+        | --- | --- |
+        | Issuer URL | `https://accounts.google.com` |
+        | Token endpoint authentication | **Client secret POST** |
+        | Email claim | **email** |
+        | Allowed email domains | Leave blank for the first test, or enter your exact Workspace domain |
+
+        camelAI requests the `openid`, `email`, and `profile` scopes. It does
+        not request access to Gmail, Drive, or other Workspace data.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Microsoft Entra ID">
+    <Steps>
+      <Step title="Create a single-tenant app registration">
+        In the [Microsoft Entra admin center](https://entra.microsoft.com/),
+        open **Identity → Applications → App registrations** and select
+        **New registration**.
+
+        Choose **Accounts in this organizational directory only**. Under
+        **Redirect URI**, choose **Web** and enter the camelAI callback URL.
+      </Step>
+      <Step title="Create the client secret">
+        Open **Certificates & secrets**, create a client secret, and copy its
+        **Value** before leaving the page.
+
+        From **Overview**, also copy the **Application (client) ID** and
+        **Directory (tenant) ID**.
+      </Step>
+      <Step title="Enter the connection in camelAI">
+        Use:
+
+        | camelAI field | Value |
+        | --- | --- |
+        | Issuer URL | `https://login.microsoftonline.com/<directory-tenant-id>/v2.0` |
+        | Client ID | Application (client) ID |
+        | Client secret | Client secret **Value** |
+        | Token endpoint authentication | **Client secret POST** |
+        | Email claim | **preferred_username** |
+        | Allowed email domains | Leave blank for the first test, or enter your exact company domain |
+
+        Use your tenant ID in the issuer. Do not use the multitenant `common`
+        or `organizations` endpoints.
+      </Step>
+      <Step title="Limit access in Entra">
+        In **Enterprise applications**, open the application and assign the
+        users or groups that should be able to use camelAI. If assignment is
+        required, confirm your test user is assigned.
+      </Step>
+    </Steps>
+
+    See [Microsoft's OIDC reference](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc)
+    for the tenant-specific discovery format.
+  </Tab>
+  <Tab title="Okta">
+    <Steps>
+      <Step title="Create an OIDC web application">
+        In the Okta Admin Console, open **Applications → Applications** and
+        select **Create App Integration**.
+
+        Choose **OIDC - OpenID Connect**, then **Web Application**. Keep
+        **Authorization Code** enabled and add the camelAI callback URL as a
+        sign-in redirect URI.
+      </Step>
+      <Step title="Assign users and copy credentials">
+        Assign the people or groups that should use camelAI. From the
+        application's **General** tab, copy the client ID and client secret.
+      </Step>
+      <Step title="Enter the connection in camelAI">
+        For the simplest SSO setup, use Okta's organization authorization
+        server:
+
+        | camelAI field | Value |
+        | --- | --- |
+        | Issuer URL | `https://<your-okta-domain>` |
+        | Token endpoint authentication | **Client secret Basic** |
+        | Email claim | **email** |
+        | Allowed email domains | Leave blank for the first test, or enter your exact company domain |
+
+        If your organization already uses a custom authorization server, enter
+        its exact issuer instead, such as
+        `https://<your-okta-domain>/oauth2/default`. Confirm it has an access
+        policy that allows this application.
+      </Step>
+    </Steps>
+
+    See Okta's guides for [Authorization Code web applications](https://developer.okta.com/docs/guides/implement-grant-type/authcode/main/)
+    and [authorization servers](https://developer.okta.com/docs/concepts/auth-servers/).
+  </Tab>
+  <Tab title="Auth0">
+    <Steps>
+      <Step title="Create a regular web application">
+        In the Auth0 Dashboard, open **Applications → Applications** and select
+        **Create Application**. Choose **Regular Web Applications**.
+      </Step>
+      <Step title="Configure the callback and credentials">
+        In **Settings**, add the camelAI callback URL to **Allowed Callback
+        URLs**.
+
+        In **Credentials**, set **Token Endpoint Authentication Method** to
+        **Post**. Copy the application's domain, client ID, and client secret.
+        Make sure the connections your team uses are enabled for the
+        application.
+      </Step>
+      <Step title="Enter the connection in camelAI">
+        Use:
+
+        | camelAI field | Value |
+        | --- | --- |
+        | Issuer URL | Your exact Auth0 issuer, such as `https://<tenant>.<region>.auth0.com/` |
+        | Token endpoint authentication | **Client secret POST** |
+        | Email claim | **email** |
+        | Allowed email domains | Leave blank for the first test, or enter your exact company domain |
+
+        Keep the trailing slash in the Auth0 issuer. If you use an Auth0 custom
+        domain, use that domain consistently for the issuer and application
+        configuration.
+      </Step>
+    </Steps>
+
+    See Auth0's guides for [regular web applications](https://auth0.com/docs/get-started/auth0-overview/create-applications/regular-web-apps)
+    and [application settings](https://auth0.com/docs/get-started/applications/application-settings).
+  </Tab>
+  <Tab title="Custom OIDC">
+    Your provider must publish a standard discovery document from:
 
     ```text
-    https://camelai.dev/api/auth/enterprise-oidc/callback
+    <issuer>/.well-known/openid-configuration
     ```
-  </Step>
-  <Step title="Configure the Google OAuth consent screen">
-    Open the [Google Auth Platform](https://console.cloud.google.com/auth/overview)
-    in a Google Cloud project owned by your organization.
 
-    Set the app audience to **Internal** so only users in your Google Workspace
-    organization can authorize it.
-  </Step>
-  <Step title="Create a web OAuth client">
-    Create an OAuth client with the application type **Web application**.
+    The document must include HTTPS authorization, token, and JWKS endpoints.
+    Create a confidential web application in your provider, register the
+    callback URL shown in camelAI, and configure it to return a stable `sub`
+    identifier plus an `email` or `preferred_username` claim.
 
-    Add the camelAI callback URL under **Authorized redirect URIs**. You can
-    leave **Authorized JavaScript origins** blank.
+    Enter the issuer URL, client credentials, matching token endpoint
+    authentication method, and email claim in camelAI.
 
-    Google may take a few minutes to apply a newly added redirect URI.
-  </Step>
-  <Step title="Enter the connection in camelAI">
-    Copy the client ID and client secret into camelAI, then use these values:
+    <Note>
+      Enter the provider's exact issuer value, not the discovery document URL.
+      For example, enter `https://accounts.google.com`, not a URL ending in
+      `/.well-known/openid-configuration`.
+    </Note>
+  </Tab>
+</Tabs>
 
-    | camelAI field | Google Workspace value |
-    | --- | --- |
-    | Issuer URL | `https://accounts.google.com` |
-    | Token endpoint authentication | **Client secret POST** |
-    | Email claim | **email** |
-    | Allowed email domains | Leave blank for the first test, or enter your exact Workspace domain |
+## Test and enable SSO
 
-    camelAI requests the `openid`, `email`, and `profile` scopes. It does not
-    request access to Gmail, Drive, or other Workspace data.
-  </Step>
+<Steps>
   <Step title="Test the connection">
-    Click **Test connection** and complete the Google login with a regular
-    Workspace user.
+    Click **Test connection** and complete the provider login with a regular
+    organization user.
 
     camelAI checks the discovery document, authorization and token endpoints,
-    signing keys, token exchange, verified email, and Google Workspace domain.
+    signing keys, token exchange, and returned email. Google Workspace tests
+    also verify the email and hosted domain.
+
     The test does not create a user, link an account, or enable SSO.
   </Step>
   <Step title="Enable SSO">
@@ -90,29 +234,6 @@ first. Their verified SSO login consumes the invitation.
     internal app launcher.
   </Step>
 </Steps>
-
-## Set up another OIDC provider
-
-Your provider must publish a standard discovery document from:
-
-```text
-<issuer>/.well-known/openid-configuration
-```
-
-The document must include HTTPS authorization, token, and JWKS endpoints.
-Create a web application in your provider, register the callback URL shown in
-camelAI, and configure it to return a stable subject identifier and email
-claim.
-
-Enter the issuer URL, client credentials, token endpoint authentication method,
-and email claim in camelAI. camelAI discovers the remaining endpoints
-automatically.
-
-<Note>
-  The issuer URL is the provider's exact issuer value, not the discovery
-  document URL. For example, enter `https://accounts.google.com`, not a URL
-  ending in `/.well-known/openid-configuration`.
-</Note>
 
 ## Allowed email domains
 
