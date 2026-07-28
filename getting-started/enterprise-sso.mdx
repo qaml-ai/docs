@@ -18,11 +18,6 @@ You need:
 - Owner or admin access to your camelAI organization
 - A regular user account in your identity provider for testing
 
-<Warning>
-  Use a regular member account for the connection test. camelAI platform
-  superusers cannot sign in through organization SSO.
-</Warning>
-
 ## Choose who can join
 
 The **Allow uninvited SSO users** setting controls whether an identity provider
@@ -207,7 +202,6 @@ workspace access.
   must also include a verified email and matching hosted domain.
 - Invitation-gated account creation requires an active invitation for the exact
   asserted email.
-- New SSO-created accounts are scoped to the organization and cannot become
-  camelAI platform superusers.
+- New SSO-created accounts are scoped to the organization.
 - SSO sessions are restricted to the organization that issued them.
 - Client secrets are encrypted at rest and are never shown again after saving.
