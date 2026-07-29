@@ -21,6 +21,17 @@ bun run dev
 bun run deploy
 ```
 
+Cloudflare Workers Builds uses the generated config for production and preview
+deployments:
+
+```bash
+npm run ci:deploy
+npm run ci:preview
+```
+
+`ci:preview` uploads a Worker version and creates a preview URL without
+promoting that version to production traffic.
+
 ## How it works
 
 | Piece | Location |

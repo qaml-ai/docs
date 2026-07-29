@@ -1,0 +1,161 @@
+---
+title: 'Deploy a single node on AWS'
+description: 'Provision self-hosted camelAI on EC2 with Terraform or CloudFormation.'
+sidebarTitle: 'AWS'
+---
+
+camelAI includes Terraform and CloudFormation templates for the supported
+single-node deployment. Both templates implement the same Docker Compose
+release contract.
+
+They provision:
+
+- An Ubuntu 24.04 EC2 instance with IMDSv2 required
+- An encrypted gp3 data volume for the checkout, Docker data, and backups
+- A security group that exposes only the web proxy and optional break-glass SSH
+- SSM Session Manager access
+- Least-privilege reads for configured Secrets Manager secrets
+- An Elastic IP and optional Route53 records
+- Caddy in front of bundled Pomerium
+- A systemd service that pulls and starts the selected release
+- Installation-time project-build, notebook, and database-query smokes
+
+The default instance type is `t3a.xlarge`. The subnet and selected Availability
+Zone must match.
+
+## Before you start
+
+You need:
+
+- AWS credentials that can create EC2, EBS, IAM, SSM, security-group, and optional Route53 resources
+- A VPC and subnet with outbound internet access, or permission to use the default VPC
+- A `selfhost-v*` release manifest with six digest-pinned camelAI images and the tested Pomerium digest
+- A main hostname, authenticate hostname, and deployed-app wildcard domain
+- An OIDC application for bundled Pomerium
+- Four AWS Secrets Manager secrets
+
+Store each secret as its raw `SecretString`, not as a JSON object:
+
+1. The AI provider API key
+2. The Pomerium OIDC client secret
+3. The PEM certificate chain
+4. The matching unencrypted PEM private key
+
+The certificate must cover the main hostname, authenticate hostname, and
+deployed-app wildcard.
+
+<Warning>
+  The AWS templates consume release images. Do not point a production stack at
+  mutable tags or combine images from different releases.
+</Warning>
+
+## Terraform
+
+Clone and check out the selected release:
+
+```bash
+git clone https://github.com/qaml-ai/camelAI.git
+cd camelAI
+git checkout --detach selfhost-vX.Y.Z
+cd infra/selfhost/terraform
+cp terraform.tfvars.example terraform.tfvars
+```
+
+Edit `terraform.tfvars`. At minimum, replace:
+
+- `repository_ref`
+- All six camelAI `*_image` values and `pomerium_image`
+- The main, authenticate, and wildcard hostnames
+- Route53 settings, or disable automatic DNS creation
+- The AI, Pomerium, certificate, and private-key secret ARNs
+- The OIDC issuer and client ID
+
+Then run:
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+Terraform waits for the VM bootstrap marker through an SSM association. The
+apply fails if Compose startup, the health check, or any attached-runtime smoke
+fails.
+
+Use the outputs to inspect the host:
+
+```bash
+aws ssm start-session --target <instance-id>
+sudo cloud-init status --wait
+sudo journalctl -u camelai-selfhost -u caddy --no-pager
+```
+
+Prefer SSM Session Manager. Leave `ssh_ingress_cidrs` empty unless you need
+narrowly scoped break-glass SSH access.
+
+## CloudFormation
+
+Deploy the template into a subnet with outbound internet access:
+
+```bash
+aws cloudformation deploy \
+  --stack-name camelai-selfhost \
+  --template-file infra/selfhost/cloudformation/aws-single-node.yaml \
+  --capabilities CAPABILITY_IAM \
+  --parameter-overrides \
+    VpcId=vpc-... \
+    SubnetId=subnet-... \
+    AvailabilityZone=us-east-1a \
+    RepositoryRef=selfhost-vX.Y.Z \
+    AppImage=ghcr.io/qaml-ai/camelai-selfhost-app@sha256:... \
+    LocalArtifactsImage=ghcr.io/qaml-ai/camelai-selfhost-local-artifacts@sha256:... \
+    ProjectBuildImage=ghcr.io/qaml-ai/camelai-selfhost-project-build@sha256:... \
+    AnalysisImage=ghcr.io/qaml-ai/camelai-selfhost-analysis@sha256:... \
+    DbQueryImage=ghcr.io/qaml-ai/camelai-selfhost-db-query@sha256:... \
+    ContainerEgressImage=ghcr.io/qaml-ai/camelai-selfhost-container-egress@sha256:... \
+    PomeriumImage=pomerium/pomerium@sha256:... \
+    MainHostname=camel.example.com \
+    AppVanityDomain=apps.example.com \
+    AuthProvider=bundled-pomerium \
+    AuthDefaultOrgName='Example Corp' \
+    PomeriumAuthenticateUrl=https://authenticate.example.com \
+    PomeriumAuthenticateHostname=authenticate.example.com \
+    PomeriumIdpProvider=oidc \
+    PomeriumIdpProviderUrl=https://idp.example.com/application/o/camelai/ \
+    PomeriumIdpClientId=camelai \
+    PomeriumIdpClientSecretArn=arn:aws:secretsmanager:... \
+    SelfhostAiApiKeySecretArn=arn:aws:secretsmanager:... \
+    TlsCertificateSecretArn=arn:aws:secretsmanager:... \
+    TlsPrivateKeySecretArn=arn:aws:secretsmanager:...
+```
+
+CloudFormation waits up to 30 minutes for bootstrap. Its wait condition
+receives success only after the HTTP health check and all three runtime smokes
+pass.
+
+## TLS and network modes
+
+The default `provided` TLS mode reads the certificate and key from Secrets
+Manager and configures Caddy on the VM.
+
+Use external TLS only behind a load balancer or identity proxy. In external
+mode, port 80 is an origin port. Restrict `web_ingress_cidrs` or
+`WebIngressCidr` to the upstream proxy and never expose it directly to the
+internet.
+
+When an external load balancer terminates TLS, the VM must be able to reach its
+public camelAI HTTPS hostname through that load balancer. camelAI uses that
+path to retrieve Pomerium's signing keys.
+
+## Deletion and recovery
+
+The encrypted data volume has snapshot retention configured when the
+CloudFormation stack is deleted. Before deleting a production stack:
+
+1. Run and verify an application backup.
+2. Confirm the data-volume snapshot policy and resulting snapshot.
+3. Retain the AI, OIDC, and TLS secrets.
+4. Record the release manifest and exact image digests.
+
+See [Operations](/self-hosting/operations) for application backups, restores,
+and verified upgrades.

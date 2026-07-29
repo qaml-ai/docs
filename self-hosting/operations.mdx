@@ -1,0 +1,244 @@
+---
+title: 'Operate a self-hosted installation'
+description: 'Monitor, validate, back up, restore, and upgrade a self-hosted camelAI node.'
+sidebarTitle: 'Operations'
+---
+
+Run operational commands from the checked-out camelAI repository on the VM.
+Keep `.env.selfhost` readable only by the operator account because it contains
+identity, signing, integration, and AI-provider secrets.
+
+## Check health
+
+Use both the readiness endpoint and the host doctor:
+
+```bash
+curl --fail --silent http://127.0.0.1:3001/api/selfhost/health
+bun run selfhost:doctor
+```
+
+The health response includes a versioned capability contract. Builds, deploys,
+notebooks, and SQL should report `state: "configured"`.
+
+`configured` means the Docker image and `workerd` namespace are wired. It does
+not mean a functional job ran during the lightweight HTTP check. The response
+therefore includes a verification command for each attached runtime.
+
+Missing required runtime bindings make readiness fail with HTTP 503.
+Intentionally disabled outbound email and SMTP do not make the service
+unhealthy.
+
+## Run attached-runtime smokes
+
+Run all three smokes after initial installation, after an upgrade, and after a
+Docker or host-networking change:
+
+```bash
+bun --env-file=.env.selfhost run selfhost:container:smoke:project
+bun --env-file=.env.selfhost run selfhost:container:smoke:analysis
+bun --env-file=.env.selfhost run selfhost:container:smoke:db-query
+```
+
+The project smoke launches a build container and executes a small build. The
+analysis smoke starts Jupyter and executes a notebook. The database-query smoke
+loads and exercises the supported query drivers. Each command removes its
+smoke container afterward.
+
+## Inspect containers and logs
+
+For the default bundled-Pomerium direct-TLS deployment:
+
+```bash
+docker compose \
+  --env-file .env.selfhost \
+  -f docker-compose.selfhost.yml \
+  -f docker-compose.selfhost.pomerium.yml \
+  -f docker-compose.selfhost.pomerium-loopback.yml \
+  ps
+
+docker compose \
+  --env-file .env.selfhost \
+  -f docker-compose.selfhost.yml \
+  -f docker-compose.selfhost.pomerium.yml \
+  -f docker-compose.selfhost.pomerium-loopback.yml \
+  logs --tail=200 app pomerium
+```
+
+If you use external Pomerium or Cloudflare Access, omit both Pomerium overlay
+files. If `SELFHOST_POMERIUM_LOOPBACK_HTTPS=0`, omit only the loopback overlay.
+
+On an AWS-provisioned host, also inspect:
+
+```bash
+sudo cloud-init status --wait
+sudo journalctl -u camelai-selfhost -u caddy --no-pager
+```
+
+## Back up
+
+Create a backup of durable application state, local Artifact repositories, and
+the Pomerium databroker:
+
+```bash
+bun run selfhost:backup
+```
+
+Backups are stored under `.selfhost/backups/<timestamp>`.
+
+`.env.selfhost` is intentionally excluded because it contains secrets. Store a
+separate encrypted copy with access controls appropriate for your
+organization. Also retain the TLS material and the release manifest used by
+the installation.
+
+Copy backups off the VM and test restores on a separate node on a regular
+schedule. A backup that exists only on the application disk does not protect
+against disk or instance loss.
+
+## Restore
+
+Stop the stack before restoring:
+
+```bash
+docker compose \
+  --env-file .env.selfhost \
+  -f docker-compose.selfhost.yml \
+  -f docker-compose.selfhost.pomerium.yml \
+  -f docker-compose.selfhost.pomerium-loopback.yml \
+  down
+
+bun run selfhost:restore -- .selfhost/backups/<timestamp>
+```
+
+Restore the matching `.env.selfhost`, TLS material, code release, and image
+digests before starting. Then run the doctor, start the stack, and execute all
+three runtime smokes.
+
+## Upgrade
+
+Download `selfhost-release.json` and
+`selfhost-upgrade-bootstrap.mjs` from the target release workflow artifact.
+Keep both files outside the mutable repository checkout.
+
+Run:
+
+```bash
+bun run selfhost:upgrade -- \
+  --release selfhost-vX.Y.Z \
+  --manifest /secure/path/selfhost-release.json
+```
+
+The upgrader:
+
+1. Requires a clean tracked worktree.
+2. Verifies the target Git revision and all seven digest-pinned images.
+3. Backs up durable volumes.
+4. Saves the previous checkout and `.env.selfhost`.
+5. Hands control to the target release's upgrader.
+6. Pulls and starts the target images.
+7. Runs the doctor and all three attached-runtime smokes.
+8. Prints the exact rollback command.
+
+For an installation whose current upgrader predates target-code handoff, run
+the standalone bootstrap once:
+
+```bash
+node /secure/path/selfhost-upgrade-bootstrap.mjs \
+  --repo "$PWD" \
+  --release selfhost-vX.Y.Z \
+  --manifest /secure/path/selfhost-release.json
+```
+
+Use the exact rollback path printed by a successful upgrade:
+
+```bash
+bun run selfhost:upgrade -- --rollback .selfhost/releases/<timestamp>
+```
+
+<Warning>
+  Runtime rollback does not reverse D1 migrations. If a schema rollback is
+  required, stop the stack and restore the matching pre-upgrade volume backup
+  before starting the previous release.
+</Warning>
+
+AWS-provisioned hosts install a wrapper around the same verified upgrader:
+
+```bash
+sudo camelai-selfhost-upgrade \
+  --release selfhost-vX.Y.Z \
+  --manifest /secure/path/selfhost-release.json
+```
+
+## Protect the Docker host
+
+The application must have read-write access to `/var/run/docker.sock` to create
+build, notebook, query, and egress containers. Treat application-container
+control as root-equivalent VM access.
+
+- Do not expose the Docker API over TCP.
+- Keep the camelAI application and local Artifact ports on loopback.
+- Restrict host administration to SSM or a narrow management network.
+- Apply operating-system and Docker security updates on a tested schedule.
+- Monitor disk use under Docker's data root and the backup directory.
+- Restrict outbound traffic according to your provider and package-registry needs.
+- Protect `.env.selfhost`, Pomerium secrets, TLS keys, and backups.
+
+The app service uses Linux host networking because the attached container
+egress sidecars communicate through loopback. Changing it to a nested Compose
+bridge prevents the runtime containers from becoming ready.
+
+## Outbound email
+
+Outbound email is disabled. Setting `EMAIL_FROM_ADDRESS`,
+`WORKSPACE_EMAIL_DOMAIN`, or SMTP-looking environment variables does not enable
+delivery.
+
+Until a supported internal SMTP transport is implemented:
+
+- Provision users through Pomerium or Cloudflare Access.
+- Deliver invitation URLs through an approved internal channel.
+- Route support requests through your existing support process.
+- Do not add a fake SMTP sink that accepts and discards messages.
+
+## Troubleshooting
+
+### Pomerium cannot read its configuration
+
+Keep `.selfhost/pomerium/config.yaml`, secret files, and TLS keys owned by the
+operator and mode `0600`. Use the repository's Pomerium Compose overlay, which
+retains the minimal `DAC_OVERRIDE` capability needed to read those protected
+bind mounts on Linux.
+
+### A runtime container never becomes ready
+
+Confirm:
+
+- The host is x86_64.
+- Docker has at least 4 CPUs and 7.5 GiB usable memory.
+- The application container uses host networking.
+- The Docker socket is mounted read-write.
+- The configured runtime and container-egress images come from one release.
+- Host firewall rules do not block Docker bridge control traffic.
+
+Run `bun run selfhost:doctor`, then run the failing runtime's smoke command.
+
+### The control plane returns a redirect loop
+
+Confirm that:
+
+- `SELFHOST_PUBLIC_BASE_URL` and `SELFHOST_MAIN_HOSTNAME` describe the same host.
+- `POMERIUM_AUTHENTICATE_URL` uses a distinct host.
+- The original `Host` header reaches Pomerium and camelAI.
+- The certificate covers both hosts.
+- The VM can resolve the public hostnames.
+
+### Public apps redirect to sign-in
+
+The control-plane route and deployed-app wildcard route must remain separate.
+Regenerate bundled Pomerium configuration with:
+
+```bash
+bun run selfhost:configure
+```
+
+For an external proxy, configure the wildcard app route without forced
+authentication and let camelAI enforce each app's public or private setting.

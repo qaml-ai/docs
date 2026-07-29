@@ -9,6 +9,7 @@
 		"start": "open-mdx-docs start",
 		"deploy": "open-mdx-docs deploy",
 		"ci:deploy": "wrangler deploy -c .open-mdx-docs/wrangler.json --keep-vars",
+		"ci:preview": "wrangler versions upload -c .open-mdx-docs/wrangler.json --keep-vars",
 		"doctor": "open-mdx-docs doctor"
 	},
 	"devDependencies": {
