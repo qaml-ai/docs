@@ -38,13 +38,11 @@ discovery document and JWKS.
 
 ### Configure Pomerium
 
-The minimum direct-TLS configuration is:
+The minimum configuration is:
 
 ```dotenv
 SELFHOST_AUTH_MODE=bundled-pomerium
 SELFHOST_MAIN_HOSTNAME=camel.example.com
-SELFHOST_POMERIUM_TLS_MODE=direct
-SELFHOST_POMERIUM_LOOPBACK_HTTPS=1
 
 POMERIUM_AUTHENTICATE_URL=https://authenticate.example.com
 POMERIUM_AUTHENTICATE_HOSTNAME=authenticate.example.com
@@ -69,37 +67,20 @@ configuration and secret files under `.selfhost/pomerium/`. The client secret,
 cookie secret, and shared secret are mounted as protected files instead of
 being placed in the Pomerium container environment.
 
-On Linux, the Pomerium container retains only `NET_BIND_SERVICE` and
-`DAC_OVERRIDE`. `DAC_OVERRIDE` lets it read the operator-owned `0600` bind
+On Linux, the Pomerium container retains only `DAC_OVERRIDE`, which lets it
+read the operator-owned `0600` bind
 mounts without making those files group-readable or world-readable.
 
 ### Configure TLS
 
-For a manual Compose deployment, use direct TLS:
+Caddy is the TLS front door for Docker Compose and AWS deployments. Pomerium
+always listens on plaintext `127.0.0.1:5444` behind Caddy and never binds a
+public port.
 
-```dotenv
-SELFHOST_POMERIUM_TLS_MODE=direct
-SELFHOST_POMERIUM_LOOPBACK_HTTPS=1
-```
-
-Place the files at:
-
-```text
-.selfhost/pomerium/tls.crt
-.selfhost/pomerium/tls.key
-```
-
-The key must be an unencrypted PEM key protected by file permissions. The
-certificate must cover the main hostname, authenticate hostname, deployed-app
-wildcard, and any separate iframe wildcard.
-
-`SELFHOST_POMERIUM_LOOPBACK_HTTPS=1` adds a local HTTPS route that camelAI uses
-to retrieve Pomerium's signing keys without depending on external DNS
-hairpinning.
-
-AWS deployments put Caddy in front of Pomerium and use
-`SELFHOST_POMERIUM_TLS_MODE=upstream`. Pomerium then listens on
-`127.0.0.1:5444`. Never expose this plaintext listener.
+Use automatic Cloudflare or Route 53 DNS validation for the simplest
+certificate setup. Operator-provided PEM files and an existing enterprise TLS
+terminator are also supported. See
+[Configure TLS and DNS](/self-hosting/docker-compose#configure-tls-and-dns).
 
 ### Test the route
 
@@ -122,6 +103,7 @@ has one:
 
 ```dotenv
 SELFHOST_AUTH_MODE=external-pomerium
+SELFHOST_TLS_MODE=external
 POMERIUM_AUTHENTICATE_URL=https://authenticate.example.com
 POMERIUM_JWKS_URL=https://camel.example.com/.well-known/pomerium/jwks.json
 POMERIUM_ISSUER=camel.example.com
@@ -143,6 +125,7 @@ Use an existing Cloudflare Access application with:
 
 ```dotenv
 SELFHOST_AUTH_MODE=cloudflare-access
+SELFHOST_TLS_MODE=external
 CLOUDFLARE_ACCESS_TEAM_DOMAIN=https://example.cloudflareaccess.com
 CLOUDFLARE_ACCESS_AUD=your-access-application-aud
 CLOUDFLARE_ACCESS_DEFAULT_ORG_NAME=Example Corp

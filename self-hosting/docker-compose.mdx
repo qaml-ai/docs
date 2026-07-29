@@ -5,7 +5,7 @@ sidebarTitle: 'Docker Compose'
 ---
 
 This guide installs camelAI on an existing Linux VM. The default configuration
-uses bundled Pomerium, direct TLS, local persistent volumes, and attached
+uses bundled Pomerium, automatic TLS, local persistent volumes, and attached
 Docker containers for project builds, notebooks, and database queries.
 
 ## Before you start
@@ -24,7 +24,7 @@ Prepare these values:
 | OIDC issuer URL | `https://idp.example.com/application/o/camelai/` |
 | OIDC client ID and secret | Values from your identity provider |
 | AI provider API key | A supported provider key |
-| TLS certificate and unencrypted PEM key | Covers the main, authenticate, and wildcard hosts |
+| DNS validation credential | Cloudflare API token or Route 53 access |
 
 Register this callback URL in your OIDC application:
 
@@ -37,7 +37,7 @@ identity-provider, and external-proxy options.
 
 ## Choose a release
 
-Production installations should use a `selfhost-v*` release and all six
+Production installations should use a `selfhost-v*` release and all seven
 digest-pinned camelAI images from that release's `selfhost-release.json`
 manifest. The manifest also pins the Pomerium image tested with the release.
 Do not mix images from different releases.
@@ -61,7 +61,7 @@ bun install --frozen-lockfile
 bun run selfhost:init
 ```
 
-Set `SELFHOST_DEPLOYMENT_MODE=release` in `.env.selfhost`, then copy all seven
+Set `SELFHOST_DEPLOYMENT_MODE=release` in `.env.selfhost`, then copy all eight
 digest-pinned image references from the manifest:
 
 ```dotenv
@@ -72,6 +72,7 @@ SELFHOST_PROJECT_BUILD_IMAGE=ghcr.io/qaml-ai/camelai-selfhost-project-build@sha2
 SELFHOST_ANALYSIS_IMAGE=ghcr.io/qaml-ai/camelai-selfhost-analysis@sha256:...
 SELFHOST_DB_QUERY_IMAGE=ghcr.io/qaml-ai/camelai-selfhost-db-query@sha256:...
 SELFHOST_CONTAINER_EGRESS_IMAGE=ghcr.io/qaml-ai/camelai-selfhost-container-egress@sha256:...
+SELFHOST_CADDY_IMAGE=ghcr.io/qaml-ai/camelai-selfhost-caddy@sha256:...
 SELFHOST_POMERIUM_IMAGE=pomerium/pomerium@sha256:...
 ```
 
@@ -103,8 +104,6 @@ LOCAL_APP_VANITY_DOMAIN=apps.example.com
 LOCAL_APP_IFRAME_DOMAIN=apps.example.com
 
 SELFHOST_AUTH_MODE=bundled-pomerium
-SELFHOST_POMERIUM_TLS_MODE=direct
-SELFHOST_POMERIUM_LOOPBACK_HTTPS=1
 POMERIUM_AUTHENTICATE_URL=https://authenticate.example.com
 POMERIUM_AUTHENTICATE_HOSTNAME=authenticate.example.com
 POMERIUM_ISSUER=camel.example.com
@@ -161,25 +160,62 @@ Choose one AI provider:
   </Tab>
 </Tabs>
 
-camelCode is hosted by camelAI and is not a self-host provider. New
-self-hosted threads use the model configured for your selected provider.
+## Configure TLS and DNS
 
-## Install TLS and create DNS
+Caddy is the Compose ingress service. It terminates TLS in automatic and
+provided modes, or exposes a private HTTP origin in external mode. Pomerium
+remains on the loopback-only `127.0.0.1:5444` upstream. Choose a certificate
+mode:
 
-Install the certificate chain and key with restrictive permissions:
+<Tabs>
+  <Tab title="Cloudflare DNS (recommended)">
+    ```dotenv
+    SELFHOST_TLS_MODE=automatic
+    SELFHOST_TLS_DNS_PROVIDER=cloudflare
+    SELFHOST_TLS_ACME_EMAIL=platform-ops@example.com
+    SELFHOST_TLS_CLOUDFLARE_API_TOKEN=...
+    ```
 
-```bash
-install -d -m 0700 .selfhost/pomerium
-install -m 0600 /secure/path/tls.crt .selfhost/pomerium/tls.crt
-install -m 0600 /secure/path/tls.key .selfhost/pomerium/tls.key
-```
+    Create a Cloudflare API token with Zone Read and DNS Edit on only this DNS
+    zone. Caddy uses it for ACME DNS validation and automatic renewal,
+    including the deployed-app wildcard.
+  </Tab>
+  <Tab title="Route 53 DNS">
+    ```dotenv
+    SELFHOST_TLS_MODE=automatic
+    SELFHOST_TLS_DNS_PROVIDER=route53
+    SELFHOST_TLS_ACME_EMAIL=platform-ops@example.com
+    SELFHOST_TLS_ROUTE53_HOSTED_ZONE_ID=Z0123456789EXAMPLE
+    SELFHOST_TLS_AWS_REGION=us-east-1
+    ```
 
-The certificate must cover:
+    On EC2, prefer an instance role. On another VM, set the optional
+    `SELFHOST_TLS_AWS_ACCESS_KEY_ID`,
+    `SELFHOST_TLS_AWS_SECRET_ACCESS_KEY`, and session-token fields.
+  </Tab>
+  <Tab title="Provided PEM">
+    ```dotenv
+    SELFHOST_TLS_MODE=provided
+    SELFHOST_TLS_CERTIFICATE_FILE=/secure/path/tls.crt
+    SELFHOST_TLS_PRIVATE_KEY_FILE=/secure/path/tls.key
+    ```
 
-- `camel.example.com`
-- `authenticate.example.com`
-- `*.apps.example.com`
-- A separate iframe wildcard, if you configure one
+    The unencrypted PEM key and certificate chain must cover the main,
+    authenticate, deployed-app wildcard, and any separate iframe wildcard
+    hostnames.
+  </Tab>
+  <Tab title="Existing TLS proxy">
+    ```dotenv
+    SELFHOST_TLS_MODE=external
+    SELFHOST_TLS_EXTERNAL_BIND_ADDRESS=127.0.0.1
+    SELFHOST_TLS_EXTERNAL_PORT=8080
+    ```
+
+    Point your existing TLS terminator at this HTTP origin and preserve the
+    original `Host` header. For a proxy on another host, bind to `0.0.0.0`
+    only after restricting the VM firewall to that proxy.
+  </Tab>
+</Tabs>
 
 Create DNS records that point all three host patterns to the VM:
 
@@ -209,7 +245,7 @@ Start the stack:
 bun run selfhost:up
 ```
 
-In source mode, this command builds all six camelAI images before starting.
+In source mode, this command builds all seven camelAI images before starting.
 
 ## Verify the installation
 
