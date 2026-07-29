@@ -1,0 +1,167 @@
+---
+title: 'Authentication and Pomerium'
+description: 'Protect self-hosted camelAI with bundled Pomerium, an existing Pomerium deployment, or Cloudflare Access.'
+sidebarTitle: 'Authentication'
+---
+
+A shared self-hosted installation must use an identity-aware proxy. Bundled
+Pomerium is the default and recommended option because it provides a complete
+OIDC sign-in path in the Docker Compose deployment.
+
+The camelAI control-plane hostname requires authentication. Deployed-app
+wildcard hosts route separately so an app can remain public when its owner
+chooses public visibility.
+
+## Bundled Pomerium
+
+Bundled Pomerium runs in all-in-one mode with a persistent file-backed
+databroker. It validates users with your OIDC provider and sends a signed
+`X-Pomerium-Jwt-Assertion` to camelAI.
+
+### Create the OIDC application
+
+Create a confidential web application in your identity provider with:
+
+| Setting | Value |
+| --- | --- |
+| Grant type | Authorization Code |
+| Redirect URI | `https://authenticate.example.com/oauth2/callback` |
+| Scopes | `openid`, `email`, and `profile` |
+| Client authentication | Client secret |
+
+Use a distinct authenticate hostname. Do not use the camelAI control-plane
+hostname or a hostname inside the deployed-app wildcard.
+
+For a generic OIDC provider, set `POMERIUM_IDP_PROVIDER=oidc` and use the exact
+issuer URL as `POMERIUM_IDP_PROVIDER_URL`. The provider must publish an OIDC
+discovery document and JWKS.
+
+### Configure Pomerium
+
+The minimum direct-TLS configuration is:
+
+```dotenv
+SELFHOST_AUTH_MODE=bundled-pomerium
+SELFHOST_MAIN_HOSTNAME=camel.example.com
+SELFHOST_POMERIUM_TLS_MODE=direct
+SELFHOST_POMERIUM_LOOPBACK_HTTPS=1
+
+POMERIUM_AUTHENTICATE_URL=https://authenticate.example.com
+POMERIUM_AUTHENTICATE_HOSTNAME=authenticate.example.com
+POMERIUM_ISSUER=camel.example.com
+POMERIUM_AUDIENCE=camel.example.com
+POMERIUM_DEFAULT_ORG_NAME=Example Corp
+
+POMERIUM_IDP_PROVIDER=oidc
+POMERIUM_IDP_PROVIDER_URL=https://idp.example.com/application/o/camelai/
+POMERIUM_IDP_CLIENT_ID=camelai
+POMERIUM_IDP_CLIENT_SECRET=replace-with-your-client-secret
+```
+
+Run:
+
+```bash
+bun run selfhost:configure
+```
+
+The command validates the hostnames and writes Pomerium's generated
+configuration and secret files under `.selfhost/pomerium/`. The client secret,
+cookie secret, and shared secret are mounted as protected files instead of
+being placed in the Pomerium container environment.
+
+On Linux, the Pomerium container retains only `NET_BIND_SERVICE` and
+`DAC_OVERRIDE`. `DAC_OVERRIDE` lets it read the operator-owned `0600` bind
+mounts without making those files group-readable or world-readable.
+
+### Configure TLS
+
+For a manual Compose deployment, use direct TLS:
+
+```dotenv
+SELFHOST_POMERIUM_TLS_MODE=direct
+SELFHOST_POMERIUM_LOOPBACK_HTTPS=1
+```
+
+Place the files at:
+
+```text
+.selfhost/pomerium/tls.crt
+.selfhost/pomerium/tls.key
+```
+
+The key must be an unencrypted PEM key protected by file permissions. The
+certificate must cover the main hostname, authenticate hostname, deployed-app
+wildcard, and any separate iframe wildcard.
+
+`SELFHOST_POMERIUM_LOOPBACK_HTTPS=1` adds a local HTTPS route that camelAI uses
+to retrieve Pomerium's signing keys without depending on external DNS
+hairpinning.
+
+AWS deployments put Caddy in front of Pomerium and use
+`SELFHOST_POMERIUM_TLS_MODE=upstream`. Pomerium then listens on
+`127.0.0.1:5444`. Never expose this plaintext listener.
+
+### Test the route
+
+After startup:
+
+1. Open the camelAI hostname in a private browser window.
+2. Confirm it redirects to the separate authenticate hostname.
+3. Complete sign-in with a regular identity-provider user.
+4. Confirm the browser returns to camelAI and creates or loads the configured organization.
+5. Open an unused hostname under the app wildcard and confirm it does not redirect to Pomerium.
+
+The last request may return an app-side not-found response until an app is
+deployed. That confirms the public wildcard route reached camelAI without
+forcing a control-plane login.
+
+## Existing Pomerium
+
+Use an operator-managed Pomerium deployment when your organization already
+has one:
+
+```dotenv
+SELFHOST_AUTH_MODE=external-pomerium
+POMERIUM_AUTHENTICATE_URL=https://authenticate.example.com
+POMERIUM_JWKS_URL=https://camel.example.com/.well-known/pomerium/jwks.json
+POMERIUM_ISSUER=camel.example.com
+POMERIUM_AUDIENCE=camel.example.com
+POMERIUM_DEFAULT_ORG_NAME=Example Corp
+```
+
+Configure the external proxy to:
+
+- Require an authenticated user for the camelAI control-plane hostname
+- Preserve the original `Host` header
+- Pass Pomerium identity headers
+- Support WebSocket upgrades
+- Route public deployed-app wildcard hosts without forcing authentication
+
+## Cloudflare Access
+
+Use an existing Cloudflare Access application with:
+
+```dotenv
+SELFHOST_AUTH_MODE=cloudflare-access
+CLOUDFLARE_ACCESS_TEAM_DOMAIN=https://example.cloudflareaccess.com
+CLOUDFLARE_ACCESS_AUD=your-access-application-aud
+CLOUDFLARE_ACCESS_DEFAULT_ORG_NAME=Example Corp
+```
+
+The Access policy must protect the camelAI control-plane hostname and pass its
+signed identity assertion. Configure deployed-app wildcard routing separately
+according to the visibility policy you want for published apps.
+
+## Local authentication bypass
+
+`LOCAL_AUTH_BYPASS=1` exists only for a loopback smoke test. Do not enable it on
+a shared VM or expand its allowed host list to a public hostname.
+
+## Email-dependent accounts
+
+Password signup is rejected in self-host mode because camelAI cannot deliver
+the verification email. Provision users through Pomerium or Cloudflare Access.
+
+Organization invitations can still be created, but camelAI reports that email
+delivery is unavailable. Copy the invitation URL and send it through an
+approved internal channel.

@@ -1,0 +1,119 @@
+---
+title: 'Self-host camelAI'
+description: 'Run camelAI on a single Linux VM with Docker Compose, your identity provider, and your AI provider.'
+sidebarTitle: 'Overview'
+---
+
+camelAI supports a single-node deployment for organizations that need to run
+the control plane and project data in their own environment. The supported
+topology is one x86_64 Linux VM running Docker Engine and Docker Compose.
+
+The deployment includes the camelAI application, local project storage,
+Pomerium authentication, and isolated containers for builds, notebooks, and
+database queries.
+
+<CardGroup cols={2}>
+  <Card title="Install with Docker Compose" icon="container" href="/self-hosting/docker-compose">
+    Configure and start camelAI on an existing Linux VM.
+  </Card>
+  <Card title="Deploy on AWS" icon="cloud" href="/self-hosting/aws">
+    Provision a single EC2 node with Terraform or CloudFormation.
+  </Card>
+</CardGroup>
+
+## Supported topology
+
+The self-hosted application runs under local `workerd`. It stores application
+state and project Git repositories in Docker volumes. When a user builds an
+app, runs a notebook, or queries a database, `workerd` starts a dedicated
+Docker container for that job.
+
+| Component | Implementation |
+| --- | --- |
+| Web application and APIs | camelAI application container running local `workerd` |
+| Authentication | Bundled Pomerium with OIDC, existing Pomerium, or Cloudflare Access |
+| Application state | Local Durable Objects, KV, R2, D1, queues, and workflows |
+| Project source and history | Local Artifact repositories in a persistent Docker volume |
+| Project builds and deploys | Attached project-build containers |
+| Notebook analysis | Attached Jupyter analysis containers |
+| SQL queries and exports | Attached database-query containers |
+| Published apps | Local dispatcher served through your wildcard app domain |
+
+This target does not provide multi-node failover or a managed control plane.
+Backups, VM availability, network policy, monitoring, and disaster recovery
+remain the operator's responsibility.
+
+## Requirements
+
+Use a VM with:
+
+- x86_64 Ubuntu 24.04 or another current x86_64 Linux distribution
+- At least 4 vCPUs and 8 GiB allocated RAM
+- 100 GiB of persistent disk recommended
+- Docker Engine and Docker Compose v2
+- Git, Node.js 22, and Bun 1.3.14
+- Outbound HTTPS access to GHCR, your AI provider, and package registries
+
+You also need:
+
+- A hostname for camelAI, such as `camel.example.com`
+- A separate Pomerium authenticate hostname, such as `authenticate.example.com`
+- A wildcard domain for deployed apps, such as `*.apps.example.com`
+- An OIDC application, or an existing Pomerium or Cloudflare Access deployment
+- An API key for Bedrock, Anthropic, OpenAI, OpenRouter, or a compatible custom provider
+- A TLS certificate that covers the required hostnames
+
+Docker may report 7.5 to 7.8 GiB of usable memory on an 8 GiB VM after normal
+kernel overhead.
+
+## Capability status
+
+| Capability | Status |
+| --- | --- |
+| Chat with Bedrock, Anthropic, OpenAI, OpenRouter, or a compatible provider | Supported with an API key |
+| Build and deploy generated applications | Supported |
+| Run notebooks | Supported |
+| Query connected databases | Supported |
+| Browser rendering | Supported |
+| Password signup and email verification | Not supported |
+| Outbound email | Disabled |
+| Internal SMTP | Not implemented |
+| Multi-node failover | Not included |
+
+<Warning>
+  Self-hosted camelAI does not send email. Verification email, invitation
+  delivery, the email-backed help form, and the agent's email tool are
+  unavailable. Invitations can still be created so an administrator can
+  deliver the invitation URL through an approved internal channel.
+</Warning>
+
+SMTP settings do not enable delivery. Support for an operator-managed internal
+SMTP server is planned, but no SMTP transport is included today.
+
+## Security boundaries
+
+The application container has read-write access to the Docker socket so it can
+create the isolated execution containers. Anyone who can control that
+container has root-equivalent control of the VM.
+
+The application and local Artifact service bind to loopback by default. Keep
+them on loopback and expose camelAI only through Pomerium or another supported
+identity-aware proxy. Do not expose the Docker socket over TCP.
+
+The bundled Pomerium route protects the camelAI control-plane hostname.
+Wildcard deployed-app hosts use a separate route so public apps remain public.
+Private app access is still enforced by camelAI.
+
+## Choose a deployment path
+
+Use [Docker Compose](/self-hosting/docker-compose) when you already have a
+Linux VM and want to manage its network, storage, and TLS directly.
+
+Use [AWS single-node deployment](/self-hosting/aws) when you want Terraform or
+CloudFormation to provision the EC2 instance, encrypted data volume, IAM
+permissions, Secrets Manager access, DNS, and system services.
+
+Read [Authentication and Pomerium](/self-hosting/authentication) before
+creating DNS or the OIDC application. After installation, use the
+[operations guide](/self-hosting/operations) for health checks, runtime
+smokes, backups, and upgrades.

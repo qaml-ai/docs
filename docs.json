@@ -52,6 +52,31 @@
         ]
       },
       {
+        "tab": "Self-hosting",
+        "groups": [
+          {
+            "group": "Plan",
+            "pages": [
+              "self-hosting/overview"
+            ]
+          },
+          {
+            "group": "Deploy",
+            "pages": [
+              "self-hosting/docker-compose",
+              "self-hosting/authentication",
+              "self-hosting/aws"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "self-hosting/operations"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Changelog",
         "groups": [
           {

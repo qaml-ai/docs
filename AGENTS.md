@@ -50,3 +50,12 @@ Connect (Steps, both Settings and agent paths) → Use it (no-code prompt first,
 Partners group in `docs.json` and link it from the relevant tab in
 `getting-started/connections.mdx`. Verify connection details (UI labels, the
 `CONNECTIONS.find()` signature, code examples) against the product repo before publishing.
+
+## Self-hosting guides
+
+Operator documentation lives in the **Self-hosting** tab under `self-hosting/`.
+Keep it aligned with `SELF_HOSTING.md`, `infra/selfhost/README.md`, the Compose
+files, and the deployment scripts in the public `qaml-ai/camelAI` repository.
+The product repository is the source of truth for exact variables and release
+behavior. Never imply that outbound SMTP, multi-node failover, or a release
+artifact exists unless the product repository provides it.
