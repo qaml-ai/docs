@@ -14,7 +14,7 @@ They provision:
 - An encrypted gp3 data volume for the checkout, Docker data, and backups
 - A security group that exposes only the web proxy and optional break-glass SSH
 - SSM Session Manager access
-- Least-privilege reads for configured Secrets Manager secrets
+- Least-privilege Secrets Manager reads and Route 53 DNS-challenge access
 - An Elastic IP and optional Route53 records
 - Caddy in front of bundled Pomerium
 - A systemd service that pulls and starts the selected release
@@ -29,20 +29,20 @@ You need:
 
 - AWS credentials that can create EC2, EBS, IAM, SSM, security-group, and optional Route53 resources
 - A VPC and subnet with outbound internet access, or permission to use the default VPC
-- A `selfhost-v*` release manifest with six digest-pinned camelAI images and the tested Pomerium digest
+- A `selfhost-v*` release manifest with seven digest-pinned camelAI images and the tested Pomerium digest
 - A main hostname, authenticate hostname, and deployed-app wildcard domain
 - An OIDC application for bundled Pomerium
-- Four AWS Secrets Manager secrets
+- A Route 53 hosted zone for the default automatic-TLS path
+- Two AWS Secrets Manager secrets
 
 Store each secret as its raw `SecretString`, not as a JSON object:
 
 1. The AI provider API key
 2. The Pomerium OIDC client secret
-3. The PEM certificate chain
-4. The matching unencrypted PEM private key
 
-The certificate must cover the main hostname, authenticate hostname, and
-deployed-app wildcard.
+If your policy requires operator-provided certificates instead, create two
+additional secrets for the PEM certificate chain and matching unencrypted
+private key.
 
 <Warning>
   The AWS templates consume release images. Do not point a production stack at
@@ -64,10 +64,11 @@ cp terraform.tfvars.example terraform.tfvars
 Edit `terraform.tfvars`. At minimum, replace:
 
 - `repository_ref`
-- All six camelAI `*_image` values and `pomerium_image`
+- All seven camelAI `*_image` values and `pomerium_image`
 - The main, authenticate, and wildcard hostnames
 - Route53 settings, or disable automatic DNS creation
-- The AI, Pomerium, certificate, and private-key secret ARNs
+- The AI and Pomerium secret ARNs
+- `tls_mode = "automatic"` and the Route 53 hosted-zone ID
 - The OIDC issuer and client ID
 
 Then run:
@@ -87,7 +88,8 @@ Use the outputs to inspect the host:
 ```bash
 aws ssm start-session --target <instance-id>
 sudo cloud-init status --wait
-sudo journalctl -u camelai-selfhost -u caddy --no-pager
+sudo journalctl -u camelai-selfhost --no-pager
+sudo camelai-selfhost-compose logs --tail=200 caddy pomerium app
 ```
 
 Prefer SSM Session Manager. Leave `ssh_ingress_cidrs` empty unless you need
@@ -113,6 +115,7 @@ aws cloudformation deploy \
     AnalysisImage=ghcr.io/qaml-ai/camelai-selfhost-analysis@sha256:... \
     DbQueryImage=ghcr.io/qaml-ai/camelai-selfhost-db-query@sha256:... \
     ContainerEgressImage=ghcr.io/qaml-ai/camelai-selfhost-container-egress@sha256:... \
+    CaddyImage=ghcr.io/qaml-ai/camelai-selfhost-caddy@sha256:... \
     PomeriumImage=pomerium/pomerium@sha256:... \
     MainHostname=camel.example.com \
     AppVanityDomain=apps.example.com \
@@ -125,8 +128,8 @@ aws cloudformation deploy \
     PomeriumIdpClientId=camelai \
     PomeriumIdpClientSecretArn=arn:aws:secretsmanager:... \
     SelfhostAiApiKeySecretArn=arn:aws:secretsmanager:... \
-    TlsCertificateSecretArn=arn:aws:secretsmanager:... \
-    TlsPrivateKeySecretArn=arn:aws:secretsmanager:...
+    TlsMode=automatic \
+    Route53HostedZoneId=Z0123456789EXAMPLE
 ```
 
 CloudFormation waits up to 30 minutes for bootstrap. Its wait condition
@@ -135,8 +138,16 @@ pass.
 
 ## TLS and network modes
 
-The default `provided` TLS mode reads the certificate and key from Secrets
-Manager and configures Caddy on the VM.
+The default `automatic` mode gives the EC2 role narrowly scoped permission to
+create and remove TXT ACME challenge records in
+`Route53HostedZoneId`. Caddy obtains and renews the main, authenticate, and
+wildcard certificates automatically. `CreateRoute53Records` separately
+controls whether the stack creates the public A records.
+
+Use `provided` mode when automated DNS credentials are not permitted. It reads
+the certificate and key from Secrets Manager; both secret ARN parameters are
+then required. The certificate must cover the main, authenticate,
+deployed-app wildcard, and any separate iframe wildcard hostnames.
 
 Use external TLS only behind a load balancer or identity proxy. In external
 mode, port 80 is an origin port. Restrict `web_ingress_cidrs` or
@@ -154,7 +165,7 @@ CloudFormation stack is deleted. Before deleting a production stack:
 
 1. Run and verify an application backup.
 2. Confirm the data-volume snapshot policy and resulting snapshot.
-3. Retain the AI, OIDC, and TLS secrets.
+3. Retain the AI and OIDC secrets, plus TLS secrets when using provided mode.
 4. Record the release manifest and exact image digests.
 
 See [Operations](/self-hosting/operations) for application backups, restores,

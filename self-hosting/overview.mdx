@@ -37,10 +37,13 @@ Pomerium unless I tell you that I already operate a supported identity-aware
 proxy.
 
 First inspect the VM and report whether it meets the documented requirements.
-Ask me for any missing domains, DNS records, OIDC settings, TLS files, and AI
-provider credentials; do not invent values. Prefer a published selfhost-v*
-release and its digest-pinned images. If no release exists, explain that the
-source-build path is for evaluation and ask before using it.
+Ask me for any missing domains, DNS records, OIDC settings, DNS-validation
+credentials, and AI provider credentials; do not invent values. Prefer
+automatic TLS with a narrowly scoped Cloudflare token or an EC2 Route 53
+instance role. Use provided certificate files or an external TLS terminator
+only if I request that mode. Prefer a published selfhost-v* release and its
+digest-pinned images. If no release exists, explain that the source-build path
+is for evaluation and ask before using it.
 
 Keep secrets out of chat, logs, shell history, and Git. Store them only in the
 documented local configuration files with restrictive permissions. Do not
@@ -99,7 +102,9 @@ You also need:
 - A wildcard domain for deployed apps, such as `*.apps.example.com`
 - An OIDC application, or an existing Pomerium or Cloudflare Access deployment
 - An API key for Bedrock, Anthropic, OpenAI, OpenRouter, or a compatible custom provider
-- A TLS certificate that covers the required hostnames
+- Cloudflare or Route 53 DNS-validation access for automatic certificates, an
+  existing enterprise TLS terminator, or a certificate covering the required
+  hostnames
 
 Docker may report 7.5 to 7.8 GiB of usable memory on an 8 GiB VM after normal
 kernel overhead.
@@ -134,9 +139,10 @@ The application container has read-write access to the Docker socket so it can
 create the isolated execution containers. Anyone who can control that
 container has root-equivalent control of the VM.
 
-The application and local Artifact service bind to loopback by default. Keep
-them on loopback and expose camelAI only through Pomerium or another supported
-identity-aware proxy. Do not expose the Docker socket over TCP.
+The application, local Artifact service, and Pomerium upstream bind to loopback
+by default. Keep them there and expose camelAI only through the Caddy front
+door and a supported identity-aware proxy. Do not expose the Docker socket
+over TCP.
 
 The bundled Pomerium route protects the camelAI control-plane hostname.
 Wildcard deployed-app hosts use a separate route so public apps remain public.

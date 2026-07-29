@@ -46,12 +46,13 @@ smoke container afterward.
 
 ## Inspect containers and logs
 
-For the default bundled-Pomerium direct-TLS deployment:
+For the default bundled-Pomerium automatic-TLS deployment:
 
 ```bash
 docker compose \
   --env-file .env.selfhost \
   -f docker-compose.selfhost.yml \
+  -f docker-compose.selfhost.caddy.yml \
   -f docker-compose.selfhost.pomerium.yml \
   -f docker-compose.selfhost.pomerium-loopback.yml \
   ps
@@ -59,25 +60,27 @@ docker compose \
 docker compose \
   --env-file .env.selfhost \
   -f docker-compose.selfhost.yml \
+  -f docker-compose.selfhost.caddy.yml \
   -f docker-compose.selfhost.pomerium.yml \
   -f docker-compose.selfhost.pomerium-loopback.yml \
-  logs --tail=200 app pomerium
+  logs --tail=200 caddy pomerium app
 ```
 
 If you use external Pomerium or Cloudflare Access, omit both Pomerium overlay
-files. If `SELFHOST_POMERIUM_LOOPBACK_HTTPS=0`, omit only the loopback overlay.
+files but keep the Caddy overlay as the restricted HTTP origin.
 
 On an AWS-provisioned host, also inspect:
 
 ```bash
 sudo cloud-init status --wait
-sudo journalctl -u camelai-selfhost -u caddy --no-pager
+sudo journalctl -u camelai-selfhost --no-pager
+sudo camelai-selfhost-compose logs --tail=200 caddy pomerium app
 ```
 
 ## Back up
 
-Create a backup of durable application state, local Artifact repositories, and
-the Pomerium databroker:
+Create a backup of durable application state, local Artifact repositories,
+Pomerium's databroker, and Caddy's certificate/account state:
 
 ```bash
 bun run selfhost:backup
@@ -87,8 +90,8 @@ Backups are stored under `.selfhost/backups/<timestamp>`.
 
 `.env.selfhost` is intentionally excluded because it contains secrets. Store a
 separate encrypted copy with access controls appropriate for your
-organization. Also retain the TLS material and the release manifest used by
-the installation.
+organization. Also retain any provided TLS material and the release manifest
+used by the installation.
 
 Copy backups off the VM and test restores on a separate node on a regular
 schedule. A backup that exists only on the application disk does not protect
@@ -102,6 +105,7 @@ Stop the stack before restoring:
 docker compose \
   --env-file .env.selfhost \
   -f docker-compose.selfhost.yml \
+  -f docker-compose.selfhost.caddy.yml \
   -f docker-compose.selfhost.pomerium.yml \
   -f docker-compose.selfhost.pomerium-loopback.yml \
   down
@@ -109,7 +113,7 @@ docker compose \
 bun run selfhost:restore -- .selfhost/backups/<timestamp>
 ```
 
-Restore the matching `.env.selfhost`, TLS material, code release, and image
+Restore the matching `.env.selfhost`, any provided TLS material, code release, and image
 digests before starting. Then run the doctor, start the stack, and execute all
 three runtime smokes.
 
@@ -130,7 +134,7 @@ bun run selfhost:upgrade -- \
 The upgrader:
 
 1. Requires a clean tracked worktree.
-2. Verifies the target Git revision and all seven digest-pinned images.
+2. Verifies the target Git revision and all eight digest-pinned images.
 3. Backs up durable volumes.
 4. Saves the previous checkout and `.env.selfhost`.
 5. Hands control to the target release's upgrader.
@@ -180,7 +184,7 @@ control as root-equivalent VM access.
 - Apply operating-system and Docker security updates on a tested schedule.
 - Monitor disk use under Docker's data root and the backup directory.
 - Restrict outbound traffic according to your provider and package-registry needs.
-- Protect `.env.selfhost`, Pomerium secrets, TLS keys, and backups.
+- Protect `.env.selfhost`, Pomerium and Caddy secrets, TLS keys, and backups.
 
 The app service uses Linux host networking because the attached container
 egress sidecars communicate through loopback. Changing it to a nested Compose
@@ -203,7 +207,7 @@ Until a supported internal SMTP transport is implemented:
 
 ### Pomerium cannot read its configuration
 
-Keep `.selfhost/pomerium/config.yaml`, secret files, and TLS keys owned by the
+Keep `.selfhost/pomerium/config.yaml` and secret files owned by the
 operator and mode `0600`. Use the repository's Pomerium Compose overlay, which
 retains the minimal `DAC_OVERRIDE` capability needed to read those protected
 bind mounts on Linux.
@@ -220,6 +224,21 @@ Confirm:
 - Host firewall rules do not block Docker bridge control traffic.
 
 Run `bun run selfhost:doctor`, then run the failing runtime's smoke command.
+
+### Caddy cannot obtain or renew a certificate
+
+Confirm that:
+
+- The selected DNS credential can read the zone and edit TXT records.
+- `SELFHOST_TLS_DNS_PROVIDER` matches where the authoritative zone is hosted.
+- The Route 53 hosted-zone ID is correct, or the Cloudflare token is scoped to
+  the correct zone.
+- Outbound HTTPS and DNS resolution work from the VM.
+
+Run `bun run selfhost:configure`, inspect
+`docker compose ... logs caddy`, and retry only after correcting the
+credential or zone. Do not work around DNS validation by exposing Pomerium's
+plaintext upstream.
 
 ### The control plane returns a redirect loop
 
