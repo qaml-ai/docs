@@ -25,7 +25,6 @@ Prepare these values:
 | OIDC client ID and secret | Values from your identity provider |
 | AI provider API key | A supported provider key |
 | DNS validation credential | Cloudflare API token or Route 53 access |
-| GHCR package token | A token with `read:packages` access to the camelAI release images |
 
 Register this callback URL in your OIDC application:
 
@@ -62,21 +61,8 @@ bun install --frozen-lockfile
 bun run selfhost:init
 ```
 
-The camelAI release images are private. Authenticate Docker on the target VM
-before pulling or starting a release:
-
-```bash
-export GHCR_TOKEN=replace-with-your-package-token
-printf '%s' "$GHCR_TOKEN" |
-  docker login ghcr.io --username YOUR_GITHUB_USER --password-stdin
-unset GHCR_TOKEN
-```
-
-The token needs `read:packages` access to the `qaml-ai` camelAI container
-packages. Docker stores the resulting credential in the current user's Docker
-configuration; run the login as the same operating-system user that runs
-`selfhost:up`, and protect that account accordingly. An anonymous pull fails
-with `unauthorized`.
+The camelAI release images are public and can be pulled from GHCR without a
+GitHub account or package token.
 
 Set `SELFHOST_DEPLOYMENT_MODE=release` in `.env.selfhost`, then copy all eight
 digest-pinned image references from the manifest:
