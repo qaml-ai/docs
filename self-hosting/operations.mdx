@@ -223,6 +223,17 @@ Confirm:
 - The configured runtime and container-egress images come from one release.
 - Host firewall rules do not block Docker bridge control traffic.
 
+Do not substitute Cloudflare's stock `cloudflare/proxy-everything` sidecar for
+the manifest's `SELFHOST_CONTAINER_EGRESS_IMAGE`. The release image contains a
+bridge-bypass entrypoint for hosts where the stock sidecar intercepts Docker
+control traffic.
+
+If the VM runs a host firewall, inspect its Docker bridge policy and add the
+narrowest rule that permits container-to-host control traffic. For UFW, the
+equivalent broad interface rule is `sudo ufw allow in on docker0`; review it
+against your network policy before applying it. A host without a blocking
+firewall does not need that rule.
+
 Run `bun run selfhost:doctor`, then run the failing runtime's smoke command.
 
 ### Caddy cannot obtain or renew a certificate
