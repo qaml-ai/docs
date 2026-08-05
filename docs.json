@@ -69,6 +69,12 @@
             ]
           },
           {
+            "group": "Customize",
+            "pages": [
+              "self-hosting/agent-customization"
+            ]
+          },
+          {
             "group": "Operate",
             "pages": [
               "self-hosting/operations"

@@ -89,6 +89,8 @@ kernel overhead.
 | Run notebooks | Supported |
 | Query connected databases | Supported |
 | Browser rendering | Supported |
+| Keep workspace connections unavailable to deployed apps | Supported with `CONNECTIONS_BINDING_ENABLED=false` |
+| Add organization-specific agent instructions and skills | Supported through `.selfhost/agent/` |
 | Password signup and email verification | Not supported |
 | Outbound email | Disabled |
 | Internal SMTP | Not implemented |
@@ -131,4 +133,5 @@ permissions, Secrets Manager access, DNS, and system services.
 Read [Authentication and Pomerium](/self-hosting/authentication) before
 creating DNS or the OIDC application. After installation, use the
 [operations guide](/self-hosting/operations) for health checks, runtime
-smokes, backups, and upgrades.
+smokes, backups, and upgrades. Use [agent customization](/self-hosting/agent-customization)
+to teach the coding agent about internal APIs and application standards.

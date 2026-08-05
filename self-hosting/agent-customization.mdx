@@ -1,0 +1,180 @@
+---
+title: 'Customize the coding agent'
+description: 'Teach a self-hosted camelAI agent about internal APIs, application standards, and organization-specific workflows.'
+sidebarTitle: 'Agent customization'
+---
+
+Self-hosted camelAI can load organization-specific instructions and skills
+without rebuilding its application image. Use this to teach the coding agent
+how to build web apps and sites that use your internal systems.
+
+<Info>
+  File-based agent customization requires `selfhost-v0.1.2` or later.
+</Info>
+
+Agent customization is additive. Your instructions do not replace camelAI's
+stock safety, tool-use, and verification rules.
+
+## Choose between a prompt and a skill
+
+Use `.selfhost/agent/prompt.append.md` for short rules that should apply to
+every task, such as an approved package registry or a requirement to include
+an audit log.
+
+Use a custom skill for detailed instructions that apply only to certain work.
+Skills are a better place for internal API contracts, application templates,
+authentication patterns, design-system rules, and deployment checklists. The
+agent sees each skill's name and description, then reads its full instructions
+when a task matches.
+
+## Agent pack layout
+
+`bun run selfhost:init` creates `.selfhost/agent/` and its `skills/` directory:
+
+```text
+.selfhost/agent/
+  README.md
+  prompt.append.md
+  prompt.prepend.md
+  skills/
+    internal-web-apps/
+      SKILL.md
+      references/
+        internal-api.md
+        design-system.md
+```
+
+- `prompt.append.md` adds deployment instructions after the stock system
+  prompt.
+- `prompt.prepend.md` adds optional policy or identity text before the stock
+  prompt.
+- Each directory under `skills/` is one skill and must contain `SKILL.md`.
+- A skill can include additional Markdown files under any nested directory.
+
+## Add instructions for every task
+
+Create `.selfhost/agent/prompt.append.md` with rules that should always apply:
+
+```markdown title=".selfhost/agent/prompt.append.md"
+Use the approved internal package registry when adding dependencies.
+
+When a user asks for an internal web app or site, read the
+`internal-web-apps` skill before writing code. Never place API keys, access
+tokens, or customer data in source files.
+```
+
+Keep this file short. Put detailed contracts and examples in a skill so the
+agent only loads them when they are relevant.
+
+## Add an internal application skill
+
+Create `.selfhost/agent/skills/internal-web-apps/SKILL.md`:
+
+```markdown title=".selfhost/agent/skills/internal-web-apps/SKILL.md"
+---
+name: internal-web-apps
+description: Build web apps and sites that use ExampleCorp internal systems. Use for internal portals, dashboards, and workflow tools.
+---
+
+# Internal web apps
+
+Before writing code:
+
+1. Read `references/internal-api.md` with
+   `read_skill({ skill: "internal-web-apps", file: "references/internal-api.md" })`.
+2. Read `references/design-system.md` before creating the interface.
+3. Use only documented endpoints, fields, and authentication methods.
+4. Confirm that the deployed app can reach the required internal service.
+5. Never copy credentials into source code, logs, or generated documentation.
+
+When the requested integration is not documented, stop and ask for the
+missing contract instead of inventing an endpoint.
+```
+
+Then add the referenced API contract:
+
+```markdown title=".selfhost/agent/skills/internal-web-apps/references/internal-api.md"
+# Internal API contract
+
+Base URL: `https://internal-api.example.com`
+
+## Authentication
+
+Describe how the deployed app receives authorization without including the
+credential itself. Name the exact header, Worker binding, or approved broker
+that is already configured for the app.
+
+## Endpoints
+
+Document each approved method, path, request schema, response schema, and
+error shape. Include a minimal working request and response for each common
+workflow.
+
+## Network requirements
+
+Document DNS, firewall, private-network, or proxy requirements that must be in
+place before a deployed app can reach this service.
+```
+
+Replace the example values with your verified internal contract. Keep secrets
+out of the skill files. Skill content gives the agent instructions; it does
+not create network access, credentials, service bindings, or permissions for
+the deployed application.
+
+## Apply the agent pack
+
+After adding or changing prompt and skill files, regenerate the self-host
+configuration and restart the application:
+
+```bash
+bun run selfhost:configure
+bun run selfhost:up
+```
+
+Confirm what loaded:
+
+```bash
+bun run selfhost:doctor
+curl --fail --silent http://127.0.0.1:3001/api/selfhost/health
+```
+
+The doctor lists custom skill names. The health response includes an
+`agent-pack` check that summarizes the loaded prompt and skills. Start a new
+camelAI task and ask it to build an internal app to verify that it selects and
+reads the skill.
+
+## Connection sharing and internal APIs
+
+Custom skills do not change the deployed-app connection boundary. If you set:
+
+```dotenv
+CONNECTIONS_BINDING_ENABLED=false
+```
+
+the coding agent can still use workspace connections while it works, but
+deployed apps cannot call `env.CONNECTIONS` or the connection catalogs behind
+their `ANALYSIS` and `WAREHOUSE` bindings. In that mode, teach the agent to use
+only an internal API or app-specific integration that you have separately
+made reachable and authorized.
+
+See [Install with Docker Compose](/self-hosting/docker-compose#choose-whether-deployed-apps-can-use-connections)
+for the full setting behavior and rollout steps.
+
+## Advanced path overrides
+
+Most installations should use `.selfhost/agent/`. These environment variables
+are available when the agent pack must live elsewhere or be supplied by an
+automation system:
+
+| Variable | Purpose |
+| --- | --- |
+| `SELFHOST_AGENT_HOST_DIR` | Host directory mounted read-only into the app container |
+| `SELFHOST_AGENT_DIR` | Agent-pack directory read by the configuration generator |
+| `SELFHOST_AGENT_SKILLS_DIR` | Alternate directory containing skill subdirectories |
+| `SELFHOST_AGENT_PROMPT_APPEND` | Inline override for `prompt.append.md` |
+| `SELFHOST_AGENT_PROMPT_PREPEND` | Inline override for `prompt.prepend.md` |
+| `SELFHOST_AGENT_SKILLS_JSON` | Serialized skill payload for automated deployments |
+
+Non-empty environment overrides take precedence over the corresponding files.
+A custom skill with the same name as a bundled camelAI skill overrides that
+bundled skill, so use unique names unless replacement is intentional.

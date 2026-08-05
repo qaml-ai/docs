@@ -160,6 +160,39 @@ Choose one AI provider:
   </Tab>
 </Tabs>
 
+## Choose whether deployed apps can use connections
+
+By default, an app deployed from a workspace can receive an `env.CONNECTIONS`
+service binding. The binding lets that app list and call the workspace's
+configured connections. Connection credentials stay inside camelAI, but data
+returned by a connection can enter the deployed app.
+
+For installations where connections should remain available to the coding
+agent but must not be shared with deployed apps, add this to `.env.selfhost`:
+
+```dotenv
+CONNECTIONS_BINDING_ENABLED=false
+```
+
+<Warning>
+  This control requires `selfhost-v0.1.2` or later. Set it before the first
+  `bun run selfhost:configure` and `bun run selfhost:up`.
+</Warning>
+
+When disabled, deployed-app access through `CONNECTIONS` fails closed. The
+connection catalog methods exposed through deployed-app `ANALYSIS` and
+`WAREHOUSE` bindings also fail closed. Connections remain available to the
+camelAI coding agent, `js_exec`, the Connections settings page, and other
+control-plane workflows.
+
+For an existing installation, change the value, run
+`bun run selfhost:configure`, and restart with `bun run selfhost:up`. Existing
+apps are blocked immediately by the runtime check. Redeploy them so their saved
+worker configuration no longer contains the binding.
+
+If the agent should build apps against approved internal APIs instead, add
+deployment-specific instructions with [custom agent skills](/self-hosting/agent-customization).
+
 ## Configure TLS and DNS
 
 Caddy is the Compose ingress service. It terminates TLS in automatic and
