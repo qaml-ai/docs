@@ -23,44 +23,10 @@ database queries.
 
 ## Install with a coding agent
 
-You can ask a coding agent such as Codex, Claude Code, or OpenCode to perform
-the installation. Start the agent in a shell on the target VM, or give it SSH
-access to the VM, then paste this prompt:
-
-```text
-Install and configure self-hosted camelAI on this dedicated Linux VM.
-
-Follow the canonical documentation at
-https://camelai.com/docs/self-hosting/overview and every linked guide that is
-relevant to the installation. Use the Docker Compose deployment with bundled
-Pomerium unless I tell you that I already operate a supported identity-aware
-proxy.
-
-First inspect the VM and report whether it meets the documented requirements.
-Ask me for any missing domains, DNS records, OIDC settings, DNS-validation
-credentials, and AI provider credentials; do not invent values. Prefer
-automatic TLS with a narrowly scoped Cloudflare token or an EC2 Route 53
-instance role. Use provided certificate files or an external TLS terminator
-only if I request that mode. Prefer a published selfhost-v* release and its
-digest-pinned images. If no release exists, explain that the source-build path
-is for evaluation and ask before using it.
-
-Keep secrets out of chat, logs, shell history, and Git. Store them only in the
-documented local configuration files with restrictive permissions. Do not
-expose the Docker socket over TCP or expose camelAI directly without the
-documented authentication proxy.
-
-Complete the setup, then run selfhost:configure, selfhost:doctor,
-selfhost:up, the health check, and all documented project-build, notebook,
-and database-query runtime smoke tests. Report what passed, the URLs I should
-open, and any DNS, OIDC, TLS, or operational work that still requires me.
-```
-
-<Tip>
-  Keep the agent running until the health check and all three runtime smokes
-  pass. DNS changes, OIDC registration, TLS issuance, and production secrets
-  may still require access that only your infrastructure administrator has.
-</Tip>
+In a shell on the target VM (or with SSH access), ask a coding agent such as
+Codex, Claude Code, or OpenCode to read the instructions at
+https://camelai.com/docs/self-hosting/overview and follow them to install and
+configure self-hosted camelAI.
 
 ## Supported topology
 
