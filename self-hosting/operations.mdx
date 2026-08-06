@@ -119,9 +119,19 @@ three runtime smokes.
 
 ## Upgrade
 
-Download `selfhost-release.json` and
-`selfhost-upgrade-bootstrap.mjs` from the target release workflow artifact.
-Keep both files outside the mutable repository checkout.
+Download `selfhost-release.json` and `selfhost-upgrade-bootstrap.mjs` from the
+matching [camelAI GitHub Release](https://github.com/qaml-ai/camelAI/releases).
+Keep both files outside the mutable repository checkout. For example:
+
+```bash
+RELEASE=selfhost-vX.Y.Z
+curl --fail --location \
+  --output /secure/path/selfhost-release.json \
+  "https://github.com/qaml-ai/camelAI/releases/download/${RELEASE}/selfhost-release.json"
+curl --fail --location \
+  --output /secure/path/selfhost-upgrade-bootstrap.mjs \
+  "https://github.com/qaml-ai/camelAI/releases/download/${RELEASE}/selfhost-upgrade-bootstrap.mjs"
+```
 
 Run:
 

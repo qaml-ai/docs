@@ -50,8 +50,18 @@ Do not mix images from different releases.
 </Warning>
 
 Download `selfhost-release.json` from the matching
-[Self-host release images workflow](https://github.com/qaml-ai/camelAI/actions/workflows/selfhost-images.yml)
-run. For a release install, check out the matching tag:
+[camelAI GitHub Release](https://github.com/qaml-ai/camelAI/releases). Release
+assets are permanent and public; do not depend on the expiring Actions
+artifact. For example:
+
+```bash
+RELEASE=selfhost-vX.Y.Z
+curl --fail --location \
+  --output /secure/path/selfhost-release.json \
+  "https://github.com/qaml-ai/camelAI/releases/download/${RELEASE}/selfhost-release.json"
+```
+
+For a release install, check out the matching tag:
 
 ```bash
 git clone https://github.com/qaml-ai/camelAI.git
@@ -139,6 +149,11 @@ Choose one AI provider:
     SELFHOST_AI_API_KEY=bedrock-api-key-...
     SELFHOST_AI_AWS_REGION=us-east-1
     ```
+
+    `SELFHOST_AI_AWS_REGION` is the preferred region. If Bedrock reports that a
+    selected model is unavailable there, camelAI automatically tries the other
+    supported regions for that model. Authentication and authorization errors
+    are not retried in another region.
   </Tab>
   <Tab title="Anthropic">
     ```dotenv
@@ -170,6 +185,22 @@ Choose one AI provider:
     ```
   </Tab>
 </Tabs>
+
+## Publish generated apps locally
+
+Self-hosted camelAI publishes generated apps to its local worker registry and
+serves them through the local dispatcher on your wildcard app domain. This is
+automatic: do not configure `CF_API_TOKEN`, `CF_ACCOUNT_ID`, or
+`CF_DISPATCH_NAMESPACE` for app deployment. The Compose stack fixes the latter
+two values to the internal self-host mode, so app deployment never calls the
+Cloudflare Workers API.
+
+<Note>
+  `SELFHOST_TLS_CLOUDFLARE_API_TOKEN` is unrelated to app deployment. When you
+  select Cloudflare DNS for automatic TLS, only Caddy uses that scoped token for
+  ACME DNS validation and certificate renewal. It can be omitted when you use
+  Route 53, provided certificates, or an existing TLS proxy.
+</Note>
 
 ## Choose whether deployed apps can use connections
 

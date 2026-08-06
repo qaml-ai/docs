@@ -51,6 +51,10 @@ Docker container for that job.
 | SQL queries and exports | Attached database-query containers |
 | Published apps | Local dispatcher served through your wildcard app domain |
 
+Publishing generated apps does not require a Cloudflare account or Cloudflare
+Workers API token. A Cloudflare DNS token is optional and is used only when you
+choose Cloudflare DNS for automatic TLS certificate validation.
+
 This target does not provide multi-node failover or a managed control plane.
 Backups, VM availability, network policy, monitoring, and disaster recovery
 remain the operator's responsibility.
