@@ -136,6 +136,14 @@ POMERIUM_IDP_CLIENT_ID=camelai
 POMERIUM_IDP_CLIENT_SECRET=replace-with-your-client-secret
 ```
 
+<Note>
+  `LOCAL_APP_VANITY_DOMAIN` and `LOCAL_APP_IFRAME_DOMAIN` contain the app base
+  domain without a leading `*.`. With the values above, a deployed app is
+  served at `https://APP_NAME.apps.example.com`—not at
+  `APP_NAME.camel.example.com` or directly at `apps.example.com`. Create
+  the `*.apps.example.com` DNS record and wildcard certificate described below.
+</Note>
+
 Choose one AI provider:
 
 <Tabs>
