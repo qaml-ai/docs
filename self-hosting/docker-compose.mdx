@@ -319,8 +319,9 @@ bun run selfhost:doctor
 
 `selfhost:doctor` checks the CLI versions, Docker daemon, CPU and memory,
 Docker socket access, domains, AI provider, authentication settings, Compose
-configuration, volumes, and local service state. Before first startup it may
-report that configured images are not local yet.
+configuration, volumes, local service state, and bidirectional sandbox storage
+synchronization when the images are already local. Before first startup it may
+report that configured images are not local yet and defer the storage smoke.
 
 Start the stack:
 
@@ -339,17 +340,24 @@ curl --fail --silent http://127.0.0.1:3001/api/selfhost/health
 bun run selfhost:doctor
 ```
 
-Then execute all three attached runtimes:
+Then execute the storage check and all three attached runtimes:
 
 ```bash
+bun --env-file=.env.selfhost run selfhost:container:smoke:mount
 bun --env-file=.env.selfhost run selfhost:container:smoke:project
 bun --env-file=.env.selfhost run selfhost:container:smoke:analysis
 bun --env-file=.env.selfhost run selfhost:container:smoke:db-query
 ```
 
-These are functional tests. They create a real project-build container, run a
-real Jupyter notebook, and load the database-query drivers, then remove the
-smoke containers.
+These are functional tests. They verify bidirectional local R2/container
+synchronization, create a real project-build container, run a real Jupyter
+notebook, and load the database-query drivers, then remove the smoke containers.
+
+<Warning>
+  Do not grant sandbox containers `/dev/fuse`, `SYS_ADMIN`, or an unconfined
+  AppArmor profile. `selfhost-v0.1.4` and later use a FUSE-free synchronization
+  path for local R2 storage.
+</Warning>
 
 Open `https://camel.example.com` and sign in through your identity provider.
 The wildcard app domain should not redirect to Pomerium because published
@@ -357,7 +365,7 @@ public apps use a separate unauthenticated proxy route.
 
 <Check>
   The installation is ready when the health endpoint returns HTTP 200,
-  `selfhost:doctor` passes, all three runtime smokes pass, and an OIDC user can
+  `selfhost:doctor` passes, all four runtime smokes pass, and an OIDC user can
   open the camelAI control plane.
 </Check>
 

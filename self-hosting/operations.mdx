@@ -30,19 +30,25 @@ unhealthy.
 
 ## Run attached-runtime smokes
 
-Run all three smokes after initial installation, after an upgrade, and after a
+Run all four smokes after initial installation, after an upgrade, and after a
 Docker or host-networking change:
 
 ```bash
+bun --env-file=.env.selfhost run selfhost:container:smoke:mount
 bun --env-file=.env.selfhost run selfhost:container:smoke:project
 bun --env-file=.env.selfhost run selfhost:container:smoke:analysis
 bun --env-file=.env.selfhost run selfhost:container:smoke:db-query
 ```
 
-The project smoke launches a build container and executes a small build. The
-analysis smoke starts Jupyter and executes a notebook. The database-query smoke
-loads and exercises the supported query drivers. Each command removes its
-smoke container afterward.
+The mount smoke verifies bidirectional synchronization between local R2 storage
+and a sandbox container. The project smoke launches a build container and
+executes a small build. The analysis smoke starts Jupyter and executes a
+notebook. The database-query smoke loads and exercises the supported query
+drivers. Each command removes its smoke container afterward.
+
+The mount smoke does not require `/dev/fuse`, `SYS_ADMIN`, or an unconfined
+AppArmor profile. A supported self-host installation must not grant those
+privileges to containers that execute generated code.
 
 ## Inspect containers and logs
 
@@ -149,7 +155,7 @@ The upgrader:
 4. Saves the previous checkout and `.env.selfhost`.
 5. Hands control to the target release's upgrader.
 6. Pulls and starts the target images.
-7. Runs the doctor and all three attached-runtime smokes.
+7. Runs the doctor and all four attached-runtime smokes.
 8. Prints the exact rollback command.
 
 For an installation whose current upgrader predates target-code handoff, run
@@ -245,6 +251,24 @@ against your network policy before applying it. A host without a blocking
 firewall does not need that rule.
 
 Run `bun run selfhost:doctor`, then run the failing runtime's smoke command.
+
+### App deployment reports an S3FS or `/dev/fuse` mount failure
+
+Upgrade to `selfhost-v0.1.4` or later. Earlier releases could ask local
+sandbox containers to use Cloudflare's production S3FS mount path, which is
+not available to stock self-host containers.
+
+Do not add `/dev/fuse`, `SYS_ADMIN`, or `apparmor=unconfined` to the sandbox
+containers. Current releases use the Sandbox SDK's FUSE-free local R2
+synchronization path instead. Verify it directly:
+
+```bash
+bun --env-file=.env.selfhost run selfhost:container:smoke:mount
+bun run selfhost:doctor
+```
+
+This is a persistent version/configuration error on an affected release, not a
+transient outage. Repeated deployment retries will not fix it.
 
 ### Caddy cannot obtain or renew a certificate
 

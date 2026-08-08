@@ -116,6 +116,11 @@ The application container has read-write access to the Docker socket so it can
 create the isolated execution containers. Anyone who can control that
 container has root-equivalent control of the VM.
 
+Sandbox storage synchronization does not require privileged containers. Do not
+give generated-code containers `/dev/fuse`, `SYS_ADMIN`, or an unconfined
+AppArmor profile; current self-host releases synchronize local R2 data through
+the sandbox file APIs.
+
 The application, local Artifact service, and Pomerium upstream bind to loopback
 by default. Keep them there and expose camelAI only through the Caddy front
 door and a supported identity-aware proxy. Do not expose the Docker socket
