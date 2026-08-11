@@ -1,0 +1,110 @@
+---
+title: 'API Endpoints'
+sidebarTitle: 'Endpoints'
+description: 'One API key works across the OpenAI and Anthropic protocols'
+---
+
+| Method | Path | Format | Use |
+| --- | --- | --- | --- |
+| `POST` | `/v1/chat/completions` | OpenAI | Chat and tool-use completions |
+| `POST` | `/v1/responses` | OpenAI | Responses API input and streaming |
+| `POST` | `/v1/messages` | Anthropic | Messages API input and streaming |
+| `POST` | `/v1/messages/count_tokens` | Anthropic | Count tokens before sending |
+| `GET` | `/v1/models` | Both | List available models |
+
+## Chat Completions
+
+**POST** `/v1/chat/completions`
+
+Use the familiar OpenAI chat schema. Send a messages array and set stream to
+true for SSE output. System messages, tool definitions, tool choice,
+temperature, and output limits are passed through.
+
+```bash cURL
+curl --no-buffer https://stream.camelai.com/v1/chat/completions \
+  -H "Authorization: Bearer $CAMEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-v4-flash",
+    "messages": [
+      {"role": "system", "content": "You are a concise coding assistant."},
+      {"role": "user", "content": "Explain this error message."}
+    ],
+    "stream": true
+  }'
+```
+
+## Responses
+
+**POST** `/v1/responses`
+
+Use the OpenAI Responses schema for string or structured array input. This is
+the preferred endpoint for clients such as Codex that speak the Responses
+protocol.
+
+```bash cURL
+curl --no-buffer https://stream.camelai.com/v1/responses \
+  -H "Authorization: Bearer $CAMEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-v4-flash",
+    "input": "Give me three names for a database migration tool.",
+    "stream": true
+  }'
+```
+
+## Messages
+
+**POST** `/v1/messages`
+
+Use the Anthropic Messages schema. Include max_tokens and an anthropic-version
+header. Set stream to true for Anthropic-format SSE events.
+
+```bash cURL
+curl --no-buffer https://stream.camelai.com/v1/messages \
+  -H "x-api-key: $CAMEL_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-v4-flash",
+    "max_tokens": 1024,
+    "messages": [
+      {"role": "user", "content": "How should I structure a TypeScript worker?"}
+    ],
+    "stream": true
+  }'
+```
+
+## Count message tokens
+
+**POST** `/v1/messages/count_tokens`
+
+Estimate the input-token count for an Anthropic Messages request before
+generating a response. Token counting also uses a stream slot and may wait in
+the account queue.
+
+```bash cURL
+curl https://stream.camelai.com/v1/messages/count_tokens \
+  -H "x-api-key: $CAMEL_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek-v4-flash",
+    "messages": [
+      {"role": "user", "content": "How many tokens are in this request?"}
+    ]
+  }'
+```
+
+## List models
+
+**GET** `/v1/models`
+
+Return the models currently exposed by Camel Stream. The response is compatible
+with OpenAI model discovery and also includes fields used by Anthropic gateway
+discovery.
+
+```bash cURL
+curl https://stream.camelai.com/v1/models \
+  -H "Authorization: Bearer $CAMEL_API_KEY"
+```

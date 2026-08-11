@@ -1,0 +1,48 @@
+---
+title: 'Make Your First Request'
+sidebarTitle: 'Quickstart'
+description: 'Create a key and stream your first response in three steps'
+---
+
+<Steps>
+  <Step title="Create a key">
+    Generate an API key in [the Stream console](https://stream.camelai.com/console).
+    It is only shown once.
+  </Step>
+
+  <Step title="Set the key">
+    Keep the key in an environment variable instead of source control.
+
+    ```bash Terminal
+    export CAMEL_API_KEY="qaml_live_..."
+    ```
+  </Step>
+
+  <Step title="Send a request">
+    Use any supported format. Streaming responses use server-sent events.
+
+    ```bash First request
+    curl --no-buffer https://stream.camelai.com/v1/chat/completions \
+      -H "Authorization: Bearer $CAMEL_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "deepseek-v4-flash",
+        "messages": [
+          {"role": "user", "content": "Write a haiku about distributed systems."}
+        ],
+        "stream": true
+      }'
+    ```
+  </Step>
+</Steps>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/stream/authentication">
+    Learn which headers each SDK sends.
+  </Card>
+  <Card title="SDKs" icon="code" href="/stream/sdks">
+    Configure the official OpenAI and Anthropic clients.
+  </Card>
+</CardGroup>
