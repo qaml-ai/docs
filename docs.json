@@ -10,7 +10,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Getting Started",
+        "tab": "Coding Agent",
         "groups": [
           {
             "group": "Start Here",
@@ -52,7 +52,28 @@
         ]
       },
       {
-        "tab": "Self-hosting",
+        "tab": "Stream",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "stream/overview",
+              "stream/quickstart"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "stream/authentication",
+              "stream/endpoints",
+              "stream/sdks",
+              "stream/queues-and-errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Self-host camelAI Coding Agent",
         "groups": [
           {
             "group": "Plan",
@@ -139,15 +160,6 @@
             ]
           }
         ]
-      },
-      {
-        "tab": "API Reference (Legacy)",
-        "groups": [
-          {
-            "group": "API Reference",
-            "openapi": "https://api.camelai.com/api/schema/"
-          }
-        ]
       }
     ],
     "global": {
@@ -156,6 +168,11 @@
           "anchor": "camelAI",
           "href": "https://camelai.dev",
           "icon": "browser"
+        },
+        {
+          "anchor": "Stream",
+          "href": "https://stream.camelai.com",
+          "icon": "bolt"
         },
         {
           "anchor": "Legacy App",

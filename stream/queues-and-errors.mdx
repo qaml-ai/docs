@@ -1,0 +1,25 @@
+---
+title: 'Queues, Limits, and Errors'
+sidebarTitle: 'Queues & errors'
+description: 'Concurrency is enforced per account across all API keys and endpoint formats'
+---
+
+<CardGroup cols={2}>
+  <Card title="Automatic queueing" icon="clock">
+    When every subscribed stream is active, the connection stays open until a
+    slot is available. No client-side retry is needed while queued.
+  </Card>
+  <Card title="Queue headers" icon="code">
+    Successful responses include `x-camel-queue-ms` and
+    `x-camel-stream-limit`.
+  </Card>
+</CardGroup>
+
+| Status | Meaning |
+| --- | --- |
+| `400` | The request body is invalid or missing required input. |
+| `401` | The API key is missing, invalid, or revoked. |
+| `402` | The account does not have an active stream subscription. |
+| `429` | An upstream rate limit was reached; respect `Retry-After` when present. |
+| `502` | The inference service could not be reached. |
+| `503` | A stream slot could not be acquired; retry after the `Retry-After` delay. |

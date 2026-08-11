@@ -1,0 +1,21 @@
+---
+title: 'Authentication'
+description: 'Every Camel Stream endpoint accepts the same API key in either header style'
+---
+
+Every endpoint requires a live Camel Stream API key. Both header styles accept
+keys beginning with `qaml_live_`.
+
+<CardGroup cols={2}>
+  <Card title="Bearer token" icon="lock">
+    OpenAI clients normally send `Authorization: Bearer $CAMEL_API_KEY`.
+  </Card>
+  <Card title="API key header" icon="lock">
+    Anthropic clients normally send `x-api-key: $CAMEL_API_KEY`.
+  </Card>
+</CardGroup>
+
+<Warning>
+  Never expose a key in browser code, commit it to a repository, or include it
+  in a public log. Revoked keys stop working immediately.
+</Warning>

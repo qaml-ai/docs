@@ -1,0 +1,84 @@
+---
+title: 'Use Existing SDKs'
+sidebarTitle: 'SDKs'
+description: 'Point official OpenAI and Anthropic SDKs at Camel Stream by changing the base URL'
+---
+
+## OpenAI SDK
+
+<CodeGroup>
+```javascript JavaScript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.CAMEL_API_KEY,
+  baseURL: "https://stream.camelai.com/v1",
+});
+
+const stream = await client.chat.completions.create({
+  model: "deepseek-v4-flash",
+  messages: [{ role: "user", content: "Hello from Camel Stream" }],
+  stream: true,
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? "");
+}
+```
+
+```python Python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["CAMEL_API_KEY"],
+    base_url="https://stream.camelai.com/v1",
+)
+
+stream = client.chat.completions.create(
+    model="deepseek-v4-flash",
+    messages=[{"role": "user", "content": "Hello from Camel Stream"}],
+    stream=True,
+)
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="")
+```
+</CodeGroup>
+
+## Anthropic SDK
+
+<CodeGroup>
+```javascript JavaScript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({
+  apiKey: process.env.CAMEL_API_KEY,
+  baseURL: "https://stream.camelai.com",
+});
+
+const message = await client.messages.create({
+  model: "deepseek-v4-flash",
+  max_tokens: 1024,
+  messages: [{ role: "user", content: "Hello from Camel Stream" }],
+});
+
+console.log(message.content);
+```
+
+```python Python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key=os.environ["CAMEL_API_KEY"],
+    base_url="https://stream.camelai.com",
+)
+
+message = client.messages.create(
+    model="deepseek-v4-flash",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello from Camel Stream"}],
+)
+print(message.content)
+```
+</CodeGroup>
