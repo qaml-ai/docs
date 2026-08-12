@@ -1,16 +1,16 @@
 ---
 title: 'Use Hermes Agent'
 sidebarTitle: 'Hermes'
-description: 'Add Camel Stream to Hermes in three steps and run DeepSeek V4 Flash'
+description: 'Point Hermes Agent at Camel Stream and run DeepSeek V4 Flash'
 ---
 
 [Hermes Agent](https://hermes-agent.nousresearch.com) is Nous Research's
 coding agent. Camel Stream is an OpenAI-compatible endpoint, so Hermes can
-use it as a first-class provider.
+use it as a custom provider.
 
 | | |
 | --- | --- |
-| **Provider** | `camel-stream` |
+| **Provider** | `custom:camel-stream` |
 | **Model** | `deepseek-v4-flash` |
 | **Base URL** | `https://stream.camelai.com/v1` |
 | **Key** | `CAMEL_API_KEY` |
@@ -19,7 +19,7 @@ use it as a first-class provider.
 <Note>
   Hermes is a third-party agent. Camel Stream provides the model. Review the
   [Hermes security policy](https://github.com/NousResearch/hermes-agent/security)
-  before installing plugins.
+  before connecting a key.
 </Note>
 
 ## 1. Install Hermes
@@ -32,64 +32,34 @@ source ~/.zshrc
 See the [Hermes installation guide](https://hermes-agent.nousresearch.com/docs/getting-started/installation)
 if you use bash or install from source.
 
-## 2. Add Camel Stream
+## 2. Add your Stream key
 
 Create a key in [the Stream console](https://stream.camelai.com/console).
-It is shown once.
-
-Then install the provider plugin and put the key in Hermes' env file:
-
-```bash Terminal
-curl -fsSL https://stream.camelai.com/integrations/hermes/install.sh | bash
-```
+It is shown once. Put it in Hermes' env file, not in `config.yaml`.
 
 ```bash ~/.hermes/.env
 CAMEL_API_KEY=qaml_live_...
 ```
 
-Keep the key in `~/.hermes/.env`. Do not put it in `config.yaml` or a git
-repo.
+## 3. Point Hermes at Stream
 
-## 3. Start chatting
-
-```bash Terminal
-hermes chat --provider camel-stream --model deepseek-v4-flash
-```
-
-To make Stream the default, add this to `~/.hermes/config.yaml`:
-
-```yaml ~/.hermes/config.yaml
-model:
-  provider: camel-stream
-  default: deepseek-v4-flash
-  context_length: 262144
-```
-
-You can still switch in a session with
-`/model camel-stream:deepseek-v4-flash`.
-
-## Check that it works
+The fastest path is the built-in setup wizard:
 
 ```bash Terminal
-hermes doctor
-curl https://stream.camelai.com/v1/models \
-  -H "Authorization: Bearer $CAMEL_API_KEY"
+hermes model
 ```
 
-`hermes doctor` should list the `camel-stream` provider. `/v1/models` should
-return `deepseek-v4-flash` with a 256k `context_length`. If live discovery
-fails, Hermes falls back to that model ID from the plugin.
+Choose **Custom endpoint**, then enter:
 
-<Note>
-  Camel Stream queues requests when every subscribed stream is busy. Hermes
-  should keep the HTTP connection open. See
-  [Queues & errors](/stream/queues-and-errors).
-</Note>
+| Field | Value |
+| --- | --- |
+| URL | `https://stream.camelai.com/v1` |
+| API mode | Chat Completions |
+| Key | your `CAMEL_API_KEY` |
+| Model | `deepseek-v4-flash` |
+| Context length | `262144` |
 
-## Config only, no plugin
-
-If you would rather not install a plugin, register a named custom provider.
-This is enough for any OpenAI-compatible `/v1/chat/completions` endpoint.
+Or add a named custom provider to `~/.hermes/config.yaml`:
 
 ```yaml ~/.hermes/config.yaml
 custom_providers:
@@ -107,14 +77,20 @@ model:
   context_length: 262144
 ```
 
-Then:
+## 4. Start chatting
 
 ```bash Terminal
 hermes chat --provider custom:camel-stream --model deepseek-v4-flash
 ```
 
-The plugin is nicer when you want **Camel Stream** in `hermes model` with
-aliases. The config-only path is enough to start chatting.
+In a session you can switch with
+`/model custom:camel-stream:deepseek-v4-flash`.
+
+<Note>
+  Camel Stream queues requests when every subscribed stream is busy. Hermes
+  should keep the HTTP connection open. See
+  [Queues & errors](/stream/queues-and-errors).
+</Note>
 
 ## What's next?
 
