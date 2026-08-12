@@ -4,9 +4,8 @@ sidebarTitle: 'Hermes'
 description: 'Point Hermes Agent at Camel Stream and run DeepSeek V4 Flash'
 ---
 
-[Hermes Agent](https://hermes-agent.nousresearch.com) is Nous Research's
-coding agent. Camel Stream is an OpenAI-compatible endpoint, so Hermes can
-use it as a custom provider.
+[Hermes Agent](https://hermes-agent.nousresearch.com) can use any
+OpenAI-compatible `/v1/chat/completions` endpoint as a custom provider.
 
 | | |
 | --- | --- |
@@ -32,9 +31,9 @@ source ~/.zshrc
 See the [Hermes installation guide](https://hermes-agent.nousresearch.com/docs/getting-started/installation)
 if you use bash or install from source.
 
-## 2. Add your Stream key
+## 2. Create a Stream key
 
-Create a key in [the Stream console](https://stream.camelai.com/console).
+Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once. Put it in Hermes' env file, not in `config.yaml`.
 
 ```bash ~/.hermes/.env
@@ -43,7 +42,7 @@ CAMEL_API_KEY=qaml_live_...
 
 ## 3. Point Hermes at Stream
 
-The fastest path is the built-in setup wizard:
+The fastest path is the built-in wizard, the same one OpenRouter documents:
 
 ```bash Terminal
 hermes model
@@ -77,7 +76,7 @@ model:
   context_length: 262144
 ```
 
-## 4. Start chatting
+## 4. Start and verify
 
 ```bash Terminal
 hermes chat --provider custom:camel-stream --model deepseek-v4-flash
@@ -85,6 +84,13 @@ hermes chat --provider custom:camel-stream --model deepseek-v4-flash
 
 In a session you can switch with
 `/model custom:camel-stream:deepseek-v4-flash`.
+
+```bash Terminal
+hermes doctor
+```
+
+`hermes doctor` should see the custom provider. If auth fails, confirm
+`CAMEL_API_KEY` is in `~/.hermes/.env`.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy. Hermes

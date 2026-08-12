@@ -1,13 +1,11 @@
 ---
 title: 'Use OpenClaw'
 sidebarTitle: 'OpenClaw'
-description: 'Add Camel Stream to OpenClaw in three steps and run DeepSeek V4 Flash'
+description: 'Point OpenClaw at Camel Stream and run DeepSeek V4 Flash'
 ---
 
-[OpenClaw](https://docs.openclaw.ai) is a TypeScript coding agent with the
-same basic shape as Hermes: pick a provider, give it a key, and chat. Camel
-Stream is an OpenAI-compatible endpoint, so OpenClaw can use it from
-configuration. No plugin is required.
+[OpenClaw](https://docs.openclaw.ai) can register an OpenAI-compatible
+provider in `~/.openclaw/openclaw.json`. No plugin is required.
 
 | | |
 | --- | --- |
@@ -36,17 +34,22 @@ npm install -g openclaw@latest
 openclaw onboard
 ```
 
-See the [OpenClaw install guide](https://docs.openclaw.ai/install) for
-daemon setup and other options.
+See the [OpenClaw install guide](https://docs.openclaw.ai/install).
 
-## 2. Add Camel Stream
+## 2. Create a Stream key
 
-Create a key in [the Stream console](https://stream.camelai.com/console).
+Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once.
 
 ```bash Terminal
 export CAMEL_API_KEY="qaml_live_..."
 ```
+
+The gateway must see the same environment variable. If you run OpenClaw as
+a daemon, put the key in that service environment or in
+`~/.openclaw/.env` if your install supports it.
+
+## 3. Add the provider
 
 Merge this into `~/.openclaw/openclaw.json`. Keep any providers you already
 have. The file is JSON5, so comments and unquoted keys are allowed.
@@ -83,33 +86,27 @@ have. The file is JSON5, so comments and unquoted keys are allowed.
 }
 ```
 
-`api: "openai-completions"` is the transport for Camel Stream's
+`api: "openai-completions"` is the transport for Stream's
 `/v1/chat/completions` endpoint. Set `contextWindow` yourself — OpenClaw's
 custom-provider default is much smaller than 256k.
 
-## 3. Reload and chat
+## 4. Reload and verify
 
 ```bash Terminal
 openclaw gateway restart
 openclaw models list
+```
+
+You should see `camel-stream/deepseek-v4-flash` with a **262k** context
+window. If the gateway is already running as a daemon, restart it so it
+reloads the config.
+
+```bash Terminal
 openclaw dashboard
 ```
 
-You should see `camel-stream/deepseek-v4-flash`. If the gateway is already
-running as a daemon, restart it so it reloads the config.
-
-## Check that it works
-
-```bash Terminal
-openclaw models list
-curl https://stream.camelai.com/v1/models \
-  -H "Authorization: Bearer $CAMEL_API_KEY"
-```
-
-`/v1/models` should return `deepseek-v4-flash` with a 256k
-`context_length`. If OpenClaw cannot see the provider, confirm
-`CAMEL_API_KEY` is set in the same environment as the gateway and that the
-JSON5 file is valid.
+If OpenClaw cannot see the provider, confirm `CAMEL_API_KEY` is set in the
+same environment as the gateway and that the JSON5 file is valid.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy.

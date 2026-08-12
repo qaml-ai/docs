@@ -5,8 +5,7 @@ description: 'Point OpenCode at Camel Stream with a custom OpenAI provider'
 ---
 
 [OpenCode](https://opencode.ai/docs) can register any OpenAI-compatible
-provider in its config. Camel Stream exposes `/v1/responses`, so a provider
-block is enough. No plugin is required.
+provider. Camel Stream exposes `/v1/responses`.
 
 | | |
 | --- | --- |
@@ -19,29 +18,50 @@ block is enough. No plugin is required.
 ## 1. Install OpenCode
 
 ```bash Terminal
-npm install -g opencode-ai
+curl -fsSL https://opencode.ai/install | bash
 ```
 
 See the [OpenCode install docs](https://opencode.ai/docs) for other
 options.
 
-## 2. Add your Stream key
+## 2. Create a Stream key
 
-Create a key in [the Stream console](https://stream.camelai.com/console).
+Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once.
 
+## 3. Connect Camel Stream
+
+The interactive path is the same one OpenRouter documents:
+
 ```bash Terminal
-export CAMEL_API_KEY="qaml_live_..."
+cd /path/to/your/project
+opencode
 ```
 
-## 3. Register Camel Stream
+Inside OpenCode:
 
-Merge this into your user `opencode.json`. Keep any providers you already
-have.
+```text
+/connect
+```
 
-```json opencode.json
+1. Choose **Other**.
+2. Enter provider ID `camel-stream`.
+3. Paste your Stream key.
+4. Run `/models`.
+5. Select `camel-stream/deepseek-v4-flash`.
+
+OpenCode stores the credential in its auth file, usually
+`~/.local/share/opencode/auth.json`. Do not commit that file.
+
+## 4. Optional config
+
+If you want the provider and model in config as well, merge this into your
+user `opencode.json` and keep any providers you already have:
+
+```json ~/.config/opencode/opencode.json
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "camel-stream/deepseek-v4-flash",
   "provider": {
     "camel-stream": {
       "npm": "@ai-sdk/openai",
@@ -59,18 +79,8 @@ have.
 }
 ```
 
-`@ai-sdk/openai` is the adapter for Stream's `/v1/responses` endpoint. Use
-`/connect`, choose **Other**, and enter provider ID `camel-stream` if you
-prefer the interactive path. See
+`@ai-sdk/openai` is the adapter for Stream's `/v1/responses` endpoint. See
 [OpenCode providers](https://opencode.ai/docs/providers).
-
-## 4. Select the model
-
-```bash Terminal
-opencode
-```
-
-Then run `/models` and choose `camel-stream/deepseek-v4-flash`.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy.

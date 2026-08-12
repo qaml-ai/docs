@@ -5,15 +5,21 @@ description: 'Point Claude Code at Camel Stream through an Anthropic-compatible 
 ---
 
 [Claude Code](https://code.claude.com/docs) can send Anthropic Messages
-traffic to a gateway. Camel Stream speaks that protocol, so you can point
-Claude Code at Stream without a plugin.
+traffic to a gateway. Camel Stream speaks that protocol.
 
 | | |
 | --- | --- |
 | **Base URL** | `https://stream.camelai.com` |
 | **Model** | `deepseek-v4-flash` |
-| **Key** | `CAMEL_API_KEY` as `ANTHROPIC_AUTH_TOKEN` |
+| **Auth** | `ANTHROPIC_AUTH_TOKEN` |
 | **Context window** | 256k input tokens |
+
+<Warning>
+  Claude Code's Stream endpoint has **no** `/v1`. Use
+  `https://stream.camelai.com`, not `https://stream.camelai.com/v1`.
+  Set `ANTHROPIC_API_KEY` to an empty string so Claude Code does not keep
+  using a previous Anthropic login.
+</Warning>
 
 <Note>
   Anthropic documents LLM gateways but does not endorse routing Claude Code
@@ -25,36 +31,48 @@ Claude Code at Stream without a plugin.
 ## 1. Install Claude Code
 
 ```bash Terminal
+curl -fsSL https://claude.ai/install.sh | bash
+```
+
+Or:
+
+```bash Terminal
 npm install -g @anthropic-ai/claude-code
 ```
 
-See the [Claude Code docs](https://code.claude.com/docs) for other install
-options.
+## 2. Create a Stream key
 
-## 2. Add your Stream key
-
-Create a key in [the Stream console](https://stream.camelai.com/console).
+Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once.
 
 ## 3. Point Claude Code at Stream
 
-For one session:
+Add this to `~/.zshrc` or `~/.bashrc`, then reload your shell:
 
 ```bash Terminal
+export CAMEL_API_KEY="qaml_live_..."
 export ANTHROPIC_BASE_URL="https://stream.camelai.com"
-export ANTHROPIC_AUTH_TOKEN="qaml_live_..."
+export ANTHROPIC_AUTH_TOKEN="$CAMEL_API_KEY"
+export ANTHROPIC_API_KEY=""
 export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY="1"
-claude
 ```
 
-`ANTHROPIC_AUTH_TOKEN` sends `Authorization: Bearer`. To persist the same
-settings, merge this into `~/.claude/settings.json`:
+```bash Terminal
+source ~/.zshrc
+```
+
+If you previously logged into Anthropic inside Claude Code, run `/logout`
+first.
+
+To persist the same settings without exporting them every session, merge
+this into user-level `~/.claude/settings.json`:
 
 ```json ~/.claude/settings.json
 {
   "env": {
     "ANTHROPIC_BASE_URL": "https://stream.camelai.com",
     "ANTHROPIC_AUTH_TOKEN": "qaml_live_...",
+    "ANTHROPIC_API_KEY": "",
     "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
   }
 }
@@ -62,10 +80,28 @@ settings, merge this into `~/.claude/settings.json`:
 
 Do not put the key in a project `.claude` file or a git repo.
 
-## 4. Select the model
+## 4. Verify
 
-In Claude Code, run `/model` and choose `deepseek-v4-flash`. Gateway
-discovery reads Stream's `/v1/models` endpoint.
+```bash Terminal
+cd /path/to/your/project
+claude
+```
+
+Inside Claude Code:
+
+```text
+/status
+```
+
+You should see:
+
+```text
+Auth token: ANTHROPIC_AUTH_TOKEN
+Anthropic base URL: https://stream.camelai.com
+```
+
+Then run `/model` and choose `deepseek-v4-flash`. Gateway discovery reads
+Stream's `/v1/models` endpoint.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy. Claude

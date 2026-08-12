@@ -4,9 +4,8 @@ sidebarTitle: 'Coding agents'
 description: 'Point Hermes, OpenClaw, Claude Code, Codex, OpenCode, or Pi at DeepSeek V4 Flash'
 ---
 
-Camel Stream is an OpenAI- and Anthropic-compatible endpoint. These agents
-do not need a Camel Stream plugin. Install the agent, add a Stream key, and
-paste a provider block.
+Create a key in [the Stream console](https://stream.camelai.com/console),
+then follow the guide for your agent. No Camel Stream plugin is required.
 
 | | |
 | --- | --- |
@@ -16,32 +15,30 @@ paste a provider block.
 | **Key** | `CAMEL_API_KEY` |
 | **Context window** | 256k input tokens |
 
-Create a key in [the Stream console](https://stream.camelai.com/console)
-before you start. It is shown once.
-
 <CardGroup cols={2}>
   <Card title="Hermes Agent" icon="robot" href="/stream/hermes">
-    `hermes model` or a `custom_providers` block.
+    `hermes model`, then pick Custom endpoint.
   </Card>
   <Card title="OpenClaw" icon="robot" href="/stream/openclaw">
-    Add a `models.providers` entry in `openclaw.json`.
+    Add a `models.providers` entry and restart the gateway.
   </Card>
   <Card title="Claude Code" icon="terminal" href="/stream/claude-code">
-    Set `ANTHROPIC_BASE_URL` to Stream's Messages API.
+    Set `ANTHROPIC_BASE_URL` and leave `ANTHROPIC_API_KEY` empty.
   </Card>
   <Card title="Codex" icon="code" href="/stream/codex">
-    Add a named Responses provider in `~/.codex`.
+    Add a named Responses profile in `~/.codex`.
   </Card>
   <Card title="OpenCode" icon="folder-open" href="/stream/opencode">
-    Register Camel Stream in `opencode.json`.
+    `/connect`, choose Other, then select the model.
   </Card>
   <Card title="Pi" icon="microchip" href="/stream/pi">
-    Add a provider to `~/.pi/agent/models.json`.
+    Add a provider in `~/.pi/agent/models.json`.
   </Card>
 </CardGroup>
 
 <Note>
   These are third-party agents. Camel Stream provides the model. Keep the
   key in an environment variable or the agent's secret file, not in a git
-  repo.
+  repo. Requests beyond your concurrent stream allowance
+  [queue instead of failing](/stream/queues-and-errors).
 </Note>

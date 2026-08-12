@@ -4,9 +4,8 @@ sidebarTitle: 'Pi'
 description: 'Point Pi at Camel Stream with a custom Responses provider'
 ---
 
-[Pi](https://github.com/earendil-works/pi-coding-agent) can add custom
-providers in `~/.pi/agent/models.json`. Camel Stream exposes
-`/v1/responses`, so a provider block is enough. No plugin is required.
+[Pi](https://pi.dev/docs/latest/quickstart) can add custom providers in
+`~/.pi/agent/models.json`. Camel Stream exposes `/v1/responses`.
 
 | | |
 | --- | --- |
@@ -22,12 +21,12 @@ providers in `~/.pi/agent/models.json`. Camel Stream exposes
 npm install -g --ignore-scripts @earendil-works/pi-coding-agent
 ```
 
-See the [Pi quickstart](https://github.com/earendil-works/pi-coding-agent/blob/main/docs/quickstart.md)
-for other install options.
+See the [Pi quickstart](https://pi.dev/docs/latest/quickstart) for other
+install options.
 
-## 2. Add your Stream key
+## 2. Create a Stream key
 
-Create a key in [the Stream console](https://stream.camelai.com/console).
+Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once.
 
 ```bash Terminal
@@ -63,15 +62,20 @@ have. The file reloads when you open `/model`.
 }
 ```
 
-See [Pi custom models](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
+`$CAMEL_API_KEY` is read from the environment. You can also run `/login`
+inside Pi and paste the key for the `camel-stream` provider. See
+[Pi custom models](https://pi.dev/docs/latest/models) and
+[Pi providers](https://pi.dev/docs/latest/providers).
 
 ## 4. Select the model
 
 ```bash Terminal
+cd /path/to/your/project
 pi
 ```
 
-Then run `/model` and choose `camel-stream/deepseek-v4-flash`.
+Then run `/model` and choose `camel-stream/deepseek-v4-flash`. If the model
+is listed but unavailable, the key is missing from the environment.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy. Pi

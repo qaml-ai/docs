@@ -5,8 +5,7 @@ description: 'Point Codex at Camel Stream with a named Responses provider'
 ---
 
 [Codex](https://developers.openai.com/codex) can use a custom OpenAI
-Responses provider. Camel Stream exposes `/v1/responses`, so a named
-profile is enough. No plugin is required.
+Responses provider. Camel Stream exposes `/v1/responses`.
 
 | | |
 | --- | --- |
@@ -18,31 +17,34 @@ profile is enough. No plugin is required.
 
 <Note>
   Codex ignores provider settings in project `.codex/config.toml` files.
-  Put this in your user Codex home, usually `~/.codex`.
+  Put this in your user Codex home, usually `~/.codex`. A separate profile
+  keeps Stream from replacing your normal OpenAI provider.
 </Note>
 
 ## 1. Install Codex
+
+Follow the [Codex CLI installation instructions](https://github.com/openai/codex),
+or:
 
 ```bash Terminal
 npm install -g @openai/codex
 ```
 
-See the [Codex docs](https://developers.openai.com/codex) for other install
-options.
+## 2. Create a Stream key
 
-## 2. Add your Stream key
-
-Create a key in [the Stream console](https://stream.camelai.com/console).
+Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once.
 
 ```bash Terminal
 export CAMEL_API_KEY="qaml_live_..."
 ```
 
+Keep the key in your shell environment or a secret manager. Do not put it
+in the TOML file.
+
 ## 3. Add a Camel Stream profile
 
-Create `~/.codex/camel-stream.config.toml` so it does not replace your
-normal OpenAI provider:
+Create `~/.codex/camel-stream.config.toml`:
 
 ```toml ~/.codex/camel-stream.config.toml
 model = "deepseek-v4-flash"
@@ -56,14 +58,18 @@ wire_api = "responses"
 ```
 
 `wire_api = "responses"` is the transport for Stream's `/v1/responses`
-endpoint. See
+endpoint. Unlike Claude Code, this URL **includes** `/v1`. See
 [Codex custom model providers](https://developers.openai.com/codex/config-advanced/#custom-model-providers).
 
-## 4. Start Codex
+## 4. Start and verify
 
 ```bash Terminal
+cd /path/to/your/project
 codex --profile camel-stream
 ```
+
+Codex should use `deepseek-v4-flash` through `camel_stream`. If auth
+fails, confirm `CAMEL_API_KEY` is set in the same shell.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy. Codex
