@@ -66,6 +66,7 @@
             "pages": [
               "stream/authentication",
               "stream/endpoints",
+              "stream/management-api",
               "stream/sdks",
               "stream/queues-and-errors"
             ]

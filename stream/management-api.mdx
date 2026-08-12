@@ -1,0 +1,158 @@
+---
+title: 'Management API'
+description: 'Create and revoke Camel Stream API keys programmatically'
+---
+
+The Management API lets your backend provision a separate inference key for
+each user, service, or environment. It is available to every Camel Stream
+account.
+
+Management keys begin with `qaml_mgmt_`. They can manage inference keys but
+cannot call inference endpoints. Keys created through this API belong to the
+same account and share its subscription access and concurrent-stream limit.
+
+## Create a management key
+
+Open [Stream Settings](https://stream.camelai.com/settings), find **Management
+API keys**, and select **Generate management key**.
+
+<Warning>
+  Copy the management key when it is created. The plaintext value is shown
+  only once. Store it in a server-side secret manager and never expose it in
+  browser code.
+</Warning>
+
+Set the credential in your backend environment:
+
+```bash Terminal
+export CAMEL_MANAGEMENT_API_KEY="qaml_mgmt_..."
+```
+
+All Management API requests use this bearer token:
+
+```http
+Authorization: Bearer $CAMEL_MANAGEMENT_API_KEY
+```
+
+## Create an inference key
+
+**POST** `/v1/keys`
+
+```bash cURL
+curl -X POST https://stream.camelai.com/v1/keys \
+  -H "Authorization: Bearer $CAMEL_MANAGEMENT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Customer user 42",
+    "external_id": "user-42",
+    "expires_at": "2027-01-01T00:00:00Z"
+  }'
+```
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `name` | Yes | Display name between 1 and 80 characters. |
+| `external_id` | No | Your stable user or resource ID, between 1 and 128 characters. |
+| `expires_at` | No | Future ISO 8601 timestamp in UTC, ending in `Z`. |
+
+The successful `201` response returns the plaintext inference key once:
+
+```json
+{
+  "data": {
+    "id": "1de22db7-3112-4d77-87b5-40c04cb27f41",
+    "name": "Customer user 42",
+    "key_prefix": "qaml_live_example...",
+    "external_id": "user-42",
+    "created_at": "2026-08-12T20:00:00.000Z",
+    "expires_at": "2027-01-01T00:00:00.000Z",
+    "disabled": false
+  },
+  "key": "qaml_live_..."
+}
+```
+
+<Warning>
+  Save `key` before discarding the response. Camel Stream stores only its hash,
+  so the plaintext value cannot be retrieved later.
+</Warning>
+
+### Prevent duplicate provisioning
+
+Use `external_id` as your idempotency and reconciliation identifier. An account
+can have only one active key with a given `external_id`.
+
+If an active key already exists, creation returns `409` with error code
+`external_id_conflict`. When the existing row is available, its safe metadata
+is included under `data`; its plaintext key is never returned.
+
+## List inference keys
+
+**GET** `/v1/keys`
+
+```bash cURL
+curl https://stream.camelai.com/v1/keys \
+  -H "Authorization: Bearer $CAMEL_MANAGEMENT_API_KEY"
+```
+
+The response contains active key metadata under `data`. It never contains
+plaintext inference keys.
+
+Filter by your external identifier with the `external_id` query parameter:
+
+```bash cURL
+curl "https://stream.camelai.com/v1/keys?external_id=user-42" \
+  -H "Authorization: Bearer $CAMEL_MANAGEMENT_API_KEY"
+```
+
+## Get an inference key
+
+**GET** `/v1/keys/:id`
+
+```bash cURL
+curl https://stream.camelai.com/v1/keys/1de22db7-3112-4d77-87b5-40c04cb27f41 \
+  -H "Authorization: Bearer $CAMEL_MANAGEMENT_API_KEY"
+```
+
+This returns safe key metadata. It returns `404` when the key does not exist,
+has been revoked, or belongs to another account.
+
+## Revoke an inference key
+
+**DELETE** `/v1/keys/:id`
+
+```bash cURL
+curl -X DELETE \
+  https://stream.camelai.com/v1/keys/1de22db7-3112-4d77-87b5-40c04cb27f41 \
+  -H "Authorization: Bearer $CAMEL_MANAGEMENT_API_KEY"
+```
+
+A successful request returns:
+
+```json
+{"deleted": true}
+```
+
+Revocation is immediate and account-scoped. You can revoke the management key
+itself from Stream Settings; doing so does not revoke inference keys it created.
+
+## Errors
+
+Management API errors use this shape:
+
+```json
+{
+  "error": {
+    "message": "Invalid management key",
+    "type": "management_api_error",
+    "code": "invalid_management_key"
+  }
+}
+```
+
+| Status | Meaning |
+| --- | --- |
+| `400` | A name, external ID, expiration, or key ID is invalid. |
+| `401` | The management key is missing, invalid, or revoked. |
+| `404` | The inference key was not found in the authenticated account. |
+| `409` | An active key already uses the requested `external_id`. |

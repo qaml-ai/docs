@@ -19,3 +19,10 @@ keys beginning with `qaml_live_`.
   Never expose a key in browser code, commit it to a repository, or include it
   in a public log. Revoked keys stop working immediately.
 </Warning>
+
+## Programmatic key provisioning
+
+Management API keys begin with `qaml_mgmt_` and are separate from inference
+keys. They can create and revoke `qaml_live_` keys but cannot run inference.
+See the [Management API guide](/stream/management-api) to provision keys from
+your backend.
