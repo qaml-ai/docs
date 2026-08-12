@@ -58,7 +58,9 @@
             "group": "Start Here",
             "pages": [
               "stream/overview",
-              "stream/quickstart"
+              "stream/quickstart",
+              "stream/hermes",
+              "stream/openclaw"
             ]
           },
           {
