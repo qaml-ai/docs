@@ -213,5 +213,11 @@
   },
   "footer": {
     "socials": {}
-  }
+  },
+  "redirects": [
+    {
+      "source": "/stream/agents",
+      "destination": "/stream/hermes"
+    }
+  ]
 }
