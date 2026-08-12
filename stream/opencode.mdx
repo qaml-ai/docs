@@ -1,0 +1,90 @@
+---
+title: 'Use OpenCode'
+sidebarTitle: 'OpenCode'
+description: 'Point OpenCode at Camel Stream with a custom OpenAI provider'
+---
+
+[OpenCode](https://opencode.ai/docs) can register any OpenAI-compatible
+provider in its config. Camel Stream exposes `/v1/responses`, so a provider
+block is enough. No plugin is required.
+
+| | |
+| --- | --- |
+| **Provider** | `camel-stream` |
+| **Model** | `camel-stream/deepseek-v4-flash` |
+| **Base URL** | `https://stream.camelai.com/v1` |
+| **Key** | `CAMEL_API_KEY` |
+| **Context window** | 256k input tokens |
+
+## 1. Install OpenCode
+
+```bash Terminal
+npm install -g opencode-ai
+```
+
+See the [OpenCode install docs](https://opencode.ai/docs) for other
+options.
+
+## 2. Add your Stream key
+
+Create a key in [the Stream console](https://stream.camelai.com/console).
+It is shown once.
+
+```bash Terminal
+export CAMEL_API_KEY="qaml_live_..."
+```
+
+## 3. Register Camel Stream
+
+Merge this into your user `opencode.json`. Keep any providers you already
+have.
+
+```json opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "camel-stream": {
+      "npm": "@ai-sdk/openai",
+      "name": "Camel Stream",
+      "options": {
+        "baseURL": "https://stream.camelai.com/v1"
+      },
+      "models": {
+        "deepseek-v4-flash": {
+          "name": "DeepSeek V4 Flash"
+        }
+      }
+    }
+  }
+}
+```
+
+`@ai-sdk/openai` is the adapter for Stream's `/v1/responses` endpoint. Use
+`/connect`, choose **Other**, and enter provider ID `camel-stream` if you
+prefer the interactive path. See
+[OpenCode providers](https://opencode.ai/docs/providers).
+
+## 4. Select the model
+
+```bash Terminal
+opencode
+```
+
+Then run `/models` and choose `camel-stream/deepseek-v4-flash`.
+
+<Note>
+  Camel Stream queues requests when every subscribed stream is busy.
+  OpenCode should keep the HTTP connection open. See
+  [Queues & errors](/stream/queues-and-errors).
+</Note>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="All agents" icon="robot" href="/stream/agents">
+    The same key works with Hermes, Claude Code, Codex, and Pi.
+  </Card>
+  <Card title="SDKs" icon="code" href="/stream/sdks">
+    Use the official OpenAI and Anthropic clients.
+  </Card>
+</CardGroup>

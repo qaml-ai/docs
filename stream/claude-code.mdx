@@ -1,0 +1,85 @@
+---
+title: 'Use Claude Code'
+sidebarTitle: 'Claude Code'
+description: 'Point Claude Code at Camel Stream through an Anthropic-compatible gateway'
+---
+
+[Claude Code](https://code.claude.com/docs) can send Anthropic Messages
+traffic to a gateway. Camel Stream speaks that protocol, so you can point
+Claude Code at Stream without a plugin.
+
+| | |
+| --- | --- |
+| **Base URL** | `https://stream.camelai.com` |
+| **Model** | `deepseek-v4-flash` |
+| **Key** | `CAMEL_API_KEY` as `ANTHROPIC_AUTH_TOKEN` |
+| **Context window** | 256k input tokens |
+
+<Note>
+  Anthropic documents LLM gateways but does not endorse routing Claude Code
+  to non-Claude models. This setup is Claude Code compatible, not
+  Anthropic-endorsed. See
+  [Connect Claude Code to an LLM gateway](https://code.claude.com/docs/en/llm-gateway-connect).
+</Note>
+
+## 1. Install Claude Code
+
+```bash Terminal
+npm install -g @anthropic-ai/claude-code
+```
+
+See the [Claude Code docs](https://code.claude.com/docs) for other install
+options.
+
+## 2. Add your Stream key
+
+Create a key in [the Stream console](https://stream.camelai.com/console).
+It is shown once.
+
+## 3. Point Claude Code at Stream
+
+For one session:
+
+```bash Terminal
+export ANTHROPIC_BASE_URL="https://stream.camelai.com"
+export ANTHROPIC_AUTH_TOKEN="qaml_live_..."
+export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY="1"
+claude
+```
+
+`ANTHROPIC_AUTH_TOKEN` sends `Authorization: Bearer`. To persist the same
+settings, merge this into `~/.claude/settings.json`:
+
+```json ~/.claude/settings.json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://stream.camelai.com",
+    "ANTHROPIC_AUTH_TOKEN": "qaml_live_...",
+    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
+  }
+}
+```
+
+Do not put the key in a project `.claude` file or a git repo.
+
+## 4. Select the model
+
+In Claude Code, run `/model` and choose `deepseek-v4-flash`. Gateway
+discovery reads Stream's `/v1/models` endpoint.
+
+<Note>
+  Camel Stream queues requests when every subscribed stream is busy. Claude
+  Code should keep the HTTP connection open. See
+  [Queues & errors](/stream/queues-and-errors).
+</Note>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="All agents" icon="robot" href="/stream/agents">
+    The same key works with Hermes, Codex, OpenCode, and Pi.
+  </Card>
+  <Card title="SDKs" icon="code" href="/stream/sdks">
+    Use the official OpenAI and Anthropic clients.
+  </Card>
+</CardGroup>

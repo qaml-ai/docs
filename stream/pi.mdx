@@ -1,0 +1,91 @@
+---
+title: 'Use Pi'
+sidebarTitle: 'Pi'
+description: 'Point Pi at Camel Stream with a custom Responses provider'
+---
+
+[Pi](https://github.com/earendil-works/pi-coding-agent) can add custom
+providers in `~/.pi/agent/models.json`. Camel Stream exposes
+`/v1/responses`, so a provider block is enough. No plugin is required.
+
+| | |
+| --- | --- |
+| **Provider** | `camel-stream` |
+| **Model** | `camel-stream/deepseek-v4-flash` |
+| **Base URL** | `https://stream.camelai.com/v1` |
+| **Key** | `CAMEL_API_KEY` |
+| **Context window** | 256k input tokens |
+
+## 1. Install Pi
+
+```bash Terminal
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+```
+
+See the [Pi quickstart](https://github.com/earendil-works/pi-coding-agent/blob/main/docs/quickstart.md)
+for other install options.
+
+## 2. Add your Stream key
+
+Create a key in [the Stream console](https://stream.camelai.com/console).
+It is shown once.
+
+```bash Terminal
+export CAMEL_API_KEY="qaml_live_..."
+```
+
+## 3. Register Camel Stream
+
+Merge this into `~/.pi/agent/models.json`. Keep any providers you already
+have. The file reloads when you open `/model`.
+
+```json ~/.pi/agent/models.json
+{
+  "providers": {
+    "camel-stream": {
+      "baseUrl": "https://stream.camelai.com/v1",
+      "api": "openai-responses",
+      "apiKey": "$CAMEL_API_KEY",
+      "authHeader": true,
+      "models": [
+        {
+          "id": "deepseek-v4-flash",
+          "name": "DeepSeek V4 Flash",
+          "reasoning": true,
+          "input": ["text"],
+          "contextWindow": 262144,
+          "maxTokens": 32768,
+          "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+        }
+      ]
+    }
+  }
+}
+```
+
+See [Pi custom models](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/models.md).
+
+## 4. Select the model
+
+```bash Terminal
+pi
+```
+
+Then run `/model` and choose `camel-stream/deepseek-v4-flash`.
+
+<Note>
+  Camel Stream queues requests when every subscribed stream is busy. Pi
+  should keep the HTTP connection open. See
+  [Queues & errors](/stream/queues-and-errors).
+</Note>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="All agents" icon="robot" href="/stream/agents">
+    The same key works with Hermes, Claude Code, Codex, and OpenCode.
+  </Card>
+  <Card title="SDKs" icon="code" href="/stream/sdks">
+    Use the official OpenAI and Anthropic clients.
+  </Card>
+</CardGroup>
