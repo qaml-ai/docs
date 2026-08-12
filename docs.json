@@ -59,7 +59,6 @@
             "pages": [
               "stream/overview",
               "stream/quickstart",
-              "stream/agents",
               "stream/hermes",
               "stream/openclaw",
               "stream/claude-code",
