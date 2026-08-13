@@ -202,14 +202,18 @@
   "navbar": {
     "links": [
       {
+        "label": "Try Coding Agent",
+        "href": "https://camelai.dev"
+      },
+      {
         "label": "Support",
         "href": "mailto:support@camelai.com"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Try camelAI",
-      "href": "https://camelai.dev"
+      "label": "Get an API Key",
+      "href": "https://stream.camelai.com/console"
     }
   },
   "footer": {
