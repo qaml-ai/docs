@@ -16,7 +16,12 @@
             "group": "Start Here",
             "pages": [
               "stream/overview",
-              "stream/quickstart",
+              "stream/quickstart"
+            ]
+          },
+          {
+            "group": "Coding Agents",
+            "pages": [
               "stream/agents",
               "stream/hermes",
               "stream/openclaw",
