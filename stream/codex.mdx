@@ -42,19 +42,23 @@ export CAMEL_API_KEY="qaml_live_..."
 Keep the key in your shell environment or a secret manager. Do not put it
 in the TOML file.
 
-## 3. Add a Camel Stream profile
+## 3. Add Camel Stream
 
-Create `~/.codex/camel-stream.config.toml`:
+Add the provider to your user config:
 
-```toml ~/.codex/camel-stream.config.toml
-model = "deepseek-v4-flash"
-model_provider = "camel_stream"
-
+```toml ~/.codex/config.toml
 [model_providers.camel_stream]
 name = "Camel Stream"
 base_url = "https://stream.camelai.com/v1"
 env_key = "CAMEL_API_KEY"
 wire_api = "responses"
+```
+
+Then create a separate profile so Stream does not replace your normal provider:
+
+```toml ~/.codex/camel-stream.config.toml
+model = "deepseek-v4-flash"
+model_provider = "camel_stream"
 ```
 
 `wire_api = "responses"` is the transport for Stream's `/v1/responses`

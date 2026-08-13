@@ -17,8 +17,6 @@ traffic to a gateway. Camel Stream speaks that protocol.
 <Warning>
   Claude Code's Stream endpoint has **no** `/v1`. Use
   `https://stream.camelai.com`, not `https://stream.camelai.com/v1`.
-  Set `ANTHROPIC_API_KEY` to an empty string so Claude Code does not keep
-  using a previous Anthropic login.
 </Warning>
 
 <Note>
@@ -53,8 +51,11 @@ Add this to `~/.zshrc` or `~/.bashrc`, then reload your shell:
 export CAMEL_API_KEY="qaml_live_..."
 export ANTHROPIC_BASE_URL="https://stream.camelai.com"
 export ANTHROPIC_AUTH_TOKEN="$CAMEL_API_KEY"
-export ANTHROPIC_API_KEY=""
-export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY="1"
+unset ANTHROPIC_API_KEY
+export ANTHROPIC_MODEL="deepseek-v4-flash"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="deepseek-v4-flash"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="deepseek-v4-flash"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-flash"
 ```
 
 ```bash Terminal
@@ -62,21 +63,8 @@ source ~/.zshrc
 ```
 
 If you previously logged into Anthropic inside Claude Code, run `/logout`
-first.
-
-To persist the same settings without exporting them every session, merge
-this into user-level `~/.claude/settings.json`:
-
-```json ~/.claude/settings.json
-{
-  "env": {
-    "ANTHROPIC_BASE_URL": "https://stream.camelai.com",
-    "ANTHROPIC_AUTH_TOKEN": "qaml_live_...",
-    "ANTHROPIC_API_KEY": "",
-    "CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY": "1"
-  }
-}
-```
+first. The model variables map Claude Code's main and background requests to
+`deepseek-v4-flash`; gateway discovery does not list non-Claude model IDs.
 
 Do not put the key in a project `.claude` file or a git repo.
 
@@ -100,8 +88,8 @@ Auth token: ANTHROPIC_AUTH_TOKEN
 Anthropic base URL: https://stream.camelai.com
 ```
 
-Then run `/model` and choose `deepseek-v4-flash`. Gateway discovery reads
-Stream's `/v1/models` endpoint.
+The session and Claude Code's Opus, Sonnet, and Haiku aliases now resolve to
+`deepseek-v4-flash`.
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy. Claude
