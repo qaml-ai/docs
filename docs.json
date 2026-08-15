@@ -10,6 +10,40 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Stream",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "stream/overview",
+              "stream/quickstart"
+            ]
+          },
+          {
+            "group": "Coding Agents",
+            "pages": [
+              "stream/agents",
+              "stream/hermes",
+              "stream/openclaw",
+              "stream/claude-code",
+              "stream/codex",
+              "stream/opencode",
+              "stream/pi"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "stream/authentication",
+              "stream/endpoints",
+              "stream/management-api",
+              "stream/sdks",
+              "stream/queues-and-errors"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Coding Agent",
         "groups": [
           {
@@ -47,35 +81,6 @@
             "pages": [
               "features/cron-jobs",
               "features/email-and-slack"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Stream",
-        "groups": [
-          {
-            "group": "Start Here",
-            "pages": [
-              "stream/overview",
-              "stream/quickstart",
-              "stream/agents",
-              "stream/hermes",
-              "stream/openclaw",
-              "stream/claude-code",
-              "stream/codex",
-              "stream/opencode",
-              "stream/pi"
-            ]
-          },
-          {
-            "group": "API Reference",
-            "pages": [
-              "stream/authentication",
-              "stream/endpoints",
-              "stream/management-api",
-              "stream/sdks",
-              "stream/queues-and-errors"
             ]
           }
         ]
@@ -173,14 +178,14 @@
     "global": {
       "anchors": [
         {
-          "anchor": "camelAI",
-          "href": "https://camelai.dev",
-          "icon": "browser"
-        },
-        {
           "anchor": "Stream",
           "href": "https://stream.camelai.com",
           "icon": "bolt"
+        },
+        {
+          "anchor": "Coding Agent",
+          "href": "https://camelai.dev",
+          "icon": "browser"
         },
         {
           "anchor": "Legacy App",
@@ -202,14 +207,18 @@
   "navbar": {
     "links": [
       {
+        "label": "Try Coding Agent",
+        "href": "https://camelai.dev"
+      },
+      {
         "label": "Support",
         "href": "mailto:support@camelai.com"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Try camelAI",
-      "href": "https://camelai.dev"
+      "label": "Get an API Key",
+      "href": "https://stream.camelai.com/console"
     }
   },
   "footer": {
