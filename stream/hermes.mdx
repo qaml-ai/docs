@@ -122,40 +122,29 @@ hermes doctor
     purchase at least 1 additional Stream. Each subscription adds one
     concurrent stream, so subagents run truly in parallel.
 
-    If you prefer to keep 1 stream, we recommend you disable subagents, cap
-    them, or raise Hermes' timeouts so queued requests wait it out. The
-    setup below covers the one-stream options.
+    If you prefer to keep 1 stream, we recommend you cap subagents so only
+    one runs at a time. Raising Hermes' timeouts can also help queued
+    requests survive the wait. The setup below covers both.
   </Accordion>
 </AccordionGroup>
 
-To run Hermes on one stream, disable subagents or cap them:
+To run Hermes on one stream, cap delegation so only one subagent runs at a
+time:
 
-<Tabs>
-  <Tab title="Disable subagents (recommended)">
-    ```yaml ~/.hermes/config.yaml
-    agent:
-      disabled_toolsets:
-        - delegation
-    ```
+```yaml ~/.hermes/config.yaml
+delegation:
+  max_concurrent_children: 1
+  max_spawn_depth: 1
+  orchestrator_enabled: false
+```
 
-    Hermes makes one model request at a time, so nothing competes for the
-    stream except your other sessions.
-  </Tab>
-  <Tab title="Keep subagents">
-    ```yaml ~/.hermes/config.yaml
-    delegation:
-      max_concurrent_children: 1
-      max_spawn_depth: 1
-      orchestrator_enabled: false
-    ```
+Capping beats disabling subagents outright: subagents do useful work, like
+keeping the main agent's context compact, and a cap keeps that. A child
+still runs alongside its parent, so some queueing remains and
+subagent-heavy prompts run slower than on a multi-stream account.
 
-    A child still runs alongside its parent, so some queueing remains. Expect
-    subagent-heavy prompts to be slower than on a multi-stream account.
-  </Tab>
-</Tabs>
-
-In both modes, raise Hermes' timeouts so queued requests outlast the wait
-instead of being killed:
+If requests still get killed, you can also raise Hermes' timeouts so queued
+requests outlast the wait:
 
 ```bash ~/.hermes/.env
 HERMES_API_TIMEOUT=3600
@@ -164,8 +153,9 @@ HERMES_STREAM_READ_TIMEOUT=3600
 HERMES_STREAM_STALE_TIMEOUT=3600
 ```
 
-This gives every request an hour to clear the queue. The tradeoff is that a
-genuine outage also looks like a hang for up to an hour.
+This gives every request an hour to clear the queue. It's a backstop rather
+than a fix: the queue is just as long, and a genuine outage also looks like
+a hang for up to an hour.
 
 <Note>
   Set the timeouts in `.env`, not per provider in `config.yaml`. Hermes
