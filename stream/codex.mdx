@@ -59,11 +59,18 @@ Then create a separate profile so Stream does not replace your normal provider:
 ```toml ~/.codex/camel-stream.config.toml
 model = "deepseek-v4-flash"
 model_provider = "camel_stream"
+model_context_window = 262144
+model_reasoning_effort = "high"
 ```
 
 `wire_api = "responses"` is the transport for Stream's `/v1/responses`
 endpoint. Unlike Claude Code, this URL **includes** `/v1`. See
 [Codex custom model providers](https://developers.openai.com/codex/config-advanced/#custom-model-providers).
+
+`model_reasoning_effort` is sent to Stream as the Responses API
+`reasoning.effort` value. Use `high` for stronger reasoning, or change it to
+`low` when latency matters more. `model_context_window` prevents Codex from
+relying on its generic context fallback for the Stream model.
 
 ## 4. Start and verify
 
@@ -74,6 +81,14 @@ codex --profile camel-stream
 
 Codex should use `deepseek-v4-flash` through `camel_stream`. If auth
 fails, confirm `CAMEL_API_KEY` is set in the same shell.
+
+<Warning>
+  Codex may warn that metadata for `deepseek-v4-flash` was not found because
+  the model is not in Codex's built-in OpenAI model catalog. The explicit
+  context and reasoning settings above keep the important runtime values from
+  depending on fallback defaults; the warning does not mean reasoning is
+  disabled.
+</Warning>
 
 <Note>
   Camel Stream queues requests when every subscribed stream is busy. Codex
