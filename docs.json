@@ -111,7 +111,9 @@
           {
             "group": "Operate",
             "pages": [
-              "self-hosting/operations"
+              "self-hosting/operations",
+              "self-hosting/usage-tracking",
+              "self-hosting/spend-limits"
             ]
           }
         ]

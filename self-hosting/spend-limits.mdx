@@ -1,0 +1,77 @@
+---
+title: 'Set per-user spend limits'
+description: 'Enforce rolling LLM spend caps for each user on a self-hosted camelAI installation.'
+sidebarTitle: 'Spend limits'
+---
+
+Self-hosted camelAI can cap each user's rolling LLM spend. When a user's
+settled spend reaches a limit, camelAI denies new LLM pulls for that user
+until enough usage ages out of the window.
+
+Limits are enforced against [tracked usage](/self-hosting/usage-tracking) and
+managed through the same
+[admin API](/self-hosting/usage-tracking#admin-api-access).
+
+<Info>
+  Spend limits require **selfhost-v0.1.14** or later and have no product UI.
+</Info>
+
+## Set limits
+
+A user's limits live at
+`/api/admin/orgs/{ORG_ID}/usage/users/{USER_ID}/limits`. `GET` returns the
+current limits and each window's spend. `PUT` replaces the full list:
+
+```bash
+curl --fail --silent --request PUT \
+  --header "Authorization: Bearer ${ADMIN_API_KEY}" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "limits": [
+      { "window_hours": 24, "limit_usd": 5, "label": "daily" },
+      { "window_hours": 720, "limit_usd": 50, "label": "30-day" }
+    ]
+  }' \
+  "http://127.0.0.1:3001/api/admin/orgs/${ORG_ID}/usage/users/${USER_ID}/limits"
+```
+
+Each limit caps USD spend over the preceding `window_hours`. A user can have
+several limits at once, and all of them apply.
+
+Before limiting a user who uses custom model IDs, add
+[pricing overrides](/self-hosting/usage-tracking#model-pricing) for those
+models. Unpriced usage blocks a limited user entirely.
+
+## How enforcement works
+
+camelAI checks limits before accepting each pull, not during one. A pull that
+was already accepted runs to completion even if it crosses the cap, and
+concurrent pulls can settle after crossing it, so a user can slightly exceed a
+limit. Later pulls are denied until enough usage ages out of the window.
+
+## Unknown pricing fails closed
+
+For a user with an active limit, camelAI denies a pull when it cannot price
+the requested model, or when any unpriced usage sits inside an active window.
+Built-in models are priced automatically, so this mainly affects custom model
+IDs.
+
+A [pricing override](/self-hosting/usage-tracking#model-pricing) makes future
+pulls for that provider and model eligible, but existing unpriced rows are
+never repriced. They keep blocking until they age out of every active window
+or you clear the user's limits.
+
+## Clear limits
+
+`PUT` an empty list to the same endpoint to remove a user's limits:
+
+```bash
+curl --fail --silent --request PUT \
+  --header "Authorization: Bearer ${ADMIN_API_KEY}" \
+  --header "Content-Type: application/json" \
+  --data '{ "limits": [] }' \
+  "http://127.0.0.1:3001/api/admin/orgs/${ORG_ID}/usage/users/${USER_ID}/limits"
+```
+
+Clearing limits also unblocks a user whose active window contains unpriced
+usage.

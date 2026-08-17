@@ -1,0 +1,114 @@
+---
+title: 'Track per-user LLM usage'
+description: 'Report LLM spend by user, provider, and model on a self-hosted camelAI installation.'
+sidebarTitle: 'Usage tracking'
+---
+
+Self-hosted camelAI records every covered LLM pull with its user, provider,
+model, and token counts, plus the calculated cost when pricing is known. Read
+the records through the local admin API for per-user spend reports, filtered
+totals, or a detailed log.
+[Spend limits](/self-hosting/spend-limits) enforce rolling caps against the
+same records.
+
+<Info>
+  Usage tracking requires **selfhost-v0.1.14** or later and has no product UI.
+  If you are on an earlier release, [upgrade your
+  installation](/self-hosting/operations#upgrade) first.
+</Info>
+
+## Admin API access
+
+Send requests to the internal application URL and authenticate with the
+`ADMIN_API_KEY` value from `.env.selfhost`:
+
+```bash
+curl --fail --silent \
+  --header "Authorization: Bearer ${ADMIN_API_KEY}" \
+  "http://127.0.0.1:3001/api/admin/orgs?limit=100"
+```
+
+The internal URL is `SELFHOST_INTERNAL_APP_URL`, or `http://127.0.0.1:3001`
+when unset. It bypasses the interactive Pomerium login, so run requests on the
+host itself. Installations created on selfhost-v0.1.14 or later already have
+the key; an older `.env.selfhost` gets one from `bun run
+selfhost:migrate-secrets` or a normal `bun run selfhost:up`.
+
+<Warning>
+  Keep the admin API key on the host. camelAI never passes it to project
+  containers, sandboxes, or deployed apps. Do not commit it or send it in
+  email or chat.
+</Warning>
+
+## What is recorded
+
+Each pull records the user, organization, provider, model, input and output
+token counts, cache creation and cache read token counts, and the cost in USD
+when pricing is known. Tracking covers main agents, child agents, context
+compaction, and attributable virtual-AI calls.
+
+Auxiliary title generation, completion summaries, and chat-group icon
+generation are not recorded in this version, so reported usage can be slightly
+lower than your provider's bill.
+
+## Report usage
+
+`GET /api/admin/orgs` and `GET /api/admin/users` list organization and user
+IDs. Report ranges are Unix-millisecond timestamps; `from` is inclusive and
+`to` is exclusive.
+
+- `GET /api/admin/orgs/{ORG_ID}/usage/users?from={FROM_MS}&to={TO_MS}`
+  returns spend per user, grouped by provider and model.
+- `GET /api/admin/orgs/{ORG_ID}/usage/log` returns individual usage records.
+- `GET /api/admin/orgs/{ORG_ID}/usage/log/sum` returns cost, request, and
+  token totals.
+
+The log endpoints accept the same range and filter by `user_id`, `provider`,
+`model`, `usage_kind`, and `usage_surface`. List responses paginate with
+`limit` and `cursor`.
+
+For example, the last 30 days of per-user spend:
+
+```bash
+NOW_MS=$(date +%s000)
+FROM_MS=$((NOW_MS - 30 * 24 * 60 * 60 * 1000))
+curl --fail --silent \
+  --header "Authorization: Bearer ${ADMIN_API_KEY}" \
+  "http://127.0.0.1:3001/api/admin/orgs/${ORG_ID}/usage/users?from=${FROM_MS}&to=${NOW_MS}"
+```
+
+## Model pricing
+
+Costs come from the built-in pricing catalog, which covers the stock provider
+models. A custom model ID without catalog pricing records tokens but no cost
+until you add an exact override for its provider and model.
+
+`GET /api/admin/orgs/{ORG_ID}/usage/pricing` returns the current overrides and
+recently seen unpriced models. `PUT` to the same path replaces the complete
+override list:
+
+```json
+{
+  "prices": [
+    {
+      "provider": "custom",
+      "model": "acme-code-70b",
+      "input_usd_per_million": 0.8,
+      "output_usd_per_million": 2.4,
+      "cache_creation_usd_per_million": 1,
+      "cache_read_usd_per_million": 0.08
+    }
+  ]
+}
+```
+
+The `PUT` is a full replacement, not an upsert: read the current list, merge
+your change, and send the complete result, or you will delete any override you
+leave out. There are no default rates for unknown models, so take the exact
+prices from your provider's price list. An all-zero override is valid only for
+a genuinely free model.
+
+Overrides apply to usage recorded after the change; existing rows are never
+repriced. Unpriced usage appears in reports without a cost, and it blocks any
+user who has an active
+[spend limit](/self-hosting/spend-limits#unknown-pricing-fails-closed).
