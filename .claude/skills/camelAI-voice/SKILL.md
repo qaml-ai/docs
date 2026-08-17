@@ -37,6 +37,19 @@ description: How to channel the brand's voice for our docs page. Use when drafti
 - Incomplete sentences used as lists. Don't drop a series of nouns as a standalone sentence ("Canonical tags, sitemaps, meta descriptions, structured data."). Either use a proper bulleted list with a complete introductory sentence, or fold them into a grammatically complete sentence.
 - Dramatic repetition without added value. Don't restate a point just to make it sound more severe ("Google will stop indexing them. Your landing page just dies."). If you want to restate for emphasis, add the concrete impact on the reader's work ("Google will stop indexing them, which means all the work you put into that content stops contributing to your rankings."). If there's no real-world impact to add, don't restate.
 
+## FAQ and troubleshooting sections in docs
+
+Patterns from editing the Hermes subagent guidance (Aug 2026):
+
+- Prefer an `<AccordionGroup>` of 3-4 simple questions over one heading with paragraphs of prose, and over one broad question with a bulky answer. Overlap between answers is fine; each reader expands only the question that matches theirs.
+- Each question must stand alone. Don't write a question like "What's the fix?" that only makes sense after reading the previous one.
+- Don't frame question titles as the product failing. "Why does Hermes hang and then fail under parallel work?" reads like a promise of failure. Use conditional framing: "What happens if a request queues for too long?"
+- Answers must survive the reader's obvious follow-ups. If the answer says "kills the request after a timeout," give the actual numbers. If it references "the loop," walk the sequence step by step instead of naming it.
+- When one fix is buying more of the product, never present it as the only fix. Open with a plain framing sentence ("There are a few options to get X to work well with Y."), recommend the purchase for the workloads that genuinely need it, and give the non-purchase path its own paragraph. Two short paragraphs, one per path, beat one dense paragraph joined by "Or".
+- Recommendation voice is "we recommend you..." rather than a bare imperative like "Match your streams to your workload." Use numerals for purchase counts ("at least 1 additional Stream").
+- Cut qualifiers that only matter to edge cases when the plain version is accurate enough. "Current builds give DeepSeek V4 models 10 minutes; older builds and some request types kill after as little as 90 seconds" became "stays silent past 10 minutes; older builds kill after as little as 90 seconds." Same for mechanism detail like "sends no bytes" — drop it if the sentence works without it.
+- Don't promise absolute outcomes from a fix. "Prevents the kills entirely" became "should reduce the likelihood of a request getting killed." Hedge to what we can actually guarantee.
+
 ## Writing changelogs
 
 Changelogs go in `changelog/platform.mdx` (current product) or `changelog/legacy.mdx` (old BI product). Each release is a `<Update label="DATE" description="TITLE">` block. New entries go at the top.

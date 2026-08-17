@@ -92,10 +92,86 @@ hermes doctor
 `hermes doctor` should see the custom provider. If auth fails, confirm
 `CAMEL_API_KEY` is in `~/.hermes/.env`.
 
+## Subagents and one stream
+
+<AccordionGroup>
+  <Accordion title="Do Hermes subagents work with Stream?">
+    Yes. A subagent is just another model request, so nothing breaks. How
+    well they work depends on how many streams you have, since each stream
+    runs one request at a time.
+  </Accordion>
+  <Accordion title="What happens when a prompt spawns three subagents on one stream?">
+    One request runs and the rest [queue](/stream/queues-and-errors) until a
+    slot frees up. Hermes runs subagents in parallel, up to 10 at once on
+    current builds, and every session shares your account's streams, so the
+    queue builds fast.
+  </Accordion>
+  <Accordion title="What happens if a request queues for too long?">
+    Queued requests wait silently, and Hermes kills any request that stays
+    silent past 10 minutes; older builds kill after as little as 90 seconds.
+    Each kill loses the request's place in line, so the retry starts over at
+    the back of the queue, where it can time out again. After several kills
+    in a row Hermes stops retrying and the turn fails. Queue waits only get
+    that long under dense parallel work, and raising Hermes' timeouts
+    (covered below) should reduce the likelihood of a request getting
+    killed.
+  </Accordion>
+  <Accordion title="How do I set up Hermes for parallel work?">
+    There are a few options to get Stream to work well with Hermes. First,
+    if your workload involves heavy use of parallel work, we recommend you
+    purchase at least 1 additional Stream. Each subscription adds one
+    concurrent stream, so subagents run truly in parallel.
+
+    If you prefer to keep 1 stream, we recommend you disable subagents, cap
+    them, or raise Hermes' timeouts so queued requests wait it out. The
+    setup below covers the one-stream options.
+  </Accordion>
+</AccordionGroup>
+
+To run Hermes on one stream, disable subagents or cap them:
+
+<Tabs>
+  <Tab title="Disable subagents (recommended)">
+    ```yaml ~/.hermes/config.yaml
+    agent:
+      disabled_toolsets:
+        - delegation
+    ```
+
+    Hermes makes one model request at a time, so nothing competes for the
+    stream except your other sessions.
+  </Tab>
+  <Tab title="Keep subagents">
+    ```yaml ~/.hermes/config.yaml
+    delegation:
+      max_concurrent_children: 1
+      max_spawn_depth: 1
+      orchestrator_enabled: false
+    ```
+
+    A child still runs alongside its parent, so some queueing remains. Expect
+    subagent-heavy prompts to be slower than on a multi-stream account.
+  </Tab>
+</Tabs>
+
+In both modes, raise Hermes' timeouts so queued requests outlast the wait
+instead of being killed:
+
+```bash ~/.hermes/.env
+HERMES_API_TIMEOUT=3600
+HERMES_API_CALL_STALE_TIMEOUT=3600
+HERMES_STREAM_READ_TIMEOUT=3600
+HERMES_STREAM_STALE_TIMEOUT=3600
+```
+
+This gives every request an hour to clear the queue. The tradeoff is that a
+genuine outage also looks like a hang for up to an hour.
+
 <Note>
-  Camel Stream queues requests when every subscribed stream is busy. Hermes
-  should keep the HTTP connection open. See
-  [Queues & errors](/stream/queues-and-errors).
+  Set the timeouts in `.env`, not per provider in `config.yaml`. Hermes
+  normalizes named custom providers before some timeout lookups, so
+  `request_timeout_seconds` and `stale_timeout_seconds` under
+  `custom_providers` may not apply.
 </Note>
 
 ## What's next?
