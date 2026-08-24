@@ -1,0 +1,120 @@
+---
+title: 'The Model Fleet'
+sidebarTitle: 'Fleet'
+description: 'The models currently serving camelStream, the intelligence floor they must clear, and the guarantees behind every stream'
+---
+
+camelStream doesn't sell a model. It sells a floor. Your requests are served
+by a changing fleet of frontier models, and every model must clear the same
+intelligence floor before it can serve a stream. This page is the official,
+current list.
+
+## The intelligence floor
+
+Every model in the fleet scores at or above **70% on
+[Terminal-Bench 2.1](https://www.tbench.ai/leaderboard/terminal-bench/2.1)**
+or **50 on the
+[Artificial Analysis Intelligence Index](https://artificialanalysis.ai/evaluations/artificial-analysis-intelligence-index)**.
+Below the bar, a model doesn't serve.
+
+## The current fleet
+
+| Model | Family | Version | Verify the scores |
+| --- | --- | --- | --- |
+| DeepSeek V4 Flash | DeepSeek | Most recent publicly available version (0731 as of August 2026) | [AA Intelligence Index](https://artificialanalysis.ai/models/deepseek-v4-flash) · [Terminal-Bench 2.1](https://www.tbench.ai/leaderboard/terminal-bench/2.1) |
+| GPT Luna | GPT | Most recent publicly available version (5.6 as of August 2026) | [AA Intelligence Index](https://artificialanalysis.ai/models/gpt-5-6-luna) · [Terminal-Bench 2.1](https://www.tbench.ai/leaderboard/terminal-bench/2.1) |
+| Muse Spark | Muse | Most recent publicly available version (1.2 as of August 2026) | [AA Intelligence Index](https://artificialanalysis.ai/models/muse-spark-1-2) · [Terminal-Bench 2.1](https://www.tbench.ai/leaderboard/terminal-bench/2.1) |
+
+The fleet changes as new models launch and partnerships evolve. This page is
+updated when it does.
+
+_Last updated: August 24, 2026_
+
+## What every stream is guaranteed
+
+- **The intelligence floor.** Every fleet model scores at or above 70% on
+  Terminal-Bench 2.1 or 50 on the AA Intelligence Index.
+- **Latest versions.** When your stream is paired with a model, you get its
+  most recent publicly available version, not a frozen snapshot.
+- **260K context.** Every request gets at least a 260K-token window, and more
+  when the model serving you supports it.
+- **One generation per stream, always.** Bursts of extra parallelism can
+  happen when capacity allows, but only streams guarantee it.
+
+## Context beyond the guarantee
+
+When a conversation grows past what the serving model supports, camelStream
+compacts the middle of the conversation first. Older messages are hollowed
+out while their envelopes stay in place, so roles and tool-call IDs keep
+lining up, and your original task and the latest turns stay intact.
+
+## Speed targets
+
+| Metric | Target |
+| --- | --- |
+| **Throughput** | p10 at or above 40 tokens per second, p5 at or above 20 tokens per second |
+| **Time to first token** | p95 under 5 seconds |
+
+Throughput percentiles are floors: p10 at or above 40 tok/s means 90% of
+requests stream at 40 tok/s or faster. The first-token percentile is a
+ceiling: 95% of requests see a first token within 5 seconds. Targets are
+tuning goals, not a service-level agreement. See the
+[camelStream Terms](https://camelai.com/stream/terms).
+
+## How the flat price works
+
+camelStream sources capacity across the fleet and partner providers, wherever
+frontier-floor intelligence is most economical: bulk deals, new-model offers,
+and data-for-training arrangements. That sourcing is what subsidizes
+unlimited tokens at a flat price. Requests and responses may be retained and
+used to train AI models, by us or by our inference providers. Your account
+details never are. The [camelStream Terms](https://camelai.com/stream/terms)
+and [Privacy Policy](https://camelai.com/stream/privacy) describe the data
+rights in full.
+
+## Common questions
+
+<AccordionGroup>
+  <Accordion title="What model am I getting?">
+    A model from the fleet above. camelStream pairs your stream with a fleet
+    model, and pairing can change between sessions. We don't guarantee which
+    model serves a given request. What is guaranteed is the floor: every
+    fleet model scores at or above 70% on Terminal-Bench 2.1 or 50 on the AA
+    Intelligence Index, and you always get the model's most recent publicly
+    available version.
+  </Accordion>
+  <Accordion title="Do I need to update the deepseek-v4-flash model ID in my config?">
+    Eventually, yes. The model ID is now `auto`, which means your request is
+    served by whatever fleet model is available, and every guide in these
+    docs configures it. Configs still sending the legacy `deepseek-v4-flash`
+    ID keep working: until September 1, 2026 those requests are still served
+    by DeepSeek V4 Flash, and after that the legacy ID is treated the same
+    as `auto`. We recommend you switch to `auto` now so the change is behind
+    you.
+  </Accordion>
+  <Accordion title="Do you use my prompts for training?">
+    Requests and responses may be retained and used to train AI models, by
+    us or by our inference providers. Your account details never are. These
+    arrangements are part of what keeps the price flat. The
+    [camelStream Terms](https://camelai.com/stream/terms) and
+    [Privacy Policy](https://camelai.com/stream/privacy) are the full
+    description.
+  </Accordion>
+  <Accordion title="Can I pin one specific model or version?">
+    Not on a standard subscription. Streams are served by the fleet, and the
+    fleet changes. If your workload needs one pinned model or version, we
+    recommend you ask about a custom agreement at
+    [camelai.com/stream/contact](https://camelai.com/stream/contact).
+  </Accordion>
+</AccordionGroup>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Choose your agent" href="/stream/agents">
+    Point Hermes, OpenClaw, Claude Code, Codex, OpenCode, or Pi at Stream.
+  </Card>
+  <Card title="Queues & errors" icon="clock" href="/stream/queues-and-errors">
+    Understand concurrency, queues, and error responses.
+  </Card>
+</CardGroup>

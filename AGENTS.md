@@ -51,6 +51,17 @@ Partners group in `docs.json` and link it from the relevant tab in
 `getting-started/connections.mdx`. Verify connection details (UI labels, the
 `CONNECTIONS.find()` signature, code examples) against the product repo before publishing.
 
+## camelStream documentation
+
+The Stream tab documents **camelStream**, camelAI's flat-rate inference API. Its product
+repository is `/Users/illiana/Projects/qaml-api-dashboard`. Position it as unlimited
+frontier intelligence above a published floor, never as a fixed-model promise.
+
+`stream/fleet.mdx` is the canonical fleet list for every camelAI property. When the fleet
+or a model version changes, update the table and the "Last updated" line. Use `auto` as the
+model ID everywhere. Document the legacy `deepseek-v4-flash` ID only in the fleet-page
+migration FAQ.
+
 ## Self-hosting guides
 
 Operator documentation lives in the **Self-hosting** tab under `self-hosting/`.

@@ -15,6 +15,9 @@ description: 'Concurrency is enforced per account across all API keys and endpoi
   </Card>
 </CardGroup>
 
+Each stream guarantees one active generation. Bursts of extra parallelism can
+happen when capacity allows, but only adding streams guarantees more.
+
 | Status | Meaning |
 | --- | --- |
 | `400` | The request body is invalid or missing required input. |

@@ -1,19 +1,19 @@
 ---
 title: 'Use Codex'
 sidebarTitle: 'Codex'
-description: 'Point Codex at Camel Stream with a named Responses provider'
+description: 'Point Codex at camelStream with a named Responses provider'
 ---
 
 [Codex](https://developers.openai.com/codex) can use a custom OpenAI
-Responses provider. Camel Stream exposes `/v1/responses`.
+Responses provider. camelStream exposes `/v1/responses`.
 
 | | |
 | --- | --- |
 | **Provider** | `camel_stream` |
-| **Model** | `deepseek-v4-flash` |
+| **Model** | `auto` |
 | **Base URL** | `https://stream.camelai.com/v1` |
 | **Key** | `CAMEL_API_KEY` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 <Note>
   Codex ignores provider settings in project `.codex/config.toml` files.
@@ -42,13 +42,13 @@ export CAMEL_API_KEY="qaml_live_..."
 Keep the key in your shell environment or a secret manager. Do not put it
 in the TOML file.
 
-## 3. Add Camel Stream
+## 3. Add camelStream
 
 Add the provider to your user config:
 
 ```toml ~/.codex/config.toml
 [model_providers.camel_stream]
-name = "Camel Stream"
+name = "camelStream"
 base_url = "https://stream.camelai.com/v1"
 env_key = "CAMEL_API_KEY"
 wire_api = "responses"
@@ -57,7 +57,7 @@ wire_api = "responses"
 Then create a separate profile so Stream does not replace your normal provider:
 
 ```toml ~/.codex/camel-stream.config.toml
-model = "deepseek-v4-flash"
+model = "auto"
 model_provider = "camel_stream"
 model_context_window = 262144
 model_reasoning_effort = "high"
@@ -79,11 +79,11 @@ cd /path/to/your/project
 codex --profile camel-stream
 ```
 
-Codex should use `deepseek-v4-flash` through `camel_stream`. If auth
+Codex should use `auto` through `camel_stream`. If auth
 fails, confirm `CAMEL_API_KEY` is set in the same shell.
 
 <Warning>
-  Codex may warn that metadata for `deepseek-v4-flash` was not found because
+  Codex may warn that metadata for `auto` was not found because
   the model is not in Codex's built-in OpenAI model catalog. The explicit
   context and reasoning settings above keep the important runtime values from
   depending on fallback defaults; the warning does not mean reasoning is
@@ -91,7 +91,7 @@ fails, confirm `CAMEL_API_KEY` is set in the same shell.
 </Warning>
 
 <Note>
-  Camel Stream queues requests when every subscribed stream is busy. Codex
+  camelStream queues requests when every subscribed stream is busy. Codex
   should keep the HTTP connection open. See
   [Queues & errors](/stream/queues-and-errors).
 </Note>

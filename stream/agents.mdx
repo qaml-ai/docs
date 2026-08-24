@@ -1,19 +1,21 @@
 ---
 title: 'Use Stream with a Coding Agent'
 sidebarTitle: 'Choose your agent'
-description: 'Point Hermes, OpenClaw, Claude Code, Codex, OpenCode, or Pi at DeepSeek V4 Flash'
+description: "Point Hermes, OpenClaw, Claude Code, Codex, OpenCode, or Pi at camelStream's frontier intelligence"
 ---
 
 Create a key in [the Stream console](https://stream.camelai.com/console),
-then follow the guide for your agent. No Camel Stream plugin is required.
+then follow the guide for your agent. No camelStream plugin is required. Every
+guide uses the same model ID, `auto`. The model serving your stream comes from
+[the fleet](/stream/fleet).
 
 | | |
 | --- | --- |
-| **Model** | `deepseek-v4-flash` |
+| **Model ID** | `auto` |
 | **OpenAI base URL** | `https://stream.camelai.com/v1` |
 | **Anthropic base URL** | `https://stream.camelai.com` |
 | **Key** | `CAMEL_API_KEY` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 <CardGroup cols={2}>
   <Card title="Hermes Agent" href="/stream/hermes">
@@ -23,7 +25,7 @@ then follow the guide for your agent. No Camel Stream plugin is required.
     Add a `models.providers` entry and restart the gateway.
   </Card>
   <Card title="Claude Code" href="/stream/claude-code">
-    Set the Anthropic gateway and map model aliases to DeepSeek V4 Flash.
+    Set the Anthropic gateway and map model aliases to `auto`.
   </Card>
   <Card title="Codex" href="/stream/codex">
     Add a named Responses profile in `~/.codex`.
@@ -37,8 +39,10 @@ then follow the guide for your agent. No Camel Stream plugin is required.
 </CardGroup>
 
 <Note>
-  These are third-party agents. Camel Stream provides the model. Keep the
+  These are third-party agents. camelStream provides the model. Keep the
   key in an environment variable or the agent's secret file, not in a git
   repo. Requests beyond your concurrent stream allowance
-  [queue instead of failing](/stream/queues-and-errors).
+  [queue instead of failing](/stream/queues-and-errors). Set up before the
+  `auto` model ID existed? Your existing config keeps working; see the
+  [fleet page FAQ](/stream/fleet#common-questions) for the migration timeline.
 </Note>

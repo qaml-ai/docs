@@ -1,7 +1,7 @@
 ---
 title: 'Use OpenClaw'
 sidebarTitle: 'OpenClaw'
-description: 'Point OpenClaw at Camel Stream and run DeepSeek V4 Flash'
+description: 'Point OpenClaw at camelStream for unlimited frontier intelligence'
 ---
 
 [OpenClaw](https://docs.openclaw.ai) can register an OpenAI-compatible
@@ -10,13 +10,13 @@ provider in `~/.openclaw/openclaw.json`. No plugin is required.
 | | |
 | --- | --- |
 | **Provider** | `camel-stream` |
-| **Model** | `camel-stream/deepseek-v4-flash` |
+| **Model** | `camel-stream/auto` |
 | **Base URL** | `https://stream.camelai.com/v1` |
 | **Key** | `CAMEL_API_KEY` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 <Note>
-  OpenClaw is a third-party agent. Camel Stream provides the model. Review
+  OpenClaw is a third-party agent. camelStream provides the model. Review
   the [OpenClaw security docs](https://docs.openclaw.ai/security) before
   connecting a key.
 </Note>
@@ -64,8 +64,8 @@ have. The file is JSON5, so comments and unquoted keys are allowed.
         api: "openai-completions",
         models: [
           {
-            id: "deepseek-v4-flash",
-            name: "DeepSeek V4 Flash",
+            id: "auto",
+            name: "camelStream Auto",
             reasoning: true,
             input: ["text"],
             contextWindow: 262144,
@@ -79,7 +79,7 @@ have. The file is JSON5, so comments and unquoted keys are allowed.
   agents: {
     defaults: {
       model: {
-        primary: "camel-stream/deepseek-v4-flash"
+        primary: "camel-stream/auto"
       }
     }
   }
@@ -87,8 +87,8 @@ have. The file is JSON5, so comments and unquoted keys are allowed.
 ```
 
 `api: "openai-completions"` is the transport for Stream's
-`/v1/chat/completions` endpoint. Set `contextWindow` yourself — OpenClaw's
-custom-provider default is much smaller than 256k.
+`/v1/chat/completions` endpoint. Set `contextWindow` yourself. OpenClaw's
+custom-provider default is much smaller.
 
 ## 4. Reload and verify
 
@@ -97,7 +97,7 @@ openclaw gateway restart
 openclaw models list
 ```
 
-You should see `camel-stream/deepseek-v4-flash` with a **262k** context
+You should see `camel-stream/auto` with a **262k** context
 window. If the gateway is already running as a daemon, restart it so it
 reloads the config.
 
@@ -109,7 +109,7 @@ If OpenClaw cannot see the provider, confirm `CAMEL_API_KEY` is set in the
 same environment as the gateway and that the JSON5 file is valid.
 
 <Note>
-  Camel Stream queues requests when every subscribed stream is busy.
+  camelStream queues requests when every subscribed stream is busy.
   OpenClaw should keep the HTTP connection open. See
   [Queues & errors](/stream/queues-and-errors).
 </Note>

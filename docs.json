@@ -16,6 +16,7 @@
             "group": "Start Here",
             "pages": [
               "stream/overview",
+              "stream/fleet",
               "stream/quickstart"
             ]
           },

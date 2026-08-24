@@ -1,10 +1,10 @@
 ---
 title: 'Management API'
-description: 'Create and revoke Camel Stream API keys programmatically'
+description: 'Create and revoke camelStream API keys programmatically'
 ---
 
 The Management API lets your backend provision a separate inference key for
-each user, service, or environment. It is available to every Camel Stream
+each user, service, or environment. It is available to every camelStream
 account.
 
 Management keys begin with `qaml_mgmt_`. They can manage inference keys but
@@ -73,7 +73,7 @@ The successful `201` response returns the plaintext inference key once:
 ```
 
 <Warning>
-  Save `key` before discarding the response. Camel Stream stores only its hash,
+  Save `key` before discarding the response. camelStream stores only its hash,
   so the plaintext value cannot be retrieved later.
 </Warning>
 

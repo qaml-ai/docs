@@ -25,7 +25,7 @@ curl --no-buffer https://stream.camelai.com/v1/chat/completions \
   -H "Authorization: Bearer $CAMEL_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "deepseek-v4-flash",
+    "model": "auto",
     "messages": [
       {"role": "system", "content": "You are a concise coding assistant."},
       {"role": "user", "content": "Explain this error message."}
@@ -47,7 +47,7 @@ curl --no-buffer https://stream.camelai.com/v1/responses \
   -H "Authorization: Bearer $CAMEL_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "deepseek-v4-flash",
+    "model": "auto",
     "input": "Give me three names for a database migration tool.",
     "stream": true
   }'
@@ -66,7 +66,7 @@ curl --no-buffer https://stream.camelai.com/v1/messages \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "deepseek-v4-flash",
+    "model": "auto",
     "max_tokens": 1024,
     "messages": [
       {"role": "user", "content": "How should I structure a TypeScript worker?"}
@@ -89,7 +89,7 @@ curl https://stream.camelai.com/v1/messages/count_tokens \
   -H "anthropic-version: 2023-06-01" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "deepseek-v4-flash",
+    "model": "auto",
     "messages": [
       {"role": "user", "content": "How many tokens are in this request?"}
     ]
@@ -100,9 +100,10 @@ curl https://stream.camelai.com/v1/messages/count_tokens \
 
 **GET** `/v1/models`
 
-Return the models currently exposed by Camel Stream. The response is compatible
-with OpenAI model discovery and also includes fields used by Anthropic gateway
-discovery.
+Return the model IDs currently accepted by camelStream. The response is
+compatible with OpenAI model discovery and also includes fields used by
+Anthropic gateway discovery. The models serving those IDs are described on
+[the fleet page](/stream/fleet).
 
 ```bash cURL
 curl https://stream.camelai.com/v1/models \

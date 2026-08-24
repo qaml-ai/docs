@@ -1,7 +1,7 @@
 ---
 title: 'Use Existing SDKs'
 sidebarTitle: 'SDKs'
-description: 'Point official OpenAI and Anthropic SDKs at Camel Stream by changing the base URL'
+description: 'Point official OpenAI and Anthropic SDKs at camelStream by changing the base URL'
 ---
 
 ## OpenAI SDK
@@ -16,8 +16,8 @@ const client = new OpenAI({
 });
 
 const stream = await client.chat.completions.create({
-  model: "deepseek-v4-flash",
-  messages: [{ role: "user", content: "Hello from Camel Stream" }],
+  model: "auto",
+  messages: [{ role: "user", content: "Hello from camelStream" }],
   stream: true,
 });
 
@@ -36,8 +36,8 @@ client = OpenAI(
 )
 
 stream = client.chat.completions.create(
-    model="deepseek-v4-flash",
-    messages=[{"role": "user", "content": "Hello from Camel Stream"}],
+    model="auto",
+    messages=[{"role": "user", "content": "Hello from camelStream"}],
     stream=True,
 )
 for chunk in stream:
@@ -57,9 +57,9 @@ const client = new Anthropic({
 });
 
 const message = await client.messages.create({
-  model: "deepseek-v4-flash",
+  model: "auto",
   max_tokens: 1024,
-  messages: [{ role: "user", content: "Hello from Camel Stream" }],
+  messages: [{ role: "user", content: "Hello from camelStream" }],
 });
 
 console.log(message.content);
@@ -75,9 +75,9 @@ client = Anthropic(
 )
 
 message = client.messages.create(
-    model="deepseek-v4-flash",
+    model="auto",
     max_tokens=1024,
-    messages=[{"role": "user", "content": "Hello from Camel Stream"}],
+    messages=[{"role": "user", "content": "Hello from camelStream"}],
 )
 print(message.content)
 ```

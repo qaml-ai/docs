@@ -1,27 +1,40 @@
 ---
-title: 'What is Camel Stream?'
+title: 'What is camelStream?'
 sidebarTitle: 'Overview'
-description: 'Unlimited AI inference at a flat monthly price, through OpenAI- and Anthropic-compatible APIs'
+description: 'Unlimited frontier intelligence at a flat monthly price, through OpenAI- and Anthropic-compatible APIs'
 ---
 
-Camel Stream provides one DeepSeek endpoint with OpenAI Chat Completions,
-OpenAI Responses, and Anthropic Messages compatibility. Requests beyond your
-concurrent stream allowance queue automatically instead of failing.
+camelStream provides one endpoint with OpenAI Chat Completions, OpenAI
+Responses, and Anthropic Messages compatibility, serving unlimited frontier
+intelligence from [a fleet of models](/stream/fleet) above a published
+intelligence floor. Requests beyond your concurrent stream allowance queue
+automatically instead of failing.
 
 ## How pricing works
 
-Each subscription adds one concurrent stream for a flat monthly price. Use
-unlimited tokens while your subscription is active, and cancel anytime. See
-[stream.camelai.com](https://stream.camelai.com) for current pricing.
+A subscription covers the number of concurrent streams you choose, from 1 to
+50, at a flat monthly price per stream. Tokens are unlimited while the
+subscription is active, and you can cancel anytime. Change your stream count
+in [Stream Settings](https://stream.camelai.com/settings); Stripe prorates the
+change for the current billing period. See
+[stream.camelai.com](https://stream.camelai.com) for current pricing, and
+[contact us](https://camelai.com/stream/contact) if you need more than 50
+streams.
 
 | | |
 | --- | --- |
 | **Base URL** | `https://stream.camelai.com/v1` |
-| **Model** | `deepseek-v4-flash` |
+| **Model ID** | `auto` |
+
+The model ID `auto` means your request is served by whatever fleet model is
+available. See [the fleet](/stream/fleet).
 
 ## Get started
 
 <CardGroup cols={2}>
+  <Card title="The model fleet" icon="layer-group" href="/stream/fleet">
+    The models serving streams, the intelligence floor, and the guarantees.
+  </Card>
   <Card title="Quickstart" icon="rocket" href="/stream/quickstart">
     Create a key and stream your first response.
   </Card>
@@ -40,7 +53,7 @@ unlimited tokens while your subscription is active, and cancel anytime. See
 </CardGroup>
 
 <Note>
-  **Looking for the camelAI coding agent?** These pages cover Camel Stream, the
+  **Looking for the camelAI coding agent?** These pages cover camelStream, the
   inference API. The agent that builds and deploys apps from a chat lives in the
   [Coding Agent docs](/getting-started/overview).
 </Note>
