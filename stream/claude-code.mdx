@@ -1,18 +1,18 @@
 ---
 title: 'Use Claude Code'
 sidebarTitle: 'Claude Code'
-description: 'Point Claude Code at Camel Stream through an Anthropic-compatible gateway'
+description: 'Point Claude Code at camelStream through an Anthropic-compatible gateway'
 ---
 
 [Claude Code](https://code.claude.com/docs) can send Anthropic Messages
-traffic to a gateway. Camel Stream speaks that protocol.
+traffic to a gateway. camelStream speaks that protocol.
 
 | | |
 | --- | --- |
 | **Base URL** | `https://stream.camelai.com` |
-| **Model** | `deepseek-v4-flash` |
+| **Model** | `auto` |
 | **Auth** | `ANTHROPIC_AUTH_TOKEN` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 <Warning>
   Claude Code's Stream endpoint has **no** `/v1`. Use
@@ -52,10 +52,10 @@ export CAMEL_API_KEY="qaml_live_..."
 export ANTHROPIC_BASE_URL="https://stream.camelai.com"
 export ANTHROPIC_AUTH_TOKEN="$CAMEL_API_KEY"
 unset ANTHROPIC_API_KEY
-export ANTHROPIC_MODEL="deepseek-v4-flash"
-export ANTHROPIC_DEFAULT_OPUS_MODEL="deepseek-v4-flash"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="deepseek-v4-flash"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-flash"
+export ANTHROPIC_MODEL="auto"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="auto"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="auto"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="auto"
 ```
 
 ```bash Terminal
@@ -64,7 +64,7 @@ source ~/.zshrc
 
 If you previously logged into Anthropic inside Claude Code, run `/logout`
 first. The model variables map Claude Code's main and background requests to
-`deepseek-v4-flash`; gateway discovery does not list non-Claude model IDs.
+`auto`; gateway discovery does not list non-Claude model IDs.
 
 Do not put the key in a project `.claude` file or a git repo.
 
@@ -89,10 +89,10 @@ Anthropic base URL: https://stream.camelai.com
 ```
 
 The session and Claude Code's Opus, Sonnet, and Haiku aliases now resolve to
-`deepseek-v4-flash`.
+`auto`.
 
 <Note>
-  Camel Stream queues requests when every subscribed stream is busy. Claude
+  camelStream queues requests when every subscribed stream is busy. Claude
   Code should keep the HTTP connection open. See
   [Queues & errors](/stream/queues-and-errors).
 </Note>

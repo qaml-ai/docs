@@ -1,19 +1,19 @@
 ---
 title: 'Use OpenCode'
 sidebarTitle: 'OpenCode'
-description: 'Point OpenCode at Camel Stream with a custom OpenAI provider'
+description: 'Point OpenCode at camelStream with a custom OpenAI provider'
 ---
 
 [OpenCode](https://opencode.ai/docs) can register any OpenAI-compatible
-provider. Camel Stream exposes `/v1/responses`.
+provider. camelStream exposes `/v1/responses`.
 
 | | |
 | --- | --- |
 | **Provider** | `camel-stream` |
-| **Model** | `camel-stream/deepseek-v4-flash` |
+| **Model** | `camel-stream/auto` |
 | **Base URL** | `https://stream.camelai.com/v1` |
 | **Key** | `CAMEL_API_KEY` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 ## 1. Install OpenCode
 
@@ -29,7 +29,7 @@ options.
 Generate an API key in [the Stream console](https://stream.camelai.com/console).
 It is shown once.
 
-## 3. Connect Camel Stream
+## 3. Connect camelStream
 
 The interactive path is the same one OpenRouter documents:
 
@@ -48,7 +48,7 @@ Inside OpenCode:
 2. Enter provider ID `camel-stream`.
 3. Paste your Stream key.
 4. Run `/models`.
-5. Select `camel-stream/deepseek-v4-flash`.
+5. Select `camel-stream/auto`.
 
 OpenCode stores the credential in its auth file, usually
 `~/.local/share/opencode/auth.json`. Do not commit that file.
@@ -61,17 +61,17 @@ user `opencode.json` and keep any providers you already have:
 ```json ~/.config/opencode/opencode.json
 {
   "$schema": "https://opencode.ai/config.json",
-  "model": "camel-stream/deepseek-v4-flash",
+  "model": "camel-stream/auto",
   "provider": {
     "camel-stream": {
       "npm": "@ai-sdk/openai",
-      "name": "Camel Stream",
+      "name": "camelStream",
       "options": {
         "baseURL": "https://stream.camelai.com/v1"
       },
       "models": {
-        "deepseek-v4-flash": {
-          "name": "DeepSeek V4 Flash"
+        "auto": {
+          "name": "camelStream Auto"
         }
       }
     }
@@ -83,7 +83,7 @@ user `opencode.json` and keep any providers you already have:
 [OpenCode providers](https://opencode.ai/docs/providers).
 
 <Note>
-  Camel Stream queues requests when every subscribed stream is busy.
+  camelStream queues requests when every subscribed stream is busy.
   OpenCode should keep the HTTP connection open. See
   [Queues & errors](/stream/queues-and-errors).
 </Note>

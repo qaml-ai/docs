@@ -35,3 +35,25 @@ Connect (Steps, both Settings and agent paths) → Use it (no-code prompt first,
 Partners group in `docs.json` and link it from the relevant tab in
 `getting-started/connections.mdx`. Verify connection details (UI labels, the
 `CONNECTIONS.find()` signature, code examples) against the product repo before publishing.
+
+## camelStream documentation
+
+The Stream tab documents **camelStream**, camelAI's flat-rate inference API. Its product
+repository is `/Users/illiana/Projects/qaml-api-dashboard`. Position it as unlimited
+frontier intelligence above a published floor, never as a fixed-model promise.
+
+`stream/fleet.mdx` is the canonical fleet list for every camelAI property. The sales site
+links to it instead of listing models. When the fleet or a model version changes, update the
+table and the "Last updated" line.
+
+Keep these vocabulary invariants:
+
+- The product name is "camelStream."
+- The only benchmarks are Terminal-Bench 2.1 at 70% and the AA Intelligence Index at 50.
+- Speeds are targets, never guarantees: p10 at or above 40 tok/s, p5 at or above 20 tok/s,
+  and p95 first token under 5 seconds. Keep the throughput floors and first-token ceiling
+  clear.
+- Context is "260K guaranteed, more when the model serving you supports it."
+- The model ID is `auto`. Document the legacy `deepseek-v4-flash` ID only in the fleet-page
+  migration FAQ. After September 1, 2026, it is treated the same as `auto`.
+- Do not add serving-precision tags.

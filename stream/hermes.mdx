@@ -1,7 +1,7 @@
 ---
 title: 'Use Hermes Agent'
 sidebarTitle: 'Hermes'
-description: 'Point Hermes Agent at Camel Stream and run DeepSeek V4 Flash'
+description: 'Point Hermes Agent at camelStream for unlimited frontier intelligence'
 ---
 
 [Hermes Agent](https://hermes-agent.nousresearch.com) can use any
@@ -10,13 +10,13 @@ OpenAI-compatible `/v1/chat/completions` endpoint as a custom provider.
 | | |
 | --- | --- |
 | **Provider** | `custom:camel-stream` |
-| **Model** | `deepseek-v4-flash` |
+| **Model** | `auto` |
 | **Base URL** | `https://stream.camelai.com/v1` |
 | **Key** | `CAMEL_API_KEY` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 <Note>
-  Hermes is a third-party agent. Camel Stream provides the model. Review the
+  Hermes is a third-party agent. camelStream provides the model. Review the
   [Hermes security policy](https://github.com/NousResearch/hermes-agent/security)
   before connecting a key.
 </Note>
@@ -55,7 +55,7 @@ Choose **Custom endpoint**, then enter:
 | URL | `https://stream.camelai.com/v1` |
 | API mode | Chat Completions |
 | Key | your `CAMEL_API_KEY` |
-| Model | `deepseek-v4-flash` |
+| Model | `auto` |
 | Context length | `262144` |
 
 Or add a named custom provider to `~/.hermes/config.yaml`:
@@ -67,23 +67,23 @@ custom_providers:
     key_env: CAMEL_API_KEY
     api_mode: chat_completions
     models:
-      deepseek-v4-flash:
+      auto:
         context_length: 262144
 
 model:
   provider: custom:camel-stream
-  default: deepseek-v4-flash
+  default: auto
   context_length: 262144
 ```
 
 ## 4. Start and verify
 
 ```bash Terminal
-hermes chat --provider custom:camel-stream --model deepseek-v4-flash
+hermes chat --provider custom:camel-stream --model auto
 ```
 
 In a session you can switch with
-`/model custom:camel-stream:deepseek-v4-flash`.
+`/model custom:camel-stream:auto`.
 
 ```bash Terminal
 hermes doctor
@@ -119,8 +119,8 @@ hermes doctor
   <Accordion title="How do I set up Hermes for parallel work?">
     There are a few options to get Stream to work well with Hermes. First,
     if your workload involves heavy use of parallel work, we recommend you
-    purchase at least 1 additional Stream. Each subscription adds one
-    concurrent stream, so subagents run truly in parallel.
+    purchase at least 1 additional Stream. Each stream you add runs one more
+    request in parallel, so subagents run truly in parallel.
 
     If you prefer to keep 1 stream, we recommend you cap subagents so only
     one runs at a time. Raising Hermes' timeouts can also help queued

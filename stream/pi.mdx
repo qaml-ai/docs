@@ -1,19 +1,19 @@
 ---
 title: 'Use Pi'
 sidebarTitle: 'Pi'
-description: 'Point Pi at Camel Stream with a custom Responses provider'
+description: 'Point Pi at camelStream with a custom Responses provider'
 ---
 
 [Pi](https://pi.dev/docs/latest/quickstart) can add custom providers in
-`~/.pi/agent/models.json`. Camel Stream exposes `/v1/responses`.
+`~/.pi/agent/models.json`. camelStream exposes `/v1/responses`.
 
 | | |
 | --- | --- |
 | **Provider** | `camel-stream` |
-| **Model** | `camel-stream/deepseek-v4-flash` |
+| **Model** | `camel-stream/auto` |
 | **Base URL** | `https://stream.camelai.com/v1` |
 | **Key** | `CAMEL_API_KEY` |
-| **Context window** | 256k input tokens |
+| **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
 ## 1. Install Pi
 
@@ -33,7 +33,7 @@ It is shown once.
 export CAMEL_API_KEY="qaml_live_..."
 ```
 
-## 3. Register Camel Stream
+## 3. Register camelStream
 
 Merge this into `~/.pi/agent/models.json`. Keep any providers you already
 have. The file reloads when you open `/model`.
@@ -48,8 +48,8 @@ have. The file reloads when you open `/model`.
       "authHeader": true,
       "models": [
         {
-          "id": "deepseek-v4-flash",
-          "name": "DeepSeek V4 Flash",
+          "id": "auto",
+          "name": "camelStream Auto",
           "reasoning": true,
           "input": ["text"],
           "contextWindow": 262144,
@@ -74,11 +74,11 @@ cd /path/to/your/project
 pi
 ```
 
-Then run `/model` and choose `camel-stream/deepseek-v4-flash`. If the model
+Then run `/model` and choose `camel-stream/auto`. If the model
 is listed but unavailable, the key is missing from the environment.
 
 <Note>
-  Camel Stream queues requests when every subscribed stream is busy. Pi
+  camelStream queues requests when every subscribed stream is busy. Pi
   should keep the HTTP connection open. See
   [Queues & errors](/stream/queues-and-errors).
 </Note>
