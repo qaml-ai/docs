@@ -38,6 +38,8 @@ _Last updated: August 30, 2026_
   Terminal-Bench 2.1 or 50 on the AA Intelligence Index.
 - **Latest versions.** When your stream is paired with a model, you get its
   most recent publicly available version, not a frozen snapshot.
+- **Vision.** Every fleet model accepts image inputs, so requests with
+  images work no matter which model is serving you.
 - **260K context.** Every request gets at least a 260K-token window, and more
   when the model serving you supports it.
 - **One generation per stream, always.** Bursts of extra parallelism can
@@ -84,6 +86,14 @@ rights in full.
     fleet model scores at or above 70% on Terminal-Bench 2.1 or 50 on the AA
     Intelligence Index, and you always get the model's most recent publicly
     available version.
+  </Accordion>
+  <Accordion title="Do requests with images work on auto?">
+    Yes. Every model in the fleet supports vision. We make sure of that
+    before a model serves a stream, the same way we hold every model to the
+    intelligence floor. With your model set to `auto`, a request that
+    includes images is handled by whichever fleet model is serving you, like
+    any other request. There is no separate routing for vision, and no case
+    where a request fails because the serving model can't read images.
   </Accordion>
   <Accordion title="Do I need to update the deepseek-v4-flash model ID in my config?">
     Eventually, yes. The model ID is now `auto`, which means your request is

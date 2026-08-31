@@ -54,6 +54,8 @@ Keep these vocabulary invariants:
   and p95 first token under 5 seconds. Keep the throughput floors and first-token ceiling
   clear.
 - Context is "260K guaranteed, more when the model serving you supports it."
+- Vision is guaranteed: every fleet model accepts image inputs, so requests with
+  images work on `auto` no matter which model serves them.
 - The model ID is `auto`. Document the legacy `deepseek-v4-flash` ID only in the fleet-page
   migration FAQ. After September 1, 2026, it is treated the same as `auto`.
 - Do not add serving-precision tags.
