@@ -17,6 +17,7 @@
             "pages": [
               "stream/overview",
               "stream/fleet",
+              "stream/data-usage",
               "stream/quickstart"
             ]
           },

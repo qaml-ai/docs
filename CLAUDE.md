@@ -46,6 +46,14 @@ frontier intelligence above a published floor, never as a fixed-model promise.
 links to it instead of listing models. When the fleet or a model version changes, update the
 table and the "Last updated" line.
 
+`stream/data-usage.mdx` is the plain-language data page. The sales site links to it
+(`DATA_DOCS_URL` in `app/lib/stream-guarantees.ts`) instead of restating details that can go
+stale. Two rules for that page and any data copy: the training posture is always "may" (never
+state that we have not shared or do not share prompts for training), and the self-hosted
+OpenAI Privacy Filter runs only on the agent traces we store, never in the live request path,
+so do not imply live redaction. State what we do plainly and keep caveats to one clause;
+readers should come away feeling protected, not warned.
+
 Keep these vocabulary invariants:
 
 - The product name is "camelStream."

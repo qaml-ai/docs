@@ -1,0 +1,85 @@
+---
+title: 'How We Handle Your Data'
+sidebarTitle: 'Data usage'
+description: 'Who can see your prompts, what we scrub from the traces we store, and how to get no-training terms'
+---
+
+camelStream is cheap because prompts and responses may be retained and used to
+train AI models, by us or by the providers we partner with. Here is exactly who
+can see your prompts, how we scrub sensitive data, and what is never
+shared. The [camelStream Terms](https://camelai.com/stream/terms) and
+[Privacy Policy](https://camelai.com/stream/privacy) are the binding versions.
+
+## Who can see your prompts
+
+A prompt goes from your client to camelStream, then to the model provider
+serving your stream, and the response comes back the same way. Two parties
+see it:
+
+- **The provider serving your request.** A model has to read the prompt to
+  answer it. The request reaches the provider without your name, email, API
+  key, or IP address attached. Providers may retain prompts and use them for
+  training under their own policies.
+- **Us.** We store agent traces on our own infrastructure so we can debug the
+  service, understand what agents actually do, and, potentially, train or
+  evaluate models.
+
+We do not sell prompts to data brokers or advertisers.
+
+## What we scrub from the traces we store
+
+Agent traces pick up things that should not sit in storage. An API key in
+tool output, an email address in a CSV the agent read, a phone number in a
+support ticket it summarized. Every agent trace we store runs through
+[OpenAI's Privacy Filter](https://huggingface.co/openai/privacy-filter), an
+open-source model built to detect and mask personally identifiable
+information in text.
+
+We run the filter on our own hardware, so traces never go to a third party to
+be scrubbed. It reads the whole trace, including system prompts, tool calls,
+tool results, and model responses, and masks the following.
+
+| What gets masked | For example |
+| --- | --- |
+| Names | A customer named in a support ticket |
+| Email addresses | A personal inbox in a contact list the agent read |
+| Phone numbers | Any format |
+| Physical addresses | A street address in a form the agent filled |
+| Account numbers | Bank, card, and customer account identifiers |
+| Private URLs | Links that identify a person or a private system |
+| Private dates | Birthdays and similar dates tied to a person |
+| Secrets | API keys, tokens, passwords, and private keys |
+
+The filter runs on the copy we store. The model serving your request reads
+the original prompt, since it has to in order to answer it. That is the same
+exposure as calling the provider yourself, minus your identity. No filter
+catches everything, which is why the Terms still ask you not to send data you
+are not allowed to share.
+
+## What is never shared
+
+Your account details are separate from your API content. Your name, email,
+billing information, and API keys are never sent to a provider and never used
+for training. Card payments are handled by Stripe, and API keys are stored
+hashed.
+
+## If you need no-training terms
+
+There is no opt-out on a standard subscription. Starting at 1,000 streams we
+can customize your terms so your data is never used for training. Your
+traffic goes only to providers that do not train on or retain data, and that
+can go into a contract if you want it in writing. Ask at
+[camelai.com/stream/contact](https://camelai.com/stream/contact).
+
+_Last updated: September 2, 2026_
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="The model fleet" icon="layer-group" href="/stream/fleet">
+    The models serving streams, the intelligence floor, and the guarantees.
+  </Card>
+  <Card title="Custom terms" icon="envelope" href="https://camelai.com/stream/contact">
+    Ask about no-training or zero-retention terms for 1,000+ streams.
+  </Card>
+</CardGroup>
