@@ -1,30 +1,36 @@
 ---
 title: 'How We Handle Your Data'
 sidebarTitle: 'Data usage'
-description: 'Who can see your prompts, what we scrub from the traces we store, and how to get no-training terms'
+description: 'Who can see your prompts, what we scrub from the traces we store, and how to get custom terms'
 ---
 
 camelStream is cheap because prompts and responses may be retained and used to
-train AI models, by us or by the providers we partner with. Here is exactly who
-can see your prompts, how we scrub sensitive data, and what is never
-shared. The [camelStream Terms](https://camelai.com/stream/terms) and
+train AI models, by us or by the providers we partner with, and may be used to
+select and measure ads and offers. Those arrangements are what keep the price
+flat. Here is who can see your prompts, how we scrub sensitive data, and what
+is never shared. The [camelStream Terms](https://camelai.com/stream/terms) and
 [Privacy Policy](https://camelai.com/stream/privacy) are the binding versions.
 
 ## Who can see your prompts
 
 A prompt goes from your client to camelStream, then to the model provider
-serving your stream, and the response comes back the same way. Two parties
-see it:
+serving your stream, and the response comes back the same way.
 
 - **The provider serving your request.** A model has to read the prompt to
-  answer it. The request reaches the provider without your name, email, API
-  key, or IP address attached. Providers may retain prompts and use them for
-  training under their own policies.
+  answer it. The request reaches the provider without your name, email,
+  camelStream API key, or IP address attached. Providers may retain prompts
+  and use them for training under their own policies.
 - **Us.** We store agent traces on our own infrastructure so we can debug the
   service, understand what agents actually do, and, potentially, train or
-  evaluate models.
+  evaluate models or select and measure ads and offers. Every trace we store
+  runs through the privacy filter described below, and we separate it from
+  your account before using it for anything beyond running the service.
+- **Partners in the arrangements that keep the price flat.** Model-development
+  partners may receive API content for training. Advertising partners may
+  receive content separated from your identity, signals derived from it, or
+  aggregate results. None of them receive your account details.
 
-We do not sell prompts to data brokers or advertisers.
+We never sell your data to data brokers.
 
 ## What we scrub from the traces we store
 
@@ -50,28 +56,31 @@ tool results, and model responses, and masks the following.
 | Private dates | Birthdays and similar dates tied to a person |
 | Secrets | API keys, tokens, passwords, and private keys |
 
-The filter runs on the copy we store. The model serving your request reads
-the original prompt, since it has to in order to answer it. That is the same
-exposure as calling the provider yourself, minus your identity. No filter
-catches everything, which is why the Terms still ask you not to send data you
-are not allowed to share.
+The filter runs on the copy we store, not on the request itself. We do not
+scrub what you send on its way to the provider. The model has to read the
+original prompt to answer it, so a key you paste into a prompt, or one an
+agent reads off your machine and sends in tool output, reaches the provider
+like everything else. That is the same exposure as calling the provider
+yourself, minus your identity. No filter catches everything, which is why the
+Terms still ask you not to send data you are not allowed to share.
 
 ## What is never shared
 
-Your account details are separate from your API content. Your name, email,
-billing information, and API keys are never sent to a provider and never used
-for training. Card payments are handled by Stripe, and API keys are stored
-hashed.
+Your account details are separate from your API content. We never attach
+your name, email, billing information, or camelStream API key to a request,
+never share them with a provider, partner, or advertiser, and never use them
+for training or to select ads. Card payments are handled by Stripe, and
+camelStream API keys are stored hashed.
 
-## If you need no-training terms
+## If you need custom terms
 
 There is no opt-out on a standard subscription. Starting at 1,000 streams we
-can customize your terms so your data is never used for training. Your
-traffic goes only to providers that do not train on or retain data, and that
-can go into a contract if you want it in writing. Ask at
+can customize your terms so your data is never used for training or
+advertising. Your traffic goes only to providers that do not train on or
+retain data, and that can go into a contract if you want it in writing. Ask at
 [camelai.com/stream/contact](https://camelai.com/stream/contact).
 
-_Last updated: September 2, 2026_
+_Last updated: September 8, 2026_
 
 ## What's next?
 
@@ -80,6 +89,6 @@ _Last updated: September 2, 2026_
     The models serving streams, the intelligence floor, and the guarantees.
   </Card>
   <Card title="Custom terms" icon="envelope" href="https://camelai.com/stream/contact">
-    Ask about no-training or zero-retention terms for 1,000+ streams.
+    Ask about no-training, no-advertising, or zero-retention terms for 1,000+ streams.
   </Card>
 </CardGroup>

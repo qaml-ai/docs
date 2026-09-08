@@ -48,11 +48,27 @@ table and the "Last updated" line.
 
 `stream/data-usage.mdx` is the plain-language data page. The sales site links to it
 (`DATA_DOCS_URL` in `app/lib/stream-guarantees.ts`) instead of restating details that can go
-stale. Two rules for that page and any data copy: the training posture is always "may" (never
-state that we have not shared or do not share prompts for training), and the self-hosted
-OpenAI Privacy Filter runs only on the agent traces we store, never in the live request path,
-so do not imply live redaction. State what we do plainly and keep caveats to one clause;
-readers should come away feeling protected, not warned.
+stale. Rules for that page and any camelStream data copy:
+
+- Two categories of use, and only two: training AI models, and "select and measure ads and
+  offers" (legal docs: "advertising, sponsored content, or offers"). Together they are "the
+  arrangements that keep the price flat." Never name a method, partner, surface, or timing.
+- The posture on both is always "may." Never state that we do not train, have no advertisers,
+  or do not show ads, and never state that we do.
+- The floor appears wherever the "may" does: we never sell your data to data brokers; account
+  details are never attached to a request, never shared with providers, partners, or
+  advertisers, and never used for training or advertising; API content is separated from
+  account identity before we use it ourselves.
+- camelStream is a pipe. Nothing is scrubbed in transit; the prompt reaches the provider as
+  sent. Say "attach" or "share" about account details, never "sent" or "go to," which read as
+  a scrubbing claim. Write "camelStream API key," never a bare "API keys," in the floor: keys
+  inside prompts or tool output are prompt content and reach the provider.
+- The self-hosted OpenAI Privacy Filter runs only on the agent traces we store, never in the
+  live request path, so do not imply live redaction. It is described in the docs and FAQ only,
+  never in the Terms or Privacy Policy.
+
+State what we do plainly and keep caveats to one clause; readers should come away feeling
+protected, not warned.
 
 Keep these vocabulary invariants:
 
