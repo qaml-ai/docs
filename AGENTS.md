@@ -70,6 +70,10 @@ Do not document the gateway's thinking-budget cap from `normalizeReasoningLimit`
 relic and reads as too much detail (CTO decision, September 2026). Describe the parameters and
 their pass-through, not internal limits. Budgets are optional on every endpoint: present effort as
 the primary control and budgets as an optional ceiling, never as something the caller must send.
+Live-tested against staging in September 2026: every effort level and both Messages `thinking`
+forms are accepted and return reasoning, while `reasoning_effort: "none"` and
+`thinking: {"type": "disabled"}` are rejected with a 400 by fleet models that require reasoning.
+Re-test with a staging key from Illiana before changing those claims.
 
 ## Self-hosting guides
 

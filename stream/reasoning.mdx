@@ -21,7 +21,8 @@ model uses its own default.
 ## Chat Completions
 
 Set `reasoning_effort` at the top level of the request, using any level the
-OpenAI API defines.
+OpenAI API defines. `none` is the exception; see
+[Can I turn reasoning off?](#common-questions).
 
 <CodeGroup>
 ```bash cURL
@@ -146,7 +147,7 @@ message = client.messages.create(
 Both forms work on camelStream. `{"type": "enabled", "budget_tokens": 8000}`
 is the form to use when you want a hard ceiling on thinking tokens. It is
 the one form that expects a budget, and the budget must be lower than
-`max_tokens`. `{"type": "disabled"}` turns thinking off.
+`max_tokens`.
 
 ## Common questions
 
@@ -159,11 +160,19 @@ the one form that expects a budget, and the budget must be lower than
     `enabled` type is the one form that expects a `budget_tokens` value.
   </Accordion>
   <Accordion title="Do I get the reasoning back in the response?">
-    When the serving model exposes its reasoning, it comes back in the
-    format of the endpoint you called: `thinking` content blocks on
-    Messages, reasoning output items on Responses, and reasoning fields on
-    the Chat Completions message. Some fleet models return a summary rather
-    than the full reasoning, and some return none.
+    Yes, when the serving model exposes it. Chat Completions returns it as
+    `reasoning` and `reasoning_details` on the message, Responses returns a
+    `reasoning` output item, and Messages returns `thinking` content blocks.
+    The usage object reports the count as `reasoning_tokens` on the OpenAI
+    endpoints and `thinking_tokens` on Messages. Some fleet models return a
+    summary rather than the full reasoning.
+  </Accordion>
+  <Accordion title="Can I turn reasoning off?">
+    Not reliably. Some fleet models can't run with reasoning off, and they
+    reject `reasoning_effort: "none"` on the OpenAI endpoints and
+    `thinking: {"type": "disabled"}` on Messages with a 400 error saying
+    reasoning is mandatory for the endpoint. When you want the least
+    reasoning possible, send `low` instead.
   </Accordion>
   <Accordion title="What happens if I send reasoning from an earlier turn back to the model?">
     It works, including with `auto`. Reasoning content that a model signed or
@@ -177,8 +186,9 @@ the one form that expects a budget, and the budget must be lower than
   <Accordion title="Which effort level should I use?">
     We recommend `high` for coding agents and any task where correctness
     matters more than latency. Use `low` when you want faster first tokens
-    on simple requests, and `none` when the request needs no reasoning at
-    all, such as classification or reformatting. The
+    on simple requests, such as classification or reformatting. Each fleet
+    model decides how much to change its thinking between levels, so the
+    difference is larger on some models than others. The
     [Codex guide](/stream/codex) sets `high`.
   </Accordion>
   <Accordion title="Does the effort level change which model serves me?">
