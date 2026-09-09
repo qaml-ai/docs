@@ -143,10 +143,10 @@ message = client.messages.create(
 ```
 </CodeGroup>
 
-`{"type": "disabled"}` turns thinking off. If you want a hard ceiling on
-thinking tokens instead, `{"type": "enabled", "budget_tokens": 8000}` is
-also accepted. That is the one form that expects a budget, and the budget
-must be lower than `max_tokens`.
+Both forms work on camelStream. `{"type": "enabled", "budget_tokens": 8000}`
+is the form to use when you want a hard ceiling on thinking tokens. It is
+the one form that expects a budget, and the budget must be lower than
+`max_tokens`. `{"type": "disabled"}` turns thinking off.
 
 ## Common questions
 
