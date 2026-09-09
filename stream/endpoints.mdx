@@ -12,13 +12,18 @@ description: 'One API key works across the OpenAI and Anthropic protocols'
 | `POST` | `/v1/messages/count_tokens` | Anthropic | Count tokens before sending |
 | `GET` | `/v1/models` | Both | List available models |
 
+Every endpoint also accepts its native reasoning controls, such as
+`reasoning_effort` and `thinking.budget_tokens`. See
+[Reasoning & thinking](/stream/reasoning).
+
 ## Chat Completions
 
 **POST** `/v1/chat/completions`
 
 Use the familiar OpenAI chat schema. Send a messages array and set stream to
 true for SSE output. System messages, tool definitions, tool choice,
-temperature, and output limits are passed through.
+temperature, output limits, and [reasoning effort](/stream/reasoning) are
+passed through.
 
 ```bash cURL
 curl --no-buffer https://stream.camelai.com/v1/chat/completions \

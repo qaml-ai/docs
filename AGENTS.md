@@ -62,6 +62,14 @@ or a model version changes, update the table and the "Last updated" line. Use `a
 model ID everywhere. Document the legacy `deepseek-v4-flash` ID only in the fleet-page
 migration FAQ.
 
+`stream/reasoning.mdx` documents the reasoning controls (`reasoning_effort`, `reasoning.effort`,
+`thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller
+sends them; do not document any effort remapping. The old remap of `medium` to `high` existed only
+because DeepSeek V4 Flash rejected `medium`, and a product PR removes it as of September 2026.
+The budget cap comes from `normalizeReasoningLimit` in `src/server/camel-stream.server.ts` in the
+product repo, with expectations in `test/model-routing.test.ts`. Re-verify before changing the cap
+numbers.
+
 ## Self-hosting guides
 
 Operator documentation lives in the **Self-hosting** tab under `self-hosting/`.

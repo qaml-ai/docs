@@ -99,6 +99,13 @@ rights in full.
     any other request. There is no separate routing for vision, and no case
     where a request fails because the serving model can't read images.
   </Accordion>
+  <Accordion title="Can I control how much the model thinks?">
+    Yes. Every endpoint accepts its native reasoning controls:
+    `reasoning_effort` on Chat Completions, `reasoning.effort` on Responses,
+    and `thinking.budget_tokens` on Messages. camelStream passes the setting
+    to whichever fleet model is serving you. See
+    [Reasoning & thinking](/stream/reasoning) for examples.
+  </Accordion>
   <Accordion title="Do I need to update the deepseek-v4-flash model ID in my config?">
     Eventually, yes. The model ID is now `auto`, which means your request is
     served by whatever fleet model is available, and every guide in these

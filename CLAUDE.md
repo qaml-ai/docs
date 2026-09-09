@@ -46,6 +46,14 @@ frontier intelligence above a published floor, never as a fixed-model promise.
 links to it instead of listing models. When the fleet or a model version changes, update the
 table and the "Last updated" line.
 
+`stream/reasoning.mdx` documents the reasoning controls (`reasoning_effort`, `reasoning.effort`,
+`thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller
+sends them; do not document any effort remapping. The old remap of `medium` to `high` existed only
+because DeepSeek V4 Flash rejected `medium`, and a product PR removes it as of September 2026.
+The budget cap comes from `normalizeReasoningLimit` in `src/server/camel-stream.server.ts` in the
+product repo, with expectations in `test/model-routing.test.ts`. Re-verify before changing the cap
+numbers.
+
 `stream/data-usage.mdx` is the plain-language data page. The sales site links to it
 (`DATA_DOCS_URL` in `app/lib/stream-guarantees.ts`) instead of restating details that can go
 stale. Rules for that page and any camelStream data copy:

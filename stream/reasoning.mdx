@@ -1,0 +1,216 @@
+---
+title: 'Set Reasoning Effort and Thinking Budgets'
+sidebarTitle: 'Reasoning & thinking'
+description: 'Control how much the model thinks with the same reasoning parameters the OpenAI and Anthropic APIs use'
+---
+
+Every camelStream endpoint accepts its native reasoning controls and passes
+them to the model serving your request. Use the field your API format
+already defines. There is no camelStream-specific parameter to learn.
+
+| Endpoint | Effort level | Token budget |
+| --- | --- | --- |
+| `/v1/chat/completions` | `reasoning_effort` | `reasoning.max_tokens` |
+| `/v1/responses` | `reasoning.effort` | `reasoning.max_tokens` |
+| `/v1/messages` | `output_config.effort` | `thinking.budget_tokens` |
+
+Leave the field out and the serving model uses its own default.
+
+## Chat Completions
+
+Set `reasoning_effort` at the top level of the request, using any level the
+OpenAI API defines.
+
+<CodeGroup>
+```bash cURL
+curl --no-buffer https://stream.camelai.com/v1/chat/completions \
+  -H "Authorization: Bearer $CAMEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "auto",
+    "reasoning_effort": "high",
+    "messages": [
+      {"role": "user", "content": "Find the race condition in this worker."}
+    ],
+    "stream": true
+  }'
+```
+
+```javascript JavaScript
+const stream = await client.chat.completions.create({
+  model: "auto",
+  reasoning_effort: "high",
+  messages: [{ role: "user", content: "Find the race condition in this worker." }],
+  stream: true,
+});
+```
+
+```python Python
+stream = client.chat.completions.create(
+    model="auto",
+    reasoning_effort="high",
+    messages=[{"role": "user", "content": "Find the race condition in this worker."}],
+    stream=True,
+)
+```
+</CodeGroup>
+
+To cap thinking by tokens instead of by level, send a `reasoning` object
+with `max_tokens`. It is subject to the [budget cap](#how-budgets-are-capped)
+below.
+
+```json Token budget
+{
+  "model": "auto",
+  "max_completion_tokens": 16000,
+  "reasoning": { "max_tokens": 8000 },
+  "messages": [{ "role": "user", "content": "Find the race condition in this worker." }]
+}
+```
+
+## Responses
+
+Set `reasoning.effort`. Add `reasoning.summary` if your client expects
+reasoning summaries in the output. This is the field Codex sends when you set
+`model_reasoning_effort` in its config. See
+[Use Codex](/stream/codex).
+
+<CodeGroup>
+```bash cURL
+curl --no-buffer https://stream.camelai.com/v1/responses \
+  -H "Authorization: Bearer $CAMEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "auto",
+    "reasoning": { "effort": "high", "summary": "auto" },
+    "input": "Find the race condition in this worker.",
+    "stream": true
+  }'
+```
+
+```javascript JavaScript
+const response = await client.responses.create({
+  model: "auto",
+  reasoning: { effort: "high", summary: "auto" },
+  input: "Find the race condition in this worker.",
+});
+```
+
+```python Python
+response = client.responses.create(
+    model="auto",
+    reasoning={"effort": "high", "summary": "auto"},
+    input="Find the race condition in this worker.",
+)
+```
+</CodeGroup>
+
+## Messages
+
+Set `thinking` with a `budget_tokens` value. The budget must be lower than
+`max_tokens`, and it is subject to the [budget cap](#how-budgets-are-capped)
+below.
+
+<CodeGroup>
+```bash cURL
+curl --no-buffer https://stream.camelai.com/v1/messages \
+  -H "x-api-key: $CAMEL_API_KEY" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "auto",
+    "max_tokens": 16000,
+    "thinking": { "type": "enabled", "budget_tokens": 8000 },
+    "messages": [
+      {"role": "user", "content": "Find the race condition in this worker."}
+    ],
+    "stream": true
+  }'
+```
+
+```javascript JavaScript
+const message = await client.messages.create({
+  model: "auto",
+  max_tokens: 16000,
+  thinking: { type: "enabled", budget_tokens: 8000 },
+  messages: [{ role: "user", content: "Find the race condition in this worker." }],
+});
+```
+
+```python Python
+message = client.messages.create(
+    model="auto",
+    max_tokens=16000,
+    thinking={"type": "enabled", "budget_tokens": 8000},
+    messages=[{"role": "user", "content": "Find the race condition in this worker."}],
+)
+```
+</CodeGroup>
+
+The other `thinking` types work too: `{"type": "adaptive"}` lets the serving
+model decide how much to think, and `{"type": "disabled"}` turns thinking
+off. To set a level instead of a budget, send `output_config` with an
+`effort` value.
+
+## How budgets are capped
+
+A token budget is capped relative to your output limit, which is
+`max_tokens`, `max_completion_tokens`, or `max_output_tokens`, whichever
+your request sets. The cap is 80% of that limit, never below 1,024 tokens
+and never above 128,000, and always at least 1 token under the limit
+itself. A budget above the cap is lowered to it. A budget at or below the
+cap is forwarded as sent.
+
+| Output limit | Highest budget forwarded |
+| --- | --- |
+| 4,096 | 3,276 |
+| 32,000 | 25,600 |
+| 200,000 | 128,000 |
+
+The same rule applies to `thinking.budget_tokens` on Messages and to
+`reasoning.max_tokens` on Chat Completions and Responses. A request with no
+output limit forwards the budget as sent.
+
+## Common questions
+
+<AccordionGroup>
+  <Accordion title="Do I get the reasoning back in the response?">
+    When the serving model exposes its reasoning, it comes back in the
+    format of the endpoint you called: `thinking` content blocks on
+    Messages, reasoning output items on Responses, and reasoning fields on
+    the Chat Completions message. Some fleet models return a summary rather
+    than the full reasoning, and some return none.
+  </Accordion>
+  <Accordion title="What happens if I send reasoning from an earlier turn back to the model?">
+    It works, including with `auto`. Reasoning content that a model signed or
+    encrypted, such as Responses items with `encrypted_content` or Messages
+    `thinking` blocks with a `signature`, can only be replayed to the model
+    that produced it. When your stream has since been paired with a different
+    fleet model, camelStream re-sends the request to the model that produced
+    the content. Your conversation should continue without any change on
+    your side.
+  </Accordion>
+  <Accordion title="Which effort level should I use?">
+    We recommend `high` for coding agents and any task where correctness
+    matters more than latency. Use `low` when you want faster first tokens
+    on simple requests, and `none` when the request needs no reasoning at
+    all, such as classification or reformatting. The
+    [Codex guide](/stream/codex) sets `high`.
+  </Accordion>
+  <Accordion title="Does the effort level change which model serves me?">
+    No. The model serving your request comes from
+    [the fleet](/stream/fleet), and the effort level only changes how much
+    that model thinks. Tokens are unlimited on every level.
+  </Accordion>
+</AccordionGroup>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Endpoints" icon="server" href="/stream/endpoints">
+    The request shape for each endpoint.
+  </Card>
+  <Card title="SDKs" icon="code" href="/stream/sdks">
+    Configure the official OpenAI and Anthropic clients.
+  </Card>
+</CardGroup>

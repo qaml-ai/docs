@@ -38,6 +38,7 @@
             "pages": [
               "stream/authentication",
               "stream/endpoints",
+              "stream/reasoning",
               "stream/management-api",
               "stream/sdks",
               "stream/queues-and-errors"
