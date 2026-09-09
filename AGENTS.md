@@ -66,9 +66,9 @@ migration FAQ.
 `thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller
 sends them; do not document any effort remapping. The old remap of `medium` to `high` existed only
 because DeepSeek V4 Flash rejected `medium`, and a product PR removes it as of September 2026.
-The budget cap comes from `normalizeReasoningLimit` in `src/server/camel-stream.server.ts` in the
-product repo, with expectations in `test/model-routing.test.ts`. Re-verify before changing the cap
-numbers.
+Do not document the gateway's thinking-budget cap from `normalizeReasoningLimit` either; it is a
+relic and reads as too much detail (CTO decision, September 2026). Describe the parameters and
+their pass-through, not internal limits.
 
 ## Self-hosting guides
 
