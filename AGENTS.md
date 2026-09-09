@@ -62,6 +62,19 @@ or a model version changes, update the table and the "Last updated" line. Use `a
 model ID everywhere. Document the legacy `deepseek-v4-flash` ID only in the fleet-page
 migration FAQ.
 
+`stream/reasoning.mdx` documents the reasoning controls (`reasoning_effort`, `reasoning.effort`,
+`thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller
+sends them; do not document any effort remapping. The old remap of `medium` to `high` existed only
+because DeepSeek V4 Flash rejected `medium`, and a product PR removes it as of September 2026.
+Do not document the gateway's thinking-budget cap from `normalizeReasoningLimit` either; it is a
+relic and reads as too much detail (CTO decision, September 2026). Describe the parameters and
+their pass-through, not internal limits. Budgets are optional on every endpoint: present effort as
+the primary control and budgets as an optional ceiling, never as something the caller must send.
+Live-tested against staging in September 2026: every effort level and both Messages `thinking`
+forms are accepted and return reasoning, while `reasoning_effort: "none"` and
+`thinking: {"type": "disabled"}` are rejected with a 400 by fleet models that require reasoning.
+Re-test with a staging key from Illiana before changing those claims.
+
 ## Self-hosting guides
 
 Operator documentation lives in the **Self-hosting** tab under `self-hosting/`.

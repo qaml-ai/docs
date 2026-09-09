@@ -82,3 +82,10 @@ message = client.messages.create(
 print(message.content)
 ```
 </CodeGroup>
+
+## Reasoning controls
+
+Use the SDKs' normal reasoning parameters: `reasoning_effort` on Chat
+Completions, `reasoning.effort` on Responses, and `thinking` on Messages.
+camelStream passes them to the model serving your request. See
+[Reasoning & thinking](/stream/reasoning) for examples in each SDK.
