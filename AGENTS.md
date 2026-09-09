@@ -68,7 +68,8 @@ sends them; do not document any effort remapping. The old remap of `medium` to `
 because DeepSeek V4 Flash rejected `medium`, and a product PR removes it as of September 2026.
 Do not document the gateway's thinking-budget cap from `normalizeReasoningLimit` either; it is a
 relic and reads as too much detail (CTO decision, September 2026). Describe the parameters and
-their pass-through, not internal limits.
+their pass-through, not internal limits. Budgets are optional on every endpoint: present effort as
+the primary control and budgets as an optional ceiling, never as something the caller must send.
 
 ## Self-hosting guides
 

@@ -1,20 +1,22 @@
 ---
-title: 'Set Reasoning Effort and Thinking Budgets'
+title: 'Control How Much the Model Thinks'
 sidebarTitle: 'Reasoning & thinking'
-description: 'Control how much the model thinks with the same reasoning parameters the OpenAI and Anthropic APIs use'
+description: 'Set an effort level with the same reasoning parameters the OpenAI and Anthropic APIs use. A token budget is optional.'
 ---
 
 Every camelStream endpoint accepts its native reasoning controls and passes
 them to the model serving your request. Use the field your API format
 already defines. There is no camelStream-specific parameter to learn.
 
-| Endpoint | Effort level | Token budget |
+| Endpoint | Effort level | Token budget (optional) |
 | --- | --- | --- |
 | `/v1/chat/completions` | `reasoning_effort` | `reasoning.max_tokens` |
 | `/v1/responses` | `reasoning.effort` | `reasoning.max_tokens` |
 | `/v1/messages` | `output_config.effort` | `thinking.budget_tokens` |
 
-Leave the field out and the serving model uses its own default.
+Both fields are optional. An effort level on its own is enough, and
+camelStream never requires a budget. Leave everything out and the serving
+model uses its own default.
 
 ## Chat Completions
 
@@ -55,17 +57,9 @@ stream = client.chat.completions.create(
 ```
 </CodeGroup>
 
-To cap thinking by tokens instead of by level, send a `reasoning` object
-with `max_tokens`.
-
-```json Token budget
-{
-  "model": "auto",
-  "max_completion_tokens": 16000,
-  "reasoning": { "max_tokens": 8000 },
-  "messages": [{ "role": "user", "content": "Find the race condition in this worker." }]
-}
-```
+If you would rather bound thinking by tokens, a `reasoning` object with
+`max_tokens` is also accepted. It is optional. Use either an effort level
+or a token ceiling, not both.
 
 ## Responses
 
@@ -106,8 +100,9 @@ response = client.responses.create(
 
 ## Messages
 
-Set `thinking` with a `budget_tokens` value. The budget must be lower than
-`max_tokens`.
+`thinking` is optional. To turn it on without choosing a budget, send
+`{"type": "adaptive"}` and let the serving model decide how much to think.
+To steer the level, add `output_config` with an `effort` value.
 
 <CodeGroup>
 ```bash cURL
@@ -118,7 +113,8 @@ curl --no-buffer https://stream.camelai.com/v1/messages \
   -d '{
     "model": "auto",
     "max_tokens": 16000,
-    "thinking": { "type": "enabled", "budget_tokens": 8000 },
+    "thinking": { "type": "adaptive" },
+    "output_config": { "effort": "high" },
     "messages": [
       {"role": "user", "content": "Find the race condition in this worker."}
     ],
@@ -130,7 +126,8 @@ curl --no-buffer https://stream.camelai.com/v1/messages \
 const message = await client.messages.create({
   model: "auto",
   max_tokens: 16000,
-  thinking: { type: "enabled", budget_tokens: 8000 },
+  thinking: { type: "adaptive" },
+  output_config: { effort: "high" },
   messages: [{ role: "user", content: "Find the race condition in this worker." }],
 });
 ```
@@ -139,20 +136,28 @@ const message = await client.messages.create({
 message = client.messages.create(
     model="auto",
     max_tokens=16000,
-    thinking={"type": "enabled", "budget_tokens": 8000},
+    thinking={"type": "adaptive"},
+    output_config={"effort": "high"},
     messages=[{"role": "user", "content": "Find the race condition in this worker."}],
 )
 ```
 </CodeGroup>
 
-The other `thinking` types work too: `{"type": "adaptive"}` lets the serving
-model decide how much to think, and `{"type": "disabled"}` turns thinking
-off. To set a level instead of a budget, send `output_config` with an
-`effort` value.
+`{"type": "disabled"}` turns thinking off. If you want a hard ceiling on
+thinking tokens instead, `{"type": "enabled", "budget_tokens": 8000}` is
+also accepted. That is the one form that expects a budget, and the budget
+must be lower than `max_tokens`.
 
 ## Common questions
 
 <AccordionGroup>
+  <Accordion title="Do I need to set a thinking budget?">
+    No. An effort level on its own is enough on every endpoint, and leaving
+    both fields out uses the serving model's default. Budgets are for the
+    case where you want a hard ceiling on thinking tokens. On Messages,
+    `{"type": "adaptive"}` turns thinking on without a budget, and the
+    `enabled` type is the one form that expects a `budget_tokens` value.
+  </Accordion>
   <Accordion title="Do I get the reasoning back in the response?">
     When the serving model exposes its reasoning, it comes back in the
     format of the endpoint you called: `thinking` content blocks on
