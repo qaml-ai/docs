@@ -1,0 +1,26 @@
+name: Fleet floor check
+
+# Verifies every model on the camelStream fleet page still clears the published
+# intelligence floor on Artificial Analysis, that the index version has not
+# changed, and that the live sales site states the same floor as the docs.
+# Findings open or update a GitHub issue labeled `fleet-check`; a clean run
+# closes it. See scripts/fleet_floor_check.py.
+
+on:
+  schedule:
+    - cron: "0 13 * * 1" # Mondays 13:00 UTC (8am Chicago in summer, 7am in winter)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the fleet against the published floor
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/fleet_floor_check.py

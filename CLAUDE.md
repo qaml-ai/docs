@@ -43,8 +43,17 @@ repository is `/Users/illiana/Projects/qaml-api-dashboard`. Position it as unlim
 frontier intelligence above a published floor, never as a fixed-model promise.
 
 `stream/fleet.mdx` is the canonical fleet list for every camelAI property. The sales site
-links to it instead of listing models. When the fleet or a model version changes, update the
-table and the "Last updated" line.
+links to it and, since September 2026, also names the current models in `CURRENT_MODELS` in
+`app/lib/stream-guarantees.ts` (camelai-salessite), so a fleet change lands in both. When the
+fleet or a model version changes, update the table and the "Last updated" line.
+
+A weekly GitHub Action (`.github/workflows/fleet-floor-check.yml`, running
+`scripts/fleet_floor_check.py`, Mondays 13:00 UTC) parses the fleet page's floor sentence
+(thresholds and the `(vX.Y)` index version), the `_Floor verified against ..._` line, and the
+table's `artificialanalysis.ai/models/<slug>` links, then compares each model's live score and
+the sales site against the docs. Findings open or update a GitHub issue labeled `fleet-check`.
+If you change the structure of the floor section or the table, update the script in the same
+change, and test with `python3 scripts/fleet_floor_check.py --dry-run`.
 
 `stream/reasoning.mdx` documents the reasoning controls (`reasoning_effort`, `reasoning.effort`,
 `thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller
@@ -86,7 +95,15 @@ protected, not warned.
 Keep these vocabulary invariants:
 
 - The product name is "camelStream."
-- The only benchmarks are Terminal-Bench 2.1 at 70% and the AA Intelligence Index at 50.
+- The only benchmarks are Terminal-Bench 2.1 at 70% and the Artificial Analysis
+  Intelligence Index at 35 on index v4.3. Name the index version wherever the number
+  appears. Artificial Analysis recalibrates the index between versions: the v4.3
+  recalibration dropped every fleet model below the old floor of 50, and Illiana
+  re-baselined to 35 on September 15, 2026. `stream/fleet.mdx` is the definition and
+  carries the "floor verified" date; the sales site's `INTELLIGENCE_FLOOR` in
+  `app/lib/stream-guarantees.ts` mirrors the number. When a new index version ships,
+  re-check every fleet model, settle the new number with Illiana, and update the docs
+  page, this line, and the sales-site constant together.
 - Speeds are targets, never guarantees: p10 at or above 40 tok/s, p5 at or above 20 tok/s,
   and p95 first token under 5 seconds. Keep the throughput floors and first-token ceiling
   clear.
