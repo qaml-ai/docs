@@ -12,13 +12,14 @@ setup for you.
 curl -fsSL https://stream.camelai.com/install | bash
 ```
 
-You need a key from [the Stream console](https://stream.camelai.com/console)
-and one of these agents installed: Claude Code, Codex, OpenCode, Pi, Hermes,
-or OpenClaw.
+You need an active Stream subscription and one of these agents installed:
+Claude Code, Codex, OpenCode, Pi, Hermes, or OpenClaw.
 
-The installer finds the agents on your machine, asks for your key, checks it,
-writes each agent's configuration, and sends one test request. It backs up
-any file it changes and is safe to run again.
+The installer finds the agents on your machine and opens the Stream console
+in your browser. Sign in, approve the code it shows, and it creates an API
+key for that computer, writes each agent's configuration, and sends one test
+request. Nothing to copy. It backs up any file it changes and is safe to run
+again.
 
 ## Start your agent
 
@@ -40,7 +41,8 @@ Open a new terminal, then:
 
 ## Scripted use
 
-Set `CAMEL_API_KEY` and name the agents to skip the prompts:
+Set `CAMEL_API_KEY` to an existing key and name the agents to skip every
+prompt, including the browser sign-in:
 
 ```bash Terminal
 CAMEL_API_KEY="qaml_live_..." curl -fsSL https://stream.camelai.com/install | bash -s -- --agents codex,claude
