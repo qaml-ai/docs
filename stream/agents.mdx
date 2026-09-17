@@ -5,9 +5,17 @@ description: "Point Hermes, OpenClaw, Claude Code, Codex, OpenCode, or Pi at cam
 ---
 
 Create a key in [the Stream console](https://stream.camelai.com/console),
-then follow the guide for your agent. No camelStream plugin is required. Every
-guide uses the same model ID, `auto`. The model serving your stream comes from
-[the fleet](/stream/fleet).
+then run the installer. It detects the agents on your machine, writes the
+configuration below, and sends one request to confirm it works.
+
+```bash Terminal
+curl -fsSL https://stream.camelai.com/install | bash
+```
+
+The guides on this page are the manual equivalent. No camelStream plugin is
+required either way. Every guide uses the same model ID, `auto`; the model
+serving your stream comes from [the fleet](/stream/fleet). See the
+[installer page](/stream/install) for what it changes and how to undo it.
 
 | | |
 | --- | --- |

@@ -1,0 +1,149 @@
+---
+title: 'Install with One Command'
+sidebarTitle: 'Installer'
+description: 'Point your coding agents at camelStream with a single command'
+---
+
+camelStream is the model. Your coding agent stays the same and sends its
+requests to Stream instead of OpenAI or Anthropic, so it stops using those
+quotas. The installer does that setup for you.
+
+```bash Terminal
+curl -fsSL https://stream.camelai.com/install | bash
+```
+
+It takes about a minute. You need a key from
+[the Stream console](https://stream.camelai.com/console) and at least one
+supported agent installed: Claude Code, Codex, OpenCode, Pi, Hermes, or
+OpenClaw.
+
+## What it does
+
+<Steps>
+  <Step title="Finds your agents">
+    It looks for each supported agent on your `PATH` and in its config folder,
+    then asks which ones to configure. Detected agents are selected by default.
+  </Step>
+
+  <Step title="Checks your key">
+    It asks for your key and verifies it against the API before writing
+    anything. An invalid key or an inactive subscription stops the installer
+    with a message, and nothing on your machine changes.
+  </Step>
+
+  <Step title="Saves the key">
+    The key goes in `~/.camelstream/env.sh` with owner-only permissions. One
+    line is added to `~/.zshrc` or `~/.bashrc` so every new terminal exports
+    `CAMEL_API_KEY`. The agent configs reference that variable instead of
+    containing the key.
+  </Step>
+
+  <Step title="Configures each agent">
+    | Agent | What changes |
+    | --- | --- |
+    | Claude Code | `~/.camelstream/claude.sh`, loaded by your shell. Sets the Anthropic base URL, auth token, and model aliases. |
+    | Codex | A `camel_stream` provider in `~/.codex/config.toml` and a profile at `~/.codex/camel-stream.config.toml`. |
+    | OpenCode | A `camel-stream` provider and default model in `~/.config/opencode/opencode.json`. |
+    | Pi | A provider in `~/.pi/agent/models.json` and the default model in `~/.pi/agent/settings.json`. |
+    | Hermes | The key in `~/.hermes/.env`, plus a provider and default model in `~/.hermes/config.yaml`. |
+    | OpenClaw | A provider and default model in `~/.openclaw/openclaw.json`. |
+
+    Existing files are backed up next to the original as `.bak.<timestamp>`
+    and merged, so providers you already use stay in place. Running the
+    installer again is safe. It skips anything already configured.
+  </Step>
+
+  <Step title="Sends one request">
+    It asks the model to reply with `OK` and prints the answer. Every agent is
+    configured with the model ID `auto`, so [the fleet](/stream/fleet) picks
+    the model serving your stream. If every subscribed stream is busy, the
+    request queues briefly instead of failing.
+  </Step>
+</Steps>
+
+## Start your agent
+
+Open a new terminal so the shell picks up the key, then start the agent as
+usual.
+
+| Agent | Command |
+| --- | --- |
+| Claude Code | `claude`, then `/status` should show `https://stream.camelai.com` as the base URL |
+| Codex | `codex --profile camel-stream` |
+| OpenCode | `opencode` |
+| Pi | `pi` |
+| Hermes | `hermes chat` |
+| OpenClaw | `openclaw gateway restart`, then `openclaw models list` |
+
+## Options
+
+Pass flags after `bash -s --`. Set `CAMEL_API_KEY` first to skip the prompt.
+
+```bash Terminal
+CAMEL_API_KEY="qaml_live_..." curl -fsSL https://stream.camelai.com/install | bash -s -- --agents codex,claude
+```
+
+| Flag | Meaning |
+| --- | --- |
+| `--agents LIST` | Comma-separated agents, or `all`, `detected`, or `none` to only save the key. |
+| `--no-test` | Skip the test request. |
+| `--help` | Print all options. |
+
+Without a terminal, for example in a setup script, the installer configures
+every detected agent and reads the key from `CAMEL_API_KEY`.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Invalid API key">
+    Keys are shown once when created. Create a new one in
+    [the Stream console](https://stream.camelai.com/console) and run the
+    installer again.
+  </Accordion>
+
+  <Accordion title="Your subscription is not active yet">
+    Activate streaming in [the Stream console](https://stream.camelai.com/console),
+    then run the installer again. Keys start working the moment the
+    subscription is active.
+  </Accordion>
+
+  <Accordion title="The agent reports an auth error after installing">
+    The agent reads the key from your shell. Open a new terminal, or run
+    `source ~/.camelstream/env.sh` in the current one, and confirm
+    `echo $CAMEL_API_KEY` prints your key.
+  </Accordion>
+
+  <Accordion title="Claude Code still talks to Anthropic">
+    If you were logged in to Anthropic inside Claude Code, run `/logout`
+    once. `/status` should then list `ANTHROPIC_AUTH_TOKEN` and the Stream
+    base URL.
+  </Accordion>
+
+  <Accordion title="Hermes or OpenClaw already had custom providers">
+    When an existing config cannot be merged safely, the installer leaves it
+    untouched and prints the block to add yourself. The
+    [Hermes](/stream/hermes) and [OpenClaw](/stream/openclaw) guides show
+    where it goes.
+  </Accordion>
+
+  <Accordion title="Removing Stream">
+    Delete `~/.camelstream`, remove the three lines between the
+    `camelStream` markers in your shell startup file, and delete the
+    `camel-stream` entries from any agent configs listed above. Revoke the
+    key in the console.
+  </Accordion>
+</AccordionGroup>
+
+## Manual setup
+
+The installer writes the same configuration the per-agent guides describe. Use
+them when you want to see or change each setting.
+
+<CardGroup cols={2}>
+  <Card title="Choose your agent" href="/stream/agents">
+    Manual guides for Hermes, OpenClaw, Claude Code, Codex, OpenCode, and Pi.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/stream/quickstart">
+    Call the API directly with curl or an SDK.
+  </Card>
+</CardGroup>

@@ -15,6 +15,16 @@ provider. camelStream exposes `/v1/responses`.
 | **Key** | `CAMEL_API_KEY` |
 | **Context window** | 260K tokens guaranteed (see [the fleet](/stream/fleet)) |
 
+<Tip>
+  Have your key ready, then skip steps 3 and 4 with the
+  [installer](/stream/install). It writes this configuration for you and
+  verifies the connection.
+
+  ```bash Terminal
+  curl -fsSL https://stream.camelai.com/install | bash -s -- --agents opencode
+  ```
+</Tip>
+
 ## 1. Install OpenCode
 
 ```bash Terminal
