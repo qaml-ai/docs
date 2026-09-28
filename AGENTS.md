@@ -53,9 +53,14 @@ Partners group in `docs.json` and link it from the relevant tab in
 
 ## camelStream documentation
 
-The Stream tab documents **camelStream**, camelAI's flat-rate inference API. Its product
-repository is `/Users/illiana/Projects/qaml-api-dashboard`. Position it as unlimited
-frontier intelligence above a published floor, never as a fixed-model promise.
+The **Stream (Legacy)** tab follows **Changelog**. camelStream is shutting down;
+new subscriptions and renewals are closed. Keep the existing `/stream/*` URLs
+and the shutdown warning on every Stream page so existing customers can find
+reference material through their remaining paid period. The overview links to
+Settings for each account's end date and invoice history; the installer page
+leads with removal instructions. Do not restore purchase, stream-increase or
+new-enterprise-plan calls to action. Do not mention refunds in public notices.
+The product repository is `/Users/illiana/Projects/qaml-api-dashboard`.
 
 `stream/fleet.mdx` is the canonical fleet list for every camelAI property. When the fleet
 or a model version changes, update the table and the "Last updated" line. Use `auto` as the

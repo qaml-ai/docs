@@ -38,22 +38,23 @@ Partners group in `docs.json` and link it from the relevant tab in
 
 ## camelStream documentation
 
-The Stream tab documents **camelStream**, camelAI's flat-rate inference API. Its product
-repository is `/Users/illiana/Projects/qaml-api-dashboard`. Position it as unlimited
-frontier intelligence above a published floor, never as a fixed-model promise.
+The **Stream (Legacy)** tab follows **Changelog**. camelStream is shutting down;
+new subscriptions and renewals are closed. Keep the existing `/stream/*` URLs
+and the shutdown warning on every Stream page so existing customers can find
+reference material through their remaining paid period. The overview links to
+Settings for each account's end date and invoice history; the installer page
+leads with removal instructions. Do not restore purchase, stream-increase or
+new-enterprise-plan calls to action. Do not mention refunds in public notices.
+The product repository is `/Users/illiana/Projects/qaml-api-dashboard`.
 
 `stream/fleet.mdx` is the canonical fleet list for every camelAI property. The sales site
 links to it and, since September 2026, also names the current models in `CURRENT_MODELS` in
 `app/lib/stream-guarantees.ts` (camelai-salessite), so a fleet change lands in both. When the
 fleet or a model version changes, update the table and the "Last updated" line.
 
-A weekly GitHub Action (`.github/workflows/fleet-floor-check.yml`, running
-`scripts/fleet_floor_check.py`, Mondays 13:00 UTC) parses the fleet page's floor sentence
-(thresholds and the `(vX.Y)` index version), the `_Floor verified against ..._` line, and the
-table's `artificialanalysis.ai/models/<slug>` links, then compares each model's live score and
-the sales site against the docs. Findings open or update a GitHub issue labeled `fleet-check`.
-If you change the structure of the floor section or the table, update the script in the same
-change, and test with `python3 scripts/fleet_floor_check.py --dry-run`.
+The fleet floor workflow (`.github/workflows/fleet-floor-check.yml`, running
+`scripts/fleet_floor_check.py`) is manual-only during shutdown. Its scheduled
+trigger has been retired; use `workflow_dispatch` if an explicit check is needed.
 
 `stream/reasoning.mdx` documents the reasoning controls (`reasoning_effort`, `reasoning.effort`,
 `thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller

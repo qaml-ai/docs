@@ -7,8 +7,7 @@ name: Fleet floor check
 # closes it. See scripts/fleet_floor_check.py.
 
 on:
-  schedule:
-    - cron: "0 13 * * 1" # Mondays 13:00 UTC (8am Chicago in summer, 7am in winter)
+  # camelStream is winding down; retain the check for manual use only.
   workflow_dispatch:
 
 permissions:

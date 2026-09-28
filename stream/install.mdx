@@ -1,8 +1,28 @@
 ---
-title: 'Install with One Command'
+title: 'camelStream Installer (Legacy)'
 sidebarTitle: 'Installer'
-description: 'Point your coding agents at camelStream with a single command'
+description: 'Remove camelStream configuration or review setup for remaining paid access'
 ---
+
+<Warning>
+  **camelStream is shutting down.** These legacy docs are kept for existing
+  customers. New subscriptions and renewals are closed. API access ends with
+  your current paid period. [Check your end date and invoices in Settings](https://stream.camelai.com/settings).
+  Move connected coding agents to another provider before your access ends.
+</Warning>
+
+## Removing it
+
+```bash Terminal
+curl -fsSL https://stream.camelai.com/install | bash -s -- --uninstall
+```
+
+This takes camelStream out of every agent it configured, restores what was
+there before, and deletes the saved key from your machine. Revoke the key in
+[the Stream console](https://stream.camelai.com/console) if you no longer
+need it.
+
+## Setup for existing customers
 
 camelStream is the model. Your coding agent stays the same and sends its
 requests to Stream instead of OpenAI or Anthropic. The installer does that
@@ -49,17 +69,6 @@ CAMEL_API_KEY="qaml_live_..." curl -fsSL https://stream.camelai.com/install | ba
 ```
 
 Run it with `--help` for all options.
-
-## Removing it
-
-```bash Terminal
-curl -fsSL https://stream.camelai.com/install | bash -s -- --uninstall
-```
-
-This takes camelStream out of every agent it configured, restores what was
-there before, and deletes the saved key from your machine. Revoke the key in
-[the Stream console](https://stream.camelai.com/console) if you no longer
-need it.
 
 ## Manual setup
 
