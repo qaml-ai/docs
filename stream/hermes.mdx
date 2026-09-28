@@ -4,6 +4,13 @@ sidebarTitle: 'Hermes'
 description: 'Point Hermes Agent at camelStream for unlimited frontier intelligence'
 ---
 
+<Warning>
+  **camelStream is shutting down.** These legacy docs are kept for existing
+  customers. New subscriptions and renewals are closed. API access ends with
+  your current paid period. [Check your end date and invoices in Settings](https://stream.camelai.com/settings).
+  Move connected coding agents to another provider before your access ends.
+</Warning>
+
 [Hermes Agent](https://hermes-agent.nousresearch.com) can use any
 OpenAI-compatible `/v1/chat/completions` endpoint as a custom provider.
 
@@ -127,14 +134,10 @@ hermes doctor
     killed.
   </Accordion>
   <Accordion title="How do I set up Hermes for parallel work?">
-    There are a few options to get Stream to work well with Hermes. First,
-    if your workload involves heavy use of parallel work, we recommend you
-    purchase at least 1 additional Stream. Each stream you add runs one more
-    request in parallel, so subagents run truly in parallel.
-
-    If you prefer to keep 1 stream, we recommend you cap subagents so only
-    one runs at a time. Raising Hermes' timeouts can also help queued
-    requests survive the wait. The setup below covers both.
+    Stream counts can no longer be increased during shutdown. To reduce
+    queueing within your existing allowance, cap subagents so only one runs
+    at a time. Raising Hermes' timeouts can also help queued requests survive
+    the wait. The setup below covers both.
   </Accordion>
 </AccordionGroup>
 

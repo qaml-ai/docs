@@ -1,27 +1,35 @@
 ---
-title: 'What is camelStream?'
+title: 'camelStream (Legacy)'
 sidebarTitle: 'Overview'
-description: 'Unlimited frontier intelligence at a flat monthly price, through OpenAI- and Anthropic-compatible APIs'
+description: 'Shutdown information and API reference for existing camelStream customers'
 ---
 
-camelStream is a model you subscribe to, not another agent. Keep using
-Claude Code, Codex, OpenCode, Pi, Hermes, or OpenClaw, point it at Stream, and
-it stops spending your OpenAI or Anthropic quota. One endpoint speaks OpenAI
-Chat Completions, OpenAI Responses, and Anthropic Messages, serving unlimited
-frontier intelligence from [a fleet of models](/stream/fleet) above a
-published intelligence floor. Requests beyond your concurrent stream allowance
-queue automatically instead of failing.
+<Warning>
+  **camelStream is shutting down.** These legacy docs are kept for existing
+  customers. New subscriptions and renewals are closed. API access ends with
+  your current paid period. [Check your end date and invoices in Settings](https://stream.camelai.com/settings).
+  Move connected coding agents to another provider before your access ends.
+</Warning>
 
-## How pricing works
+camelStream is camelAI's inference API, with OpenAI Chat Completions, OpenAI
+Responses, and Anthropic Messages compatibility. These pages preserve the
+setup guides and API reference for customers finishing their paid service period.
 
-A subscription covers the number of concurrent streams you choose, from 1 to
-50, at a flat monthly price per stream. Tokens are unlimited while the
-subscription is active, and you can cancel anytime. Change your stream count
-in [Stream Settings](https://stream.camelai.com/settings); Stripe prorates the
-change for the current billing period. See
-[stream.camelai.com](https://stream.camelai.com) for current pricing, and
-[contact us](https://camelai.com/stream/contact) if you need more than 50
-streams.
+## What happens to your subscription
+
+We're no longer able to subsidize the token costs behind camelStream, so we're
+winding it down. Your subscription will not renew, and you do not need to cancel
+it yourself. New subscriptions and changes to stream counts are closed.
+
+Your service continues through the end of your current paid billing period.
+After that, your API keys stop working. [Sign in to Stream Settings](https://stream.camelai.com/settings)
+to see your account's end date and view your invoices. Switch connected coding
+agents and applications to another provider before that date. If you used our
+installer, see [how to remove its configuration](/stream/install#removing-it).
+
+For questions, email [support@camelai.com](mailto:support@camelai.com).
+
+## API reference for existing customers
 
 | | |
 | --- | --- |
@@ -31,17 +39,17 @@ streams.
 The model ID `auto` means your request is served by whatever fleet model is
 available. See [the fleet](/stream/fleet).
 
-## Get started
+## Legacy guides
 
 <CardGroup cols={2}>
   <Card title="Installer" icon="terminal" href="/stream/install">
-    One command configures your coding agents and verifies the connection.
+    Remove the Stream configuration, or review setup for remaining paid access.
   </Card>
   <Card title="The model fleet" icon="layer-group" href="/stream/fleet">
     The models serving streams, the intelligence floor, and the guarantees.
   </Card>
   <Card title="Quickstart" icon="rocket" href="/stream/quickstart">
-    Create a key and stream your first response.
+    Request examples for accounts whose paid access is still active.
   </Card>
   <Card title="Coding agents" href="/stream/agents">
     Manual setup for Hermes, Claude Code, Codex, OpenCode, or Pi.
