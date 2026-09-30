@@ -1,0 +1,154 @@
+---
+title: 'REST API'
+description: 'Create agents, send prompts, poll runs and read events over HTTP'
+---
+
+The REST API is served under `https://agents.camelai.dev/v1`. The full
+specification is [`/v1/openapi.json`](https://agents.camelai.dev/v1/openapi.json)
+(OpenAPI 3). Every request sends `Authorization: Bearer <API key>`; see
+[Authentication](/camelrun/authentication).
+
+<Tip>
+  The SDKs wrap all of this, including tool calls over the agent's own
+  connection, which REST alone can't serve. Use REST for languages without an
+  SDK, and for scripts.
+</Tip>
+
+## Create an agent
+
+```bash
+curl https://agents.camelai.dev/v1/agents \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: support-triage" \
+  -d '{"model": "anthropic/claude-sonnet-5-5", "systemPrompt": "Be concise.", "builtins": ["web_search"]}'
+```
+
+```json
+{"id": "client_...", "token": "...", "expiresAt": null}
+```
+
+The `Idempotency-Key` is the agent's key: the same key returns the same agent,
+brought to the configuration you send. The body takes `name`, `model`,
+`systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `builtins`, `definition`,
+`subject`, `context`, `keyScope`, `spendLimit`, `modelHeaders`, `mounts`,
+`fileTools`, `ttlSeconds` and `initialMessages`.
+
+It also takes `prompt`, a first message with the same body as
+`POST /v1/agents/{id}/prompt`. The answer then carries `prompt`: the request to
+poll, or `{error}` if it was refused. The agent is made either way.
+
+## Send a message and get the result
+
+```bash
+curl https://agents.camelai.dev/v1/agents/$AGENT/prompt \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"text": "Which tickets look urgent?", "requestId": "msg-8812", "from": {"id": "u_42", "name": "Ada"}}'
+```
+
+The prompt answers `202` with the request record. `requestId` is optional; it
+makes the prompt idempotent, so sending the same one again returns the same run.
+Other fields are `files`, `metadata`, `whileRunning` (`queue` or `steer`),
+`spendLimit` and `allowDisconnected`.
+
+Poll the request until `state` is `completed`:
+
+```bash
+curl https://agents.camelai.dev/v1/agents/$AGENT/requests/msg-8812 \
+  -H "Authorization: Bearer $CAMELAI_API_KEY"
+```
+
+```json
+{"id": "msg-8812", "method": "prompt", "state": "completed",
+ "outcome": {"result": {"reply": "Tickets 4411 and 4417...", "replyIndex": 5, "messages": 6,
+                        "error": null, "files": [], "toolErrors": []}}}
+```
+
+An ended request with `error` set failed; `stopped: "input_required"` means it
+waits on a person. See [Run outcomes](/camelrun/events#run-outcomes). Instead of
+polling, you can register a [webhook](/camelrun/webhooks) for `run.completed`
+and `run.failed`.
+
+## Endpoints
+
+<AccordionGroup>
+  <Accordion title="Agents">
+    | Endpoint | |
+    | --- | --- |
+    | `POST /v1/agents` | Create or upsert an agent (with `Idempotency-Key`) |
+    | `GET /v1/agents` | List your agents, each with its key and name |
+    | `GET /v1/agents/{id}` | One agent: configuration, definition, `spendLimit`, `toolSources` |
+    | `DELETE /v1/agents/{id}` | Stop an agent and delete its history and files |
+    | `PATCH /v1/agents/{id}/configuration` | Change model, prompt, thinking level, key scope, spend limit or headers between turns |
+    | `POST /v1/agents/{id}/prompt` | Send a message |
+    | `GET /v1/agents/{id}/requests/{requestId}` | A request's state and outcome |
+    | `POST /v1/agents/{id}/abort` | Stop the running turn |
+    | `GET /v1/agents/{id}/state` | Every request's state, and the stream's cursor |
+    | `GET /v1/agents/{id}/history` | Messages, in pages of whole turns (`?limit=`, `?before=`) |
+    | `GET /v1/agents/{id}/events` | The event stream (SSE, or `?poll=1&wait=25`). See [Events](/camelrun/events) |
+    | `POST /v1/agents/{id}/browser-tokens` | A token for a browser to read this agent |
+  </Accordion>
+  <Accordion title="Human input">
+    | Endpoint | |
+    | --- | --- |
+    | `GET /v1/agents/{id}/inputs` | An agent's inputs (`?state=pending`) |
+    | `POST /v1/agents/{id}/inputs/{inputId}` | Answer one: `{action, content?, from?}` |
+    | `POST /v1/agents/{id}/inputs` | Answer several at once |
+    | `GET /v1/inputs` | Inputs across all your agents |
+  </Accordion>
+  <Accordion title="Files and volumes">
+    | Endpoint | |
+    | --- | --- |
+    | `PUT /v1/agents/{id}/uploads/{requestId}/{name}` | Upload a file to attach to a prompt |
+    | `POST /v1/agents/{id}/links` | Sign a download or upload link by the path the agent sees |
+    | `GET`, `PUT /v1/agents/{id}/mounts` | An agent's mounts |
+    | `GET`, `POST /v1/volumes`; `GET`, `DELETE /v1/volumes/{id}` | Volumes |
+    | `GET /v1/volumes/{id}/files`; `GET`, `PUT`, `DELETE /v1/volumes/{id}/files/{path}` | A volume's files |
+    | `GET /v1/volumes/{id}/changes` | The change feed |
+    | `POST /v1/volumes/{id}/snapshots`, `POST /v1/volumes/{id}/fork` | Snapshots and forks |
+    | `POST /v1/volumes/{id}/links` | Sign a link by a volume's path |
+  </Accordion>
+  <Accordion title="Schedules">
+    | Endpoint | |
+    | --- | --- |
+    | `GET`, `POST /v1/agents/{id}/schedules` | List, or add a wake-up: `{text, inSeconds \| at, everySeconds?}` |
+    | `DELETE /v1/agents/{id}/schedules/{scheduleId}` | Remove one |
+  </Accordion>
+  <Accordion title="Definitions and channels">
+    | Endpoint | |
+    | --- | --- |
+    | `GET`, `POST /v1/definitions` | List, or create (upsert with `Idempotency-Key`) |
+    | `GET`, `PATCH`, `DELETE /v1/definitions/{id}` | One definition. `PATCH` with `apply: "all"` reconfigures its agents |
+    | `GET /v1/definitions/{id}/agents` | Agents made from it, with their revisions |
+    | `GET`, `POST /v1/channels`; `GET`, `PATCH`, `DELETE /v1/channels/{id}` | Channels |
+  </Accordion>
+  <Accordion title="Models, providers and keys">
+    | Endpoint | |
+    | --- | --- |
+    | `GET /v1/models` | The model catalog (`?available=true`, `?keyScope=`) |
+    | `GET /v1/providers` | Providers, with your keys' status and your own providers |
+    | `PUT`, `DELETE /v1/providers/{provider}/key` | Your account's key for a provider |
+    | `PUT`, `DELETE /v1/providers/{name}` | A [custom provider](/camelrun/custom-models) |
+    | `GET`, `DELETE /v1/key-scopes/{scope}` | A [key scope](/camelrun/models-and-keys#key-scopes) |
+    | `PUT`, `DELETE /v1/key-scopes/{scope}/providers/{provider}` | A key scope's key for a provider |
+    | `GET /v1/key-scopes/{scope}/model-providers`; `PUT`, `DELETE .../model-providers/{name}` | A key scope's own providers |
+  </Accordion>
+  <Accordion title="Account">
+    | Endpoint | |
+    | --- | --- |
+    | `GET /v1/me` | Your tenant id and default model |
+    | `GET`, `POST /v1/tokens`; `DELETE /v1/tokens/{id}` | API tokens |
+    | `GET /v1/oauth/grants`; `DELETE /v1/oauth/grants/{id}` | Apps connected over OAuth |
+    | `GET`, `POST /v1/webhooks`; `GET`, `PATCH`, `DELETE /v1/webhooks/{webhookId}` | [Webhook](/camelrun/webhooks) endpoints |
+    | `POST /v1/webhooks/{webhookId}/secret` | Rotate an endpoint's secret |
+    | `GET /v1/usage` | Model usage and cost |
+    | `GET /v1/billing`, `GET /v1/billing/ledger` | Prepaid credit and its ledger |
+  </Accordion>
+</AccordionGroup>
+
+## Conventions
+
+- Errors are `{"error": "<message>", "code": "<CODE>"}`. Switch on `code`, not
+  the message. See [Errors](/camelrun/errors).
+- Every POST that changes something takes an `Idempotency-Key` header. A retry
+  with the same key, path and body gets the first answer again, for 24 hours.
+- Every 429 and 503 has `Retry-After`.

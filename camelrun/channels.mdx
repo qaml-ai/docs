@@ -1,0 +1,140 @@
+---
+title: 'Channels'
+description: 'Let people talk to agents from Slack, Telegram and Discord, and have agents answer GitHub and any webhook'
+---
+
+A channel lets people talk to agents from a messaging service (Telegram, Slack
+or Discord), or has agents answer activity on GitHub. A `webhook` channel
+lets any service that sends webhooks (Sentry, Linear, Stripe, your own) start
+agents. Manage channels with `/v1/channels` or the console's Channels page:
+
+```bash
+curl https://agents.camelai.dev/v1/channels \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"type": "telegram", "credentials": {"botToken": "<from @BotFather>"},
+       "definition": "def_...", "access": {"allow": ["@ada", "123456789"]}}'
+```
+
+Each conversation's agent is made from the channel's `definition`. A channel
+created without one gets an empty definition of its own.
+
+| Service | Credentials | Messages arrive by | One conversation (one agent) is |
+| --- | --- | --- | --- |
+| `telegram` | `botToken` | Webhook, registered for you | A chat |
+| `slack` | `botToken` (`xoxb-...`), `signingSecret` | Webhook, pasted into the app | A thread started by an @mention, or a DM |
+| `discord` | `botToken` | The Gateway, which camelRun keeps connected | A DM, or a channel or thread where the bot is @mentioned |
+| `github` | `appId`, `privateKey`, `webhookSecret` | Webhook, pasted into the GitHub App | A pull request or issue |
+| `webhook` | `secret`, optional `replyUrl` | Webhook, pasted into the sending service | Whatever the `key` template names |
+
+Creating a channel checks its credentials with the service. Credentials are
+stored encrypted, and the API returns only masked values.
+
+## Set up each service
+
+<AccordionGroup>
+  <Accordion title="Telegram">
+    Create a bot with @BotFather and pass its token. camelRun registers the
+    bot's webhook with a random secret that each delivery must echo, and removes
+    it when you delete the channel. `/start` gets the channel's `greeting`
+    without a model call.
+  </Accordion>
+  <Accordion title="Slack">
+    Create an app with the bot scopes `app_mentions:read`, `chat:write`,
+    `im:history`, `channels:history` (and `groups:history` for private
+    channels), `files:read` and `files:write`, and install it. Paste the
+    channel's `webhookUrl` into Event Subscriptions and subscribe to
+    `app_mention`, `message.im` and `message.channels`. A mention starts a
+    thread and replies go there; later messages in that thread reach its agent
+    without a mention.
+  </Accordion>
+  <Accordion title="Discord">
+    Create an application, add a bot, and invite it with View Channel, Send
+    Messages, Send Messages in Threads, Attach Files and Read Message History.
+    The bot needs no privileged intents: it answers DMs and messages that
+    mention the bot user. Once the token is saved, the console shows an invite
+    link and a test mention.
+  </Accordion>
+  <Accordion title="GitHub">
+    Create a GitHub App with the repository permissions Pull requests (read and
+    write), Issues (read and write), Contents (read) and Metadata (read).
+    Subscribe it to Pull request, Issue comment and Pull request review comment
+    (and Issues, for `issues.opened`), generate a private key, set a webhook
+    secret, and install it. Create the channel with the App ID, the private key
+    and the secret, then paste the channel's `webhookUrl` into the app.
+
+    Each pull request or issue gets its own agent. A pull request's diff is
+    attached as `pr-<n>.diff`, and the reply is a comment. `settings` choose
+    what starts a turn: `events`, `repos` (`owner/repo` or `owner/*`),
+    `ignoreDrafts` (default `true`), `reply` (`comment` or `none`), `authors`
+    (`allowlist` or `members`) and `debounceSeconds` (default 30).
+
+    <Warning>
+      On a public repository, anyone can open pull requests and comments.
+      Treat them as untrusted input, keep `access.public` off, and give the
+      agent's tools no more than the conversation needs.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  The runtime also supports email channels, an address that agents answer
+  mail at. They require a runtime configured to receive mail, and aren't
+  enabled on agents.camelai.dev.
+</Note>
+
+## What all channels share
+
+- Each external conversation gets its own agent, made on first contact from the
+  channel's definition.
+- Senders must be on the allowlist (`access.allow`) unless the channel sets
+  `access.public`. Each sender is rate limited (`limits.perSenderPerMinute`,
+  default 10), and the channel has a daily turn cap (`limits.turnsPerDay`,
+  default 1,000).
+- Each message carries its sender as `from`, and tool calls carry a runtime-set
+  `origin` (`{channel, conversationId, sender}`) that tools can authorize
+  against.
+- Attachments are streamed into the agent's workspace at
+  `uploads/<requestId>/<name>`: up to 10 files a message and 25 MiB each (20 MB
+  on Telegram).
+- The turn's final answer is sent back when the turn ends, split to the
+  service's message limit. Channel agents also get a `send_message` tool for
+  updates mid-turn, and files the agent presents follow the reply.
+- Messages are recorded durably before they are acknowledged, duplicates are
+  dropped, and replies go through a durable outbox, so each part is sent once.
+- Questions and approvals appear as text, and the next fitting message from an
+  allowed person answers them. See [Human input](/camelrun/human-input).
+
+## Generic webhooks
+
+A `webhook` channel turns each delivery from any service into a prompt. Give it
+the secret the service signs with, then point the service at the channel's
+`webhookUrl`:
+
+```bash
+curl https://agents.camelai.dev/v1/channels \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"type": "webhook", "credentials": {"secret": "<the signing secret>"}, "definition": "def_...",
+       "settings": {"signature": {"type": "hmac-sha256", "header": "Sentry-Hook-Signature"},
+                    "key": "sentry-{{data.issue.id}}",
+                    "filter": [{"path": "action", "in": ["created"]}],
+                    "prompt": "Sentry issue {{data.issue.title}} ({{data.issue.web_url}}) was created. Triage it."}}'
+```
+
+| Setting | |
+| --- | --- |
+| `signature` | How a delivery proves itself: `{"type": "standard"}` (Standard Webhooks, the default), `{"type": "hmac-sha256", "header", "prefix"?, "encoding"?}` (GitHub, Sentry, Linear, Shopify and most others), or `{"type": "token", "header"}`. Unsigned or wrongly signed deliveries get a 401 |
+| `key` | Picks the conversation, and so the agent. Deliveries that render to the same key go to the same agent. Without a key, the channel has one agent |
+| `prompt` | What the agent is told. By default, the payload itself. Either way the whole payload is attached as `payload.json` |
+| `sender` | Who a delivery is from, for `from` and rate limits, such as `{{actor.email}}` |
+| `filter` | Conditions that must all hold (`path` with `in`, `equals` or `exists`), or the delivery is acknowledged and ignored |
+| `idPath`, `idHeader` | Where a delivery's id is, so retries are dropped |
+
+Templates are `{{path}}`: a dotted path into the JSON payload
+(`data.items.0.id`), or `{{headers.<name>}}` for a request header. Bodies must
+be JSON, up to 1 MiB.
+
+There's no conversation to answer, so the agent acts through its tools and the
+turn's end reaches you as a [`run.completed`](/camelrun/webhooks) event. To get
+the reply too, set `credentials.replyUrl`: each reply is POSTed there as
+`{"type": "message", "conversationId", "text"}`, signed per Standard Webhooks
+with the channel's secret.

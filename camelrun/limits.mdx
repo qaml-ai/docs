@@ -1,0 +1,109 @@
+---
+title: 'Limits'
+description: 'Every limit a developer can hit on camelRun'
+---
+
+Past a size limit the request is refused with a 400 or 413. Past a count or
+rate limit, it's a 409 or 429 with `Retry-After`. See [Errors](/camelrun/errors)
+for what to do about each. KiB = 1,024 bytes, MiB = 1,024 KiB.
+
+## Agents
+
+| Limit | Value |
+| --- | --- |
+| An agent's key | 1 to 80 characters of `A-Z a-z 0-9 _ -` |
+| Lifetime (`ttlSeconds`) | 60 seconds to 366 days, or `null` for until deleted. Default: until deleted with a key, 1 day without |
+| Imported history (`initialMessages`) | 16 MB of JSON |
+| `systemPrompt`, `systemPromptAppend` | 32,000 characters each |
+| `modelHeaders` | 20 headers, 8 KB in all |
+| `context` | 4 KB |
+| Mounts | 16 per agent |
+| Agents awake at once | Set per account; the free tier allows 2. Past it, the least recently active idle agent is stopped to make room; with none idle, 429 |
+| Tools in an agent's catalog | 4,096 tools and 16 MiB of schemas; at most 64 offered directly to the model, the rest reached from `js_exec` |
+
+## Runs and requests
+
+| Limit | Value |
+| --- | --- |
+| Request id (`requestId`, `idempotencyKey`) | 1 to 80 characters of `A-Z a-z 0-9 _ -` |
+| Open requests per agent (running and queued) | 32 |
+| Prompt body | 6 MiB, with inline files |
+| `metadata` | 16 keys of 1 to 64 characters, string values of at most 512 characters |
+| Provider retries within a turn | 3 attempts for overloads, rate limits, 5xx and dropped streams |
+| How long a run may take | No limit. The SDKs have no default timeout |
+| `Idempotency-Key` header | 1 to 255 characters; its answer is kept for 24 hours |
+
+## Files
+
+| Limit | Value |
+| --- | --- |
+| Files attached to one message | 20 |
+| Inline (base64) file bytes in one message | 4 MiB in all |
+| One file | 256 MiB |
+| Image the model sees natively | 5 MiB and 8,000 pixels a side |
+| PDF the model sees natively | 16 MiB and 100 pages |
+| Signed links | 1 second to 24 hours, default 15 minutes |
+| A volume | 100,000 files and 100 snapshots |
+
+## Tools
+
+| Limit | Value |
+| --- | --- |
+| A tool result the model reads | 32,000 characters; a longer one is saved whole to a file the model can read |
+| Attached tool call deadline | 15 seconds without an answer by default; `timeoutMs` from 1 second to 20 minutes |
+| MCP server call deadline | Default 60 seconds, at most 20 minutes |
+| OpenAPI operation deadline | Default 30 seconds, at most 20 minutes |
+| Progress | Each progress report restarts a call's deadline, up to 20 minutes in all |
+| One tool result from the SDKs | 1 MiB of JSON |
+| Tool sources per definition | 64 MCP servers and 64 OpenAPI specs |
+| An OpenAPI spec | 8 MiB, at most 1,024 operations |
+
+## Code the model writes (`js_exec`)
+
+| Limit | Value |
+| --- | --- |
+| Wall time | 30 seconds by default, at most 120 |
+| CPU time | 2 seconds of executing code (time waiting on tools doesn't count) |
+| Memory | 32 MiB WebAssembly memory, 16 MiB QuickJS heap |
+| Output | 32,000 characters by default, at most 128,000 |
+| Tool calls | 256 per script, at most 32 in flight |
+| One `fs.readFile` or `fs.writeFile` | 700 KiB |
+
+## People
+
+| Limit | Value |
+| --- | --- |
+| How long an input waits | 7 days by default; from 60 seconds to 30 days |
+| An input's message | 4,000 characters |
+| Approvers | 100 |
+| `ask_user` | 1 to 4 questions, each with 2 to 4 options |
+
+## Streams and browsers
+
+| Limit | Value |
+| --- | --- |
+| One SSE frame | 1.1 MB; a larger event arrives as `event_omitted` |
+| Events buffered per agent for replay | The last 512, at most 2 MiB |
+| Long poll `wait` | 25 seconds |
+| Read-only subscribers | 32 per agent |
+| Browser token lifetime | 5 to 3,600 seconds, default 900 |
+| History page (`?limit=`) | 1 to 500 messages, default 50 |
+
+## Schedules, channels and webhooks
+
+| Limit | Value |
+| --- | --- |
+| Schedules per agent | 100, at most a year ahead |
+| Repeating schedules | At least 60 seconds apart |
+| Channel senders | `perSenderPerMinute` 1 to 600 (default 10), `turnsPerDay` default 1,000 |
+| Channel attachments | 10 files a message, 25 MiB each |
+| Webhook endpoints | 16 per account |
+| A webhook delivery | 10 seconds to answer; retried for up to 3 days |
+
+## Spending
+
+| Limit | Value |
+| --- | --- |
+| An agent's spend limit | New prompts are refused, and a running turn stops after the response that crossed it |
+| An account's monthly cap | 402 for new runs once reached |
+| Prepaid credit | 402 at a zero balance. Free credit allows $1 of usage per hour |

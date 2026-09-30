@@ -1,0 +1,102 @@
+---
+title: 'Definitions'
+description: 'Reusable agent configurations, and rolling a change out to every agent made from one'
+---
+
+A definition is a reusable agent configuration: name, model, system prompt,
+thinking level, tool sources (built-ins, remote MCP servers and OpenAPI specs),
+limits and mounts. Manage definitions with the SDKs, `/v1/definitions`,
+[`camelrun deploy`](/camelrun/cli), or the console's Definitions page, and make
+agents from one.
+
+Run `upsertDefinition(key, ...)` at every deploy. The same key is the same
+definition, set to what you send (fields left out are cleared), with a new
+revision only when something changed.
+
+<CodeGroup>
+```ts TypeScript
+const definition = await agents.runtime.upsertDefinition("support", {
+  name: "Support",
+  model: "anthropic/claude-sonnet-5-5",
+  systemPrompt: "You answer support tickets.",
+  builtins: ["web_search", "ask_user"],
+  mcpServers: [{ name: "app", url: "https://app.example.com/mcp", auth: { type: "runtime" } }],
+});
+const agent = await agents.upsert(`ticket-${ticket.id}`, { definition: definition.id, subject: ticket.customerId });
+```
+
+```python Python
+definition = await agents.runtime.upsert_definition(
+    "support",
+    name="Support",
+    model="anthropic/claude-sonnet-5-5",
+    systemPrompt="You answer support tickets.",
+    builtins=["web_search", "ask_user"],
+    mcpServers=[{"name": "app", "url": "https://app.example.com/mcp", "auth": {"type": "runtime"}}],
+)
+agent = await agents.upsert(f"ticket-{ticket.id}", definition=definition["id"], subject=ticket.customer_id)
+```
+</CodeGroup>
+
+Over REST, the key is the `Idempotency-Key` of `POST /v1/definitions`. Saving a
+definition lists its MCP servers: credentials a server refuses are a 400, and the
+answer's `toolSources` shows what each server offers.
+
+## What an agent keeps
+
+The definition supplies the model, prompt, thinking level and tool sources. An
+agent can also have configuration of its own, which applying the definition
+leaves alone:
+
+```json
+{"definition": "def_...", "model": "anthropic/claude-opus-5", "thinkingLevel": "low",
+ "systemPromptAppend": "Thread thr_123 in workspace ws_9."}
+```
+
+- `model` and `thinkingLevel` given at creation or later, and `fileTools` given
+  at creation, are the agent's own.
+- `systemPromptAppend` is text the model reads after the definition's prompt,
+  such as per-conversation context. An apply replaces the prompt and keeps the
+  addition.
+- `systemPrompt` can't be given alongside a definition, because the definition
+  owns the prompt.
+- Tools of your process (`tools` on `upsert`) are added as the agent's attached
+  server.
+
+## Roll out a change
+
+Every change is a new revision. An agent records the definition and revision it
+was made from, and keeps that configuration when the definition changes, so
+only new agents get the new revision by default.
+
+To move live agents too, apply the change to all of them:
+
+```bash
+curl -X PATCH https://agents.camelai.dev/v1/definitions/def_... \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"systemPrompt": "You answer support tickets. Be brief.", "apply": "all"}'
+```
+
+Each agent is reconfigured between its turns, keeping its history and attached
+tools. The response's `applied` lists each agent with its `status`: `updated`,
+`queued` (it takes the revision after its current turn), or `failed`.
+`GET /v1/definitions/{id}/agents` lists the agents and the revision each has.
+
+Deleting a definition leaves its agents as they are. A definition a channel
+uses can't be deleted.
+
+## Change one agent
+
+`PATCH /v1/agents/{id}/configuration` changes one agent's `model`,
+`systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `keyScope`, `spendLimit`
+or `modelHeaders` without touching its definition or history:
+
+```bash
+curl -X PATCH https://agents.camelai.dev/v1/agents/client_.../configuration \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"requestId": "model-change-1", "model": "openrouter/openai/gpt-6-luna"}'
+```
+
+It answers `202` with a queued request that survives a restart. Poll it for the
+outcome, and reuse `requestId` to retry. A model must be in `GET /v1/models` and
+have a key for its provider, or the change is a 400.

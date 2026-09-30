@@ -1,0 +1,154 @@
+---
+title: 'Concepts'
+description: 'Durable keyed agents, runs, events, where tools run, and people in the loop'
+---
+
+## Agents are durable and keyed
+
+An agent is a conversation that lasts. Its history, files, configuration
+(model, instructions, tools) and pending work live in camelRun, not in your
+process. Most agents are asleep at any moment and cost nothing. A message wakes
+one on whichever node has room, and it picks up where it left off.
+
+You name an agent with a **key**, your own id for it, such as `support-triage`,
+`user-123` or `thread-9f2c`. Keys are 1 to 80 letters, digits, `_` and `-`.
+
+```ts
+const agent = await agents.upsert("user-123", { model, instructions, tools });
+```
+
+- The same key is the same agent, from any process, until you delete it with
+  `agent.delete()`.
+- `upsert` makes the agent if there is none, and otherwise brings it to the
+  configuration you pass. A changed model, instructions or tool list applies
+  between turns, and the history carries over.
+- Who the agent acts for (`subject`, `context`), its definition and its mounts
+  are fixed when it is made. Changing them is a 409 that names the field. Delete
+  the agent and upsert again to start over.
+- Over REST, the key is the `Idempotency-Key` header of `POST /v1/agents`.
+
+Every agent also has an **id** (`client_...`), which is safe to log and store,
+and a **token**, which lets its holder run that agent and nothing else. You
+rarely need the token, because upserting by key gives you the agent again.
+Agents made without a key are scratch agents that expire after a day unless you
+set `ttlSeconds`.
+
+## Runs
+
+A message to an agent starts a **run**: the model loop, with every tool call it
+makes, until the model answers or something stops it. An agent has one run at a
+time. A message sent during a run waits for it (`whileRunning: "queue"`, the
+default) or joins it (`whileRunning: "steer"`, read by the running turn after
+its current step).
+
+```ts
+const run = await agent.run("Summarize ticket 123", { user: "alice" });
+```
+
+| Field | |
+| --- | --- |
+| `id` | The run's id. Pass `idempotencyKey` to choose it; sending the same key again returns the same run |
+| `status` | `completed`, `input_required` (it waits on a person, see `inputs`), or `failed` |
+| `text` | The final reply |
+| `inputs` | What it waits on, each with `answer()` |
+| `error` | `{code, message, uncertain?}` when it failed |
+| `toolErrors` | Tool calls that didn't complete (timed out, connection lost, nobody serving the tools). The model was told and carried on |
+| `files` | Files the run wrote |
+| `usage` | What its model calls used |
+
+`run()` has no timeout: runs can take minutes, and a run waiting on a person
+can wait for days. Pass an `AbortSignal` (Python: `timeout=`) to stop waiting;
+the run itself goes on until it ends or you call `agent.abort()`.
+
+## The result is the truth; events are for display
+
+An agent's **events** stream every step: text as the model writes it, tool
+calls and their progress, and inputs asked and answered. Use them to show the
+agent working, not to decide what happened.
+
+- The run's result (`run()`, the `run.completed` webhook, or
+  `GET /v1/agents/{id}/requests/{requestId}`) is recorded durably and always
+  arrives, even if your process restarts or the connection drops.
+- The stream replays from memory on reconnect, as far back as it can. Where it
+  can't (a restarted node, a long disconnection), the SDK gets a snapshot of the
+  running turn instead.
+
+Reply to your user from the run, and render the stream as progress. See
+[Events](/camelrun/events).
+
+## Where tools run
+
+Pick by where your code runs:
+
+| Your situation | Use | How |
+| --- | --- | --- |
+| A long-lived server or worker, and the tools touch its state | **Attached tools** | `tools` on `upsert`. The SDK holds a connection and camelRun calls your functions over it. One process serves an agent's tools at a time |
+| Serverless functions, several instances, or one backend serving many users' agents | **Served tools** | `serveTools(tools)` on an HTTPS endpoint of yours, named in a definition with `auth: { type: "runtime" }`. camelRun calls it with a signed token saying who each call is for |
+| A third-party API | **OpenAPI** or **MCP** sources in a definition | camelRun calls the API itself, with credentials it stores sealed |
+| Web search, fetching pages, scheduling, asking the user | **Built-ins** | `builtins: ["web_search", "web_fetch", "schedule", "ask_user"]` |
+
+The same `tool({...})` definitions work attached and served, so you can start
+attached and move to served without changing a tool. Every agent also has file
+tools over its [files](/camelrun/files), and `js_exec`, a sandbox where the
+model writes JavaScript that calls its tools. See [Tools](/camelrun/tools).
+
+## Processes and connections
+
+A process that serves an agent's tools **attaches** to it: it holds the agent's
+event stream and answers its tool calls. Only one process at a time can, so a
+tool call never lands in the wrong place. A second process that tries gets
+`APPLICATION_CONNECTED`, unless it passes `takeover: true`.
+
+Any number of processes can **run** an agent without serving its tools: an
+agent upserted without local tools, or with `attach: false`, follows the stream
+read-only. That's how serverless functions and webhook handlers run agents whose
+tools are served elsewhere.
+
+A run of an agent with attached tools while no process serves them is refused
+with `APPLICATION_NOT_CONNECTED`, after a few seconds' grace. Pass
+`allowDisconnected: true` to run anyway; calls to those tools then fail and show
+in `toolErrors` as `not_connected`. Schedules and channels are never refused, so
+agents that must work with nobody attached should use served tools.
+
+## People in the loop
+
+A run can stop and wait for a person: the model asks a question (`ask_user`), a
+tool needs approval before it runs, or a tool asks for a form. The run ends with
+`status: "input_required"` and its `inputs`, the agent sleeps, and answering the
+last input resumes it.
+
+```ts
+if (run.status === "input_required") run = await run.inputs[0].answer(true, { from: "alice" });
+```
+
+See [Human input](/camelrun/human-input).
+
+## Idempotency
+
+Everything that changes something can be retried safely:
+
+- `upsert` by key, and `run` or `POST /v1/agents/{id}/prompt` by
+  `idempotencyKey` (the request id). The same key returns the same agent or run.
+- Every other POST takes an `Idempotency-Key` header. A retry with the same key,
+  path and body gets the first answer again for a day. The same key with a
+  different body is a 409.
+- Every tool call carries `context.idempotencyKey`, the same for every attempt
+  of that call. Key your side effects by it.
+
+A tool call whose answer was lost (the connection dropped, or its deadline
+passed) is never sent again. The model is told its outcome is unknown, so it
+can check before repeating anything.
+
+## Waking later
+
+An agent can be woken by a schedule (`agent.schedule({ text, inSeconds, at,
+everySeconds })`, or the `schedule` built-in so the agent sets its own), by a
+[channel](/camelrun/channels), or by your own code from a
+[webhook](/camelrun/webhooks).
+
+## Definitions
+
+A **definition** is a reusable configuration: model, instructions, tool sources
+(MCP servers, OpenAPI specs, built-ins), limits and mounts. Make agents from one
+with `definition: "def_..."` on `upsert`, and roll a change out to all of them
+with `apply: "all"`. See [Definitions](/camelrun/definitions).

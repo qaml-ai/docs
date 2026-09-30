@@ -1,0 +1,103 @@
+---
+title: 'Agents for many users'
+sidebarTitle: 'Many users'
+description: 'One agent per user or conversation, served tools with identity, and per-user spend'
+---
+
+Most applications give each user, or each conversation, an agent of its own,
+and serve every agent's tools from one backend. This page puts the pieces
+together: keys, identity, served tools, and per-user limits and keys.
+
+## One agent per user or conversation
+
+Key agents by your own ids, and upsert on each request:
+
+```ts
+const agent = await agents.upsert(`thread-${thread.id}`, {
+  definition: SUPPORT_DEFINITION,  // tools served by your backend, see below
+  subject: thread.ownerId,         // whom the agent acts for
+  context: { org: thread.orgId },  // claims your tools authorize against
+});
+const run = await agent.run(message, { user: currentUser.id });
+```
+
+- `subject` and `context` are set when the agent is made, with your API key.
+  Neither the agent's own token nor the model can change them. Your tools get
+  them as `identity.subject` and `identity.context`.
+- `user` names who sent this message. The model sees who sent it, and tools get
+  it as `identity.actor`. Use `user: { id, name }` to give the model a display
+  name too.
+- An agent shared by several people shares its whole conversation with all of
+  them. Keep private data in agents of one person each.
+
+## Serve the tools from your backend
+
+A multi-user backend runs many instances, so its tools are served over HTTP
+rather than attached to one process. Each call carries a signed token saying
+which agent it is for and who is acting, so one endpoint answers every user's
+agents safely:
+
+```ts
+const tools = {
+  list_todos: tool({
+    description: "The current user's to-dos",
+    input: schema.Object({}),
+    execute: (_args, { identity }) => db.todos({ user: identity!.user, org: identity!.context.org }),
+  }),
+};
+export default { fetch: serveTools(tools, { runtime: "https://agents.camelai.dev", tenant: "acme" }) };
+```
+
+```ts
+const definition = await agents.runtime.upsertDefinition("support", {
+  name: "Support",
+  mcpServers: [{ name: "app", url: "https://app.example.com/mcp", auth: { type: "runtime" } }],
+});
+```
+
+Authorize every call as `identity.user` within `identity.context`, never from
+the model's arguments. See [Served tools](/camelrun/tools#served-tools) and
+[Identity](/camelrun/tools#identity).
+
+Your request handlers can be serverless: an agent upserted without local tools
+follows its stream read-only, so any number of instances can run agents at once.
+
+## Show each user their agent
+
+Mint a browser token per user and let the browser read the agent directly, or
+use [`createAgentHandler`](/camelrun/chat-app), which does this for you. Send
+messages through your server.
+
+## Spend limits and keys per user
+
+- **`spendLimit: { usd }`** caps what one agent may spend on model calls from
+  now on. Set it on upsert or with `PATCH /v1/agents/{id}/configuration`.
+  Setting it starts counting from zero, so you can set the remaining allowance
+  before each run. An agent at its limit gets 402 for new runs.
+- **A key scope per customer** holds that customer's own provider keys, so
+  their agents call providers with them. See [Key scopes](/camelrun/models-and-keys#key-scopes).
+- **`modelHeaders`** label each model call, for example for a gateway's
+  per-conversation logs.
+- **The `usage.recorded` [webhook](/camelrun/webhooks)** reports each model
+  response's cost with the agent's `subject`, `context`, `actor` and `keyScope`,
+  so you can meter per user.
+
+## Match messages to your records
+
+`run(text, { metadata })` attaches your own key-value data to the message (at
+most 16 string values). The stored message and its run carry it in history,
+events and webhooks; the model never sees it. Pass `idempotencyKey` to choose the
+run's id, so a retried request never runs twice.
+
+## Bring in existing conversations
+
+A conversation that began elsewhere can continue on an agent made with its
+history: `initialMessages` on `POST /v1/agents` (or on an upsert's first
+create). Messages are [Pi](https://github.com/earendil-works/pi) messages:
+`user`, `assistant` and `toolResult`, plus an optional `compactionSummary` that
+the model sees in place of every message before it.
+
+History is imported only when the agent is made, up to 16 MB of JSON. An
+invalid message is `INVALID_HISTORY` (400), naming the message and what it
+lacks. If the history is larger than the model's context, the first run
+compacts it before calling the model.

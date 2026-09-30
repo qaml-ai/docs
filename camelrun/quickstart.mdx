@@ -1,0 +1,176 @@
+---
+title: 'Quickstart'
+description: 'An agent that runs in camelRun, calls a tool in your own process, and answers you'
+---
+
+In five minutes you will have an agent that runs in camelRun, calls a tool in
+your own process, and answers you. camelRun keeps the model loop, the agent's
+history and its files. Your tools stay in your code, with your credentials.
+
+<Steps>
+  <Step title="Get an API key">
+    Sign in to the [console](https://agents.camelai.dev/console), then:
+
+    - Under **Models & keys**, check that a model is marked *Usable*. New
+      accounts start with credit for the platform's models, or you can add your
+      own provider key.
+    - Under **API tokens**, create a token and export it:
+
+    ```bash
+    export CAMELAI_API_KEY=art_...
+    ```
+
+    The key can create and control every agent in your account. Keep it on
+    your server and never ship it to a browser.
+  </Step>
+  <Step title="Install the SDK">
+    <CodeGroup>
+    ```bash TypeScript
+    # Node 22 or later, or Bun
+    npm install @camelai/run
+    ```
+
+    ```bash Python
+    # Python 3.11 or later
+    pip install camelai-run
+    ```
+    </CodeGroup>
+  </Step>
+  <Step title="Run an agent">
+    <CodeGroup>
+    ```ts quickstart.ts
+    import { Agents, schema, tool } from "@camelai/run";
+
+    const agents = new Agents(); // reads CAMELAI_API_KEY
+
+    // A tool is an ordinary function. It runs here, in your process.
+    const weather = tool({
+      description: "Today's weather in a city",
+      input: schema.Object({ city: schema.String() }),
+      execute: ({ city }) => ({ city, forecast: "sunny", highC: 24 }),
+    });
+
+    // The same key is the same agent, with its history, every time you run this.
+    const agent = await agents.upsert("quickstart", {
+      model: "anthropic/claude-sonnet-5-5",
+      instructions: "You are a concise assistant.",
+      tools: { weather },
+    });
+
+    const run = await agent.run("Should I bring an umbrella in Lisbon today?");
+    console.log(run.text);
+
+    await agents.close();
+    ```
+
+    ```python quickstart.py
+    import asyncio
+    from camelai_run import Agents, tool
+
+    @tool
+    def weather(city: str) -> dict:
+        """Today's weather in a city"""
+        return {"city": city, "forecast": "sunny", "highC": 24}
+
+    async def main():
+        async with Agents() as agents:  # reads CAMELAI_API_KEY
+            agent = await agents.upsert(
+                "quickstart",
+                model="anthropic/claude-sonnet-5-5",
+                instructions="You are a concise assistant.",
+                tools=[weather],
+            )
+            run = await agent.run("Should I bring an umbrella in Lisbon today?")
+            print(run.text)
+
+    asyncio.run(main())
+    ```
+    </CodeGroup>
+
+    Run it with `npx tsx quickstart.ts` or `python quickstart.py`.
+  </Step>
+</Steps>
+
+If you see `No ... API key configured`, pick a model your account can use: the
+console's **Models & keys** page, or `GET /v1/models?available=true`.
+
+## With curl
+
+Without an SDK, an agent can't call tools in your process, but everything else
+works over REST. Create an agent with a first prompt, then poll the run:
+
+```bash
+BASE=https://agents.camelai.dev; AUTH="Authorization: Bearer $CAMELAI_API_KEY"
+
+# The Idempotency-Key is the agent's key: the same key is the same agent.
+CREATED=$(curl -s $BASE/v1/agents -H "$AUTH" -H "Content-Type: application/json" \
+  -H "Idempotency-Key: quickstart-curl" \
+  -d '{"model": "anthropic/claude-sonnet-5-5", "systemPrompt": "You are a concise assistant.",
+       "prompt": {"text": "Write a haiku about durable agents."}}')
+AGENT=$(echo "$CREATED" | jq -r .id); REQ=$(echo "$CREATED" | jq -r .prompt.id)
+
+until curl -s $BASE/v1/agents/$AGENT/requests/$REQ -H "$AUTH" | jq -e '.state == "completed"' > /dev/null; do sleep 1; done
+curl -s $BASE/v1/agents/$AGENT/requests/$REQ -H "$AUTH" | jq -r '.outcome.result.reply // .error'
+```
+
+Send later messages with `POST /v1/agents/{id}/prompt {"text": "..."}`, which
+answers `202` with the request to poll. See [REST API](/camelrun/api).
+
+## Stream the reply
+
+`run()` waits for the whole run. To show it as it happens, `stream()` yields
+text as the model writes it, each tool call and result, and the finished run
+last:
+
+<CodeGroup>
+```ts TypeScript
+for await (const part of agent.stream("And tomorrow?")) {
+  if (part.type === "text") process.stdout.write(part.text);
+  if (part.type === "tool_call") console.log(`\n[${part.name}(${JSON.stringify(part.arguments)})]`);
+  if (part.type === "done") console.log(`\n(${part.run.status})`);
+}
+```
+
+```python Python
+async for part in agent.stream("And tomorrow?"):
+    if part.type == "text":
+        print(part.text, end="", flush=True)
+    elif part.type == "tool_call":
+        print(f"\n[{part.name}({part.arguments})]")
+```
+</CodeGroup>
+
+The run's result is the source of truth, and the stream is for display. If a
+stream breaks, the run isn't lost: `run()` (or `stream.result()`) still
+resolves with it.
+
+## What just happened
+
+- `upsert("quickstart", ...)` made a keyed agent, or found the one from last
+  time and brought it to this configuration. It lives until you delete it, so
+  running the file again continues the same conversation.
+- Because the agent has `tools`, this process served them. camelRun called
+  `weather` here, over the connection the SDK holds. One process at a time
+  serves an agent's tools. Serverless functions and multi-user backends serve
+  tools over HTTP instead; see [Tools](/camelrun/tools).
+- `run()` resolved with a `Run`: `status` (`completed`, `input_required` or
+  `failed`), `text`, `inputs`, `error` and `toolErrors`. A failed run throws a
+  `RunError` unless you pass `throwOnError: false` (`throw_on_error=False`).
+- `agents.close()` let the process exit. The agent stays in camelRun.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Concepts" icon="book" href="/camelrun/concepts">
+    Keyed agents, runs, events, and where tools run.
+  </Card>
+  <Card title="Build a chat app" icon="browser" href="/camelrun/chat-app">
+    Put a streaming chat with each user's agent in your app.
+  </Card>
+  <Card title="Tools" icon="wrench" href="/camelrun/tools">
+    Attached and served tools, identity, MCP and OpenAPI sources.
+  </Card>
+  <Card title="Production checklist" icon="list-checks" href="/camelrun/production">
+    What to check before you ship.
+  </Card>
+</CardGroup>

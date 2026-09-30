@@ -1,0 +1,83 @@
+---
+title: 'Webhooks'
+description: 'Get signed events when runs start and end, when an agent asks for input, and what each model call cost'
+---
+
+camelRun can tell your server when runs start and end, when an agent asks a
+person for input, and what each model response cost, so you can react without
+holding a connection open. Register an endpoint with the event types it wants:
+
+```bash
+curl https://agents.camelai.dev/v1/webhooks \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/hooks/agents", "events": ["run.completed", "run.failed", "input.requested"], "description": "prod"}'
+```
+
+The answer carries the endpoint's `id` (`we_...`) and its signing `secret`
+(`whsec_...`), shown only this once.
+
+| Endpoint | |
+| --- | --- |
+| `GET /v1/webhooks` | List your endpoints (at most 16) |
+| `GET`, `PATCH`, `DELETE /v1/webhooks/{webhookId}` | Read, change or remove one |
+| `POST /v1/webhooks/{webhookId}/secret` | Replace its secret. The old one also signs for 24 hours |
+
+## Events
+
+Every event is an envelope:
+
+```json
+{"id": "evt_3f9c0a1b2c3d4e5f60718293", "type": "run.completed", "created": 1790000000,
+ "data": {"agentId": "client_...", "requestId": "...", "method": "prompt", "metadata": {"source": "web"},
+          "replyIndex": 3, "messageCount": 4,
+          "usage": {"responses": 2, "input": 2300, "output": 140, "cacheRead": 0, "cacheWrite": 0, "costUsd": 0.0081}}}
+```
+
+| Type | When | `data` |
+| --- | --- | --- |
+| `run.started` | A run began | `agentId`, `requestId`, `method`, `actor`, `metadata` |
+| `run.completed` | It ended without an error | As above, plus `usage`, and `stopped` (`input_required` with `inputIds`, or `spend_limit`) if it stopped early |
+| `run.failed` | It ended with an error | As above, plus `usage`, `error`, and `uncertain` when a restart cut it short |
+| `input.requested` | The agent asks a person for input | `agentId`, `requestId`, `inputId`, `toolCallId`, `kind`, `expiresAt` |
+| `input.resolved` | An input settled | `agentId`, `requestId`, `inputId`, `state` |
+| `usage.recorded` | A model response's usage was counted | `agentId`, `requestId`, `subject`, `actor`, `context`, `keyScope`, `provider`, `model`, tokens, `cost: {usd, source}` |
+
+Payloads are small: ids and the key facts. Read the rest with your API key, for
+example the run's reply from `GET /v1/agents/{id}/requests/{requestId}` at
+`outcome.result.reply`. `metadata` is what the message that started the run
+carried, so you can route an event without a lookup.
+
+## Verify and handle
+
+Requests are signed per [Standard Webhooks](https://www.standardwebhooks.com/)
+with `webhook-id`, `webhook-timestamp` and `webhook-signature` headers. Any
+Standard Webhooks library verifies them:
+
+```ts
+import { Webhook } from "standardwebhooks";
+import type { WebhookEvent } from "@camelai/run";
+
+const event = new Webhook(process.env.WEBHOOK_SECRET!.replace(/^whsec_/, "")).verify(body, headers) as WebhookEvent;
+```
+
+- Delivery is at least once. Answer 2xx within 10 seconds; anything else is
+  retried with exponential backoff, from 5 seconds to an hour apart, for 3 days.
+- Dedupe by `id` (a retried event keeps it), and order by `created`, because
+  retries can reorder deliveries.
+- Do the work after answering: queue it, then return 200.
+
+## Continue from a webhook
+
+A handler can act on the agent itself. Send your own ids as `metadata` with
+each message, and they come back on the run's events:
+
+```ts
+// When the message was sent: agent.run(text, { metadata: { thread: thread.id } })
+if (event.type === "run.failed" && event.data.metadata?.thread) {
+  const agent = await agents.upsert(`thread-${event.data.metadata.thread}`, config);
+  await agent.run("The last step failed; tell the user what happened and what to try.");
+}
+```
+
+A serverless handler that upserts without local tools never contends with the
+process serving the agent's tools.

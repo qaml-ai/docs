@@ -1,0 +1,99 @@
+---
+title: 'camelRun'
+sidebarTitle: 'Overview'
+description: 'A hosted runtime for durable agents. Your tools stay in your code; camelRun runs the model loop, keeps history and files, and wakes agents when there is work.'
+---
+
+camelRun is camelAI's hosted agent runtime. You define an agent's tools in your
+own code with the TypeScript or Python SDK, or serve them over HTTP. camelRun
+runs the model loop, keeps each agent's history and files, compacts long
+conversations, runs model-written code in a sandbox, and wakes agents when there
+is work. Most agents are asleep at any moment and cost nothing while they are.
+
+```ts
+import { Agents } from "@camelai/run";
+
+const agents = new Agents(); // reads CAMELAI_API_KEY
+const agent = await agents.upsert("support-triage", {
+  model: "anthropic/claude-sonnet-5-5",
+  instructions: "Be concise.",
+});
+console.log((await agent.run("Which tickets look urgent?")).text);
+await agents.close();
+```
+
+| | |
+| --- | --- |
+| **API** | `https://agents.camelai.dev/v1` |
+| **Console** | [agents.camelai.dev/console](https://agents.camelai.dev/console) |
+| **OpenAPI spec** | [`/v1/openapi.json`](https://agents.camelai.dev/v1/openapi.json) |
+| **Docs for agents** | [`/llms.txt`](https://agents.camelai.dev/llms.txt) |
+| **Source** | [github.com/qaml-ai/run](https://github.com/qaml-ai/run) |
+
+## What you get
+
+<CardGroup cols={2}>
+  <Card title="Durable, keyed agents" icon="database">
+    The same key is the same agent, with its history and files, from any
+    process, until you delete it.
+  </Card>
+  <Card title="Tools in your code" icon="wrench">
+    Tools run in your process or on your HTTPS endpoint, with your credentials.
+    MCP servers and OpenAPI specs work too.
+  </Card>
+  <Card title="People in the loop" icon="user-check">
+    Approvals, questions and forms suspend a run for days, then resume it where
+    it stopped.
+  </Card>
+  <Card title="Chat UI in minutes" icon="messages-square">
+    React, Vue, Svelte and Solid components stream an agent into your app
+    without exposing your API key.
+  </Card>
+  <Card title="Channels" icon="plug">
+    Slack, Telegram, Discord, GitHub and any service that sends
+    webhooks can start and talk to agents.
+  </Card>
+  <Card title="Agents as MCP servers" icon="plug-zap" href="/camelrun/mcp-server">
+    Every agent is an MCP server, so Claude, Cursor or any MCP client can
+    message it.
+  </Card>
+  <Card title="Any model" icon="brain">
+    Pick from the catalog, bring your own provider keys, or add a model server
+    of your own.
+  </Card>
+</CardGroup>
+
+## Start here
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/camelrun/quickstart">
+    An agent that calls a tool in your process, in five minutes.
+  </Card>
+  <Card title="Build a chat app" icon="browser" href="/camelrun/chat-app">
+    A streaming chat with your users' agents, from one command.
+  </Card>
+  <Card title="Concepts" icon="book" href="/camelrun/concepts">
+    Keyed agents, runs, events, and where tools run.
+  </Card>
+  <Card title="CLI and MCP server" icon="terminal" href="/camelrun/cli">
+    Deploy and manage agents from a terminal, or from a coding agent.
+  </Card>
+</CardGroup>
+
+## Packages
+
+| Package | |
+| --- | --- |
+| `@camelai/run` (npm) | TypeScript SDK: Node 22+, Bun, Deno, Cloudflare Workers |
+| `camelai-run` (PyPI) | Python SDK: Python 3.11+ |
+| `@camelai/run-react` | Chat components and hooks. Vue, Svelte and Solid bindings are `@camelai/run-vue`, `-svelte` and `-solid` |
+| `@camelai/create-run-app` | `npm create @camelai/run-app` scaffolds a Next.js chat app |
+| `@camelai/camelrun` | The `camelrun` CLI and local MCP server |
+
+## Licensing
+
+The camelRun runtime is licensed under the GNU AGPL-3.0. The SDKs, frontend
+packages, CLI and examples are MIT, so you can use them in any application.
+Commercial licenses for the runtime are available: contact us through
+[camelai.com](https://camelai.com). See [Self-hosting](/camelrun/self-hosting)
+to run the runtime yourself.

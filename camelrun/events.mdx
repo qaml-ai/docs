@@ -1,0 +1,112 @@
+---
+title: 'Events'
+description: 'The event stream: endpoints, cursors, frames, event types and run outcomes'
+---
+
+An agent's event stream says what it is doing as it does it: text as the model
+writes it, tool calls and their progress, questions it waits on, and files it
+presents. Use it for display. **A run's result is the source of truth; events
+are for display.** A stream can drop events (a restart, a slow reader, a frame
+too large), and the SDKs settle every run from its outcome, never from its
+events.
+
+## Read the stream
+
+| Endpoint | Token | Mode |
+| --- | --- | --- |
+| `GET /v1/agents/{id}/events` | An API key, or a [browser token](/camelrun/browser) | Read-only watcher |
+| `GET /clients/{id}/events` | The agent's own token (the SDKs) | The application's connection, which also carries tool calls to the application |
+
+| Option | |
+| --- | --- |
+| `Last-Event-ID: <cursor>` | Resume after this event id |
+| `?snapshot=1` | Where the stream can't replay what you missed, send a `snapshot` of the running turn first instead of a 409. Watchers get one by default |
+| `?poll=1&wait=N` | Answer once, as JSON (`{cursor, events: [{id, data}]}`), instead of streaming. `wait` is at most 25 seconds. For clients that can't hold a stream open |
+
+The response is `text/event-stream`. Each frame is `data:` JSON, and most have
+an `id:` line, the cursor. A `: heartbeat` comment arrives about every 5
+seconds, so a stream silent for much longer is dead: reconnect with the last
+cursor.
+
+```text
+event: ready
+data: {"version":5,"agentId":"client_...","connection":"..."}
+
+id: 1727520000000123
+data: {"type":"event","requestId":"8c1...","event":{"type":"agent_start"}}
+```
+
+camelRun buffers each agent's last 512 events (at most 2 MiB) for replay. A
+cursor behind that gets a snapshot, or `409 REPLAY_GAP` without one. Nothing
+durable is lost in a gap, only display events; recover settled outcomes from
+`GET /v1/agents/{id}/state` and `/history`.
+
+## Frames
+
+| Frame | |
+| --- | --- |
+| `{"type": "event", "requestId", "event"}` | One event. `requestId` is the run it belongs to |
+| `{"type": "response", "id", "outcome"}` | A request settled. See [Run outcomes](#run-outcomes) |
+| `{"type": "snapshot", "cursor", "requestId", "turn"}` | The running turn, sent in place of what couldn't be replayed: `messages` it finished and the `partial` message streaming now |
+
+## Event types
+
+New types may be added, so ignore ones you don't know.
+
+### Runs and messages
+
+| Type | When |
+| --- | --- |
+| `turn_opened` | A model run begins. `index` is where its first message will sit in history |
+| `agent_start`, `agent_end` | The model loop starts and ends |
+| `turn_start`, `turn_end` | A model round (one response and its tool calls) starts and ends |
+| `message_start` | A message begins: the user's, an assistant response, or a tool result |
+| `message_update` | The streaming assistant message grew. Carries only the delta, in `assistantMessageEvent` |
+| `message_end` | A message finished, as history keeps it |
+| `message_retracted` | A response was taken back (before a retry), and the message at `index` is gone |
+
+`assistantMessageEvent.type` is `text_delta` for reply text, `thinking_delta`
+for reasoning, and `toolcall_delta` for a tool call's arguments as partial JSON,
+each with its `start` and `end`. Fold deltas into the message from its
+`message_start`; `@camelai/run/watch` does this for you.
+
+### Tools, people and the runtime
+
+| Type | When |
+| --- | --- |
+| `tool_execution_start` | A tool call starts: `toolCallId`, `toolName`, `args` |
+| `tool_execution_update` | A tool reported progress (`partialResult`), at most every 250 ms per call |
+| `tool_execution_end` | A tool call finished: `result`, `isError` |
+| `file_presented` | The agent presented a file, with a signed download `url` |
+| `input_required` | The turn waits on a person. `input` has `id`, `kind` (`question`, `approval`, `form` or `url`), `message`, `detail` and `expiresAt` |
+| `input_resolved` | An input settled: `answered`, `declined`, `cancelled`, `expired` or `superseded` |
+| `auto_retry_start`, `auto_retry_end` | A transient provider failure is being retried |
+| `compaction_start`, `compaction_end` | The conversation is being summarized to fit the model's context |
+| `turn_resumed` | The node running this turn was lost, and it continues on another |
+
+## Run outcomes
+
+A prompt's `outcome.result`, from a `response` frame or
+`GET /v1/agents/{id}/requests/{requestId}`:
+
+| Field | |
+| --- | --- |
+| `reply` | The final assistant message's text |
+| `replyIndex` | That message's index in the agent's history |
+| `messages` | How many messages the history holds after the run |
+| `error` | The model's error (a provider refusal after retries), or `null` |
+| `stopped` | Why the run stopped early: `input_required` or `spend_limit` |
+| `inputs` | When `stopped` is `input_required`, the pending inputs |
+| `files` | Files the run wrote (at most 100) |
+| `presented` | Files the run presented (at most 20) |
+| `toolErrors` | Tool calls that didn't complete. See [Tool errors](/camelrun/errors#tool-errors) |
+| `sourceErrors` | Tool sources (MCP servers, OpenAPI specs) that couldn't be listed |
+
+`outcome.error` without a `result` means camelRun couldn't carry the request
+out, and `uncertain: true` means a restart cut it short so nobody can tell
+whether its work took effect. The request record also puts `error` and `stopped`
+on top, so a failed run reads as failed without looking inside `result`.
+
+The SDKs turn this into a typed `Run`: `status` (`completed`, `input_required`
+or `failed`), `text`, `inputs`, `error`, `files`, `toolErrors` and
+`sourceErrors`.

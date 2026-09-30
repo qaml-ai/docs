@@ -1,0 +1,86 @@
+---
+title: 'Agents as MCP servers'
+description: 'Connect Claude, Cursor or any MCP client to one of your agents and talk to it as a tool'
+---
+
+Every agent is also an MCP server, at
+`https://agents.camelai.dev/v1/agents/<agent id>/mcp` (Streamable HTTP).
+Connect Claude, Cursor or any MCP client to it, and the model there can talk to
+your agent. The server has one tool, `message`, which sends the agent a message
+and returns its reply. The agent's own tools stay its own.
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http support https://agents.camelai.dev/v1/agents/client_.../mcp
+    # Then run /mcp in Claude Code to sign in. Or skip signing in with a token:
+    claude mcp add --transport http support https://agents.camelai.dev/v1/agents/client_.../mcp --header "Authorization: Bearer art_..."
+    ```
+  </Tab>
+  <Tab title="Claude">
+    In claude.ai or the desktop app, go to **Settings**, then **Connectors**,
+    then **Add custom connector**, and enter the agent's URL.
+  </Tab>
+  <Tab title="Cursor and others">
+    ```json
+    { "mcpServers": { "support": { "url": "https://agents.camelai.dev/v1/agents/client_.../mcp" } } }
+    ```
+  </Tab>
+</Tabs>
+
+The agent's id (`client_...`) is `agent.id` in the SDKs, and `GET /v1/agents`
+lists every agent with its key.
+
+## The `message` tool
+
+| Argument | |
+| --- | --- |
+| `text` | The message to send |
+| `requestId` | Optional. Sending the same text with the same id again is the same message: it isn't sent twice, and the call returns its reply |
+
+The tool's description tells the calling model what the agent is, so it knows
+when to use it.
+
+## How it behaves
+
+- **One conversation.** A message joins the agent's history exactly as a
+  prompt (`POST /v1/agents/{id}/prompt`) does, next to messages from the API,
+  the console and channels. There are no separate threads per caller; to give
+  each caller its own conversation, give each one its own agent. Each message is
+  a run, limited and billed like any prompt.
+- **Long turns.** A call lasts as long as the turn. It sends progress
+  notifications while the agent works (its text as it streams, each tool it uses,
+  and a heartbeat every 20 seconds), so clients that reset their timeout on
+  progress keep waiting. A caller that goes away doesn't stop the turn.
+- **Retries.** Pass `requestId` to make a retry safe. A call your client sends
+  again in the same session is recognized without one.
+- **A busy agent.** A message to an agent that is working queues behind its
+  current turn, as a prompt does. Once 32 requests are open, the call fails with
+  `The agent is busy: ...`.
+- **Errors.** A failed run, a spend limit, a model error or a refused request
+  comes back as a tool error carrying camelRun's message.
+
+## Human input
+
+When the turn [waits on a person](/camelrun/human-input) and the client supports
+MCP elicitation, the question, approval, form or page comes up in the client,
+and the answer resumes the turn.
+
+Otherwise the call ends with a result listing what the agent waits on
+(`structuredContent.status` is `input_required`) and how to answer it. Once it's
+answered, calling again with the same text and `requestId` returns the reply. A
+new message instead sets the waiting inputs aside.
+
+## Who may call it
+
+Anyone who may prompt the agent: the agent's own token (the `token` it was
+created with), an API key of your account, or an OAuth sign-in. A `401` names the
+agent's protected-resource metadata, so clients sign in the same way as with the
+[hosted MCP server](/camelrun/cli#hosted-mcp-server). Other accounts' tokens get
+a `404`.
+
+<Warning>
+  Anyone you give the agent's token or an API key to can message the agent and
+  spend on its model calls. Set a [spend limit](/camelrun/models-and-keys#spend-limits)
+  on agents you share.
+</Warning>

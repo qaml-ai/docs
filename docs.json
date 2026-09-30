@@ -85,6 +85,61 @@
         ]
       },
       {
+        "tab": "camelRun",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "camelrun/overview",
+              "camelrun/quickstart",
+              "camelrun/chat-app"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "camelrun/concepts"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "camelrun/tools",
+              "camelrun/human-input",
+              "camelrun/browser",
+              "camelrun/files",
+              "camelrun/multi-user",
+              "camelrun/webhooks",
+              "camelrun/models-and-keys",
+              "camelrun/custom-models",
+              "camelrun/definitions",
+              "camelrun/channels",
+              "camelrun/mcp-server",
+              "camelrun/production"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "camelrun/authentication",
+              "camelrun/api",
+              "camelrun/events",
+              "camelrun/errors",
+              "camelrun/limits",
+              "camelrun/sdks",
+              "camelrun/cli"
+            ]
+          },
+          {
+            "group": "Self-hosting",
+            "pages": [
+              "camelrun/self-hosting",
+              "camelrun/configuration"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Changelog",
         "groups": [
           {
@@ -187,6 +242,11 @@
           "anchor": "Coding Agent",
           "href": "https://camelai.dev",
           "icon": "browser"
+        },
+        {
+          "anchor": "camelRun",
+          "href": "https://agents.camelai.dev/console",
+          "icon": "robot"
         },
         {
           "anchor": "Legacy Stream sign in",

@@ -1,0 +1,72 @@
+---
+title: 'Configuration'
+description: 'Environment variables for a self-hosted camelRun runtime'
+---
+
+Everything in the Compose deployment's `.env` reaches the runtime. These are the
+settings a self-hosted runtime uses.
+
+## Required
+
+| Variable | |
+| --- | --- |
+| `AGENT_TENANT`, `AGENT_OPERATOR_TOKEN` | The one tenant the runtime serves, and that tenant's operator token (at least 24 characters). Your application sends the token as `Authorization: Bearer` |
+| `AGENT_SESSION_SECRET` | 32 random bytes, hex. Keep it: changing it invalidates agents' tokens and signed links |
+| `AGENT_SECRETS_KEY` | 32 random bytes, hex. Encrypts stored provider keys; changing it makes them unreadable |
+| `AGENT_PUBLIC_URL` | The URL your application and tool servers reach the runtime at. Signed links and identity tokens name it |
+| `AGENT_DATABASE_URL` | Postgres. The Compose file sets it for its own database, with `POSTGRES_PASSWORD` |
+
+Generate the secrets with `openssl rand -hex 32`.
+
+## Models
+
+| Variable | |
+| --- | --- |
+| `AGENT_TENANT_API_KEYS` | The tenant's provider keys as JSON, such as `{"anthropic": "sk-ant-...", "openrouter": "sk-or-..."}`. Optional: keys can also be stored later with `PUT /v1/providers/{provider}/key`, or per key scope |
+| `AGENT_PROVIDER`, `AGENT_MODEL` | The default model for agents that name none, such as `anthropic` and `claude-sonnet-5-5` |
+| `AGENT_MODEL_FALLBACKS` | Defaults after it, as comma-separated `provider/model` references. An agent that names no model gets the first its tenant has a key for |
+
+## Storage
+
+| Variable | |
+| --- | --- |
+| `AGENT_STORAGE` | `file` (default, one node only), `shared-file` (several processes on one filesystem), or `s3` |
+| `AGENT_S3_BUCKET`, `AGENT_S3_PREFIX` | The bucket, with `s3` storage |
+| `AGENT_S3_ENDPOINT`, `AGENT_S3_FORCE_PATH_STYLE` | An S3-compatible service instead of AWS S3, and `true` for path-style requests |
+| `AGENT_GC_ENABLED`, `AGENT_GC_DRY_RUN` | Storage garbage collection (off by default), and `true` to only log what it would delete |
+
+## Networking
+
+| Variable | |
+| --- | --- |
+| `AGENT_BROWSER_URL` | Where browsers reach the runtime, as browser tokens say. Defaults to `AGENT_PUBLIC_URL`; empty for a private runtime browsers read through your application |
+| `AGENT_OUTBOUND_ALLOW_ORIGINS` | Exact origins (`scheme://host:port`, comma-separated) of your own services the runtime may call despite the private-address guard, over `http` too. Never used by `web_fetch` or `web_search` |
+| `AGENT_OUTBOUND_BLOCK_CIDRS` | Extra ranges no tool source may reach, such as your VPC's CIDR |
+| `AGENT_NODE_URL` | This node's address for forwarding between nodes, when running several |
+| `HOST`, `PORT` | Where the runtime listens. Default `127.0.0.1:8790` outside the container |
+
+## Operations
+
+| Variable | |
+| --- | --- |
+| `AGENT_DRAIN_TIMEOUT_MS` | How long a stop waits for running turns before handing them off. Default 100,000 |
+| `AGENT_DATABASE_POOL_SIZE` | Database connections per node. Default 10 |
+| `AGENT_SANDBOX_PROCESSES` | How many sandbox processes run model-written code. Default 2, at most 16 |
+| `AGENT_TOOL_SEARCH` | Ranking for `tools.search`: `keyword` (default), or `embeddings` with an embeddings API key |
+
+## Several tenants
+
+Instead of `AGENT_TENANT` and `AGENT_OPERATOR_TOKEN`, give a tenants file as
+`AGENT_TENANTS_FILE` (a mounted path) or `AGENT_TENANTS_JSON` (inline). It is
+re-read on `SIGHUP`:
+
+```json
+{"tenants": {
+  "acme": {"tokenSha256": "<sha256 of the operator token>", "apiKeys": {"anthropic": "sk-ant-..."}},
+  "globex": {"tokenSha256": "...", "maxAgents": 50, "maxMonthlyCost": 500}
+}}
+```
+
+Each tenant's `tokenSha256` is the SHA-256 hex digest of its operator token.
+Optional fields include `maxAgents` (agents awake at once), `maxWatchers` and
+`maxMonthlyCost`.

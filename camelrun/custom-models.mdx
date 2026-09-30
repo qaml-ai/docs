@@ -1,0 +1,113 @@
+---
+title: 'Custom models'
+description: 'Use any server that speaks OpenAI Chat Completions, OpenAI Responses or Anthropic Messages as a provider'
+---
+
+Any server that speaks OpenAI Chat Completions, OpenAI Responses or Anthropic
+Messages can be a provider of your own: a hosted API the catalog lacks, a model
+the catalog hasn't caught up with, a gateway, or your own vLLM, Ollama or LM
+Studio. Name the provider, list its models, and your agents use them like
+catalog models, as `<name>/<model id>`.
+
+<CodeGroup>
+```ts TypeScript
+await agents.runtime.setProvider("acme-llm", {
+  type: "openai-completions",
+  baseUrl: "https://llm.acme.example/v1",
+  apiKey: process.env.ACME_LLM_KEY,
+  models: [{ id: "acme-70b", contextWindow: 131072, maxOutputTokens: 8192, pricing: { input: 0.6, output: 0.8 } }],
+});
+const agent = await agents.upsert("support", { model: "acme-llm/acme-70b" });
+```
+
+```python Python
+await agents.runtime.set_provider(
+    "acme-llm",
+    base_url="https://llm.acme.example/v1",
+    api_key=os.environ["ACME_LLM_KEY"],
+    models=[{"id": "acme-70b", "contextWindow": 131072, "maxOutputTokens": 8192,
+             "pricing": {"input": 0.6, "output": 0.8}}],
+)
+agent = await agents.upsert("support", model="acme-llm/acme-70b")
+```
+
+```bash curl
+curl -X PUT https://agents.camelai.dev/v1/providers/acme-llm \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"type": "openai-completions", "baseUrl": "https://llm.acme.example/v1", "apiKey": "'"$ACME_LLM_KEY"'",
+       "models": [{"id": "acme-70b", "contextWindow": 131072, "maxOutputTokens": 8192,
+                   "pricing": {"input": 0.6, "output": 0.8}}]}'
+```
+</CodeGroup>
+
+## The provider
+
+`PUT /v1/providers/{name}` adds a provider or replaces it:
+
+| Field | |
+| --- | --- |
+| `type` | `"openai-completions"` (`POST <baseUrl>/chat/completions`), `"openai-responses"` (`POST <baseUrl>/responses`) or `"anthropic-messages"` (`POST <baseUrl>/v1/messages`). All stream |
+| `baseUrl` | The API root, public and `https`: with `/v1` for OpenAI's APIs, without for Anthropic's |
+| `apiKey` | Sent as `Authorization: Bearer` (`x-api-key` for Anthropic Messages). Leave it out when saving again to keep the stored key; `null` removes it |
+| `auth` | Anthropic Messages only: `"bearer"` sends the key as `Authorization: Bearer` instead of `x-api-key` |
+| `headers` | More headers for each call, stored sealed like the key |
+| `models` | The models to use, 1 to 200 |
+
+- The name is 1 to 40 lowercase letters, digits and `-`, and can't be a built-in
+  provider's name.
+- A rotated key, new address or new headers reach agents at their next model
+  call.
+- `GET /v1/providers` lists your providers after the built-in ones.
+  `DELETE /v1/providers/{name}` deletes one; its agents fail at their next call
+  until it is set again or they move to another model.
+- A key scope can have its own providers too, for one customer's agents only:
+  `PUT /v1/key-scopes/{scope}/model-providers/{name}` with the same body.
+
+## Models
+
+Each model is `{id, contextWindow, maxOutputTokens?, input?, reasoning?, pricing?, compat?}`:
+
+| Field | |
+| --- | --- |
+| `id` | The model's id on the server, sent as `model`. It may contain `/` and `:` |
+| `contextWindow` | Its context window in tokens. Long histories are compacted to fit |
+| `maxOutputTokens` | The most it writes in a reply. Default 8,192, or half a smaller context window |
+| `input` | `["text", "image"]` for a model that sees images. Default `["text"]` |
+| `reasoning` | `true` for a model that reasons, so `thinkingLevel` applies |
+| `pricing` | `{input, output, cacheRead?, cacheWrite?}` in USD per million tokens. Used for usage, spend limits and webhooks. Without it, runs cost 0 |
+| `compat` | Switches for Chat Completions servers that differ from OpenAI's |
+
+`compat` switches: `supportsFinishReason: false` for servers that end streams
+without `finish_reason`, `maxTokensField: "max_tokens"`,
+`supportsDeveloperRole: false`, `supportsReasoningEffort`, and `thinkingFormat`
+(`openai`, `openrouter`, `deepseek`, `together`, `zai`, `qwen` or
+`qwen-chat-template`).
+
+## Where the server can be
+
+camelRun calls the address from the public internet. It must be `https`, and
+its host must resolve to public addresses only, so `localhost` and your LAN are
+unreachable. Put a server on your own machine behind a public `https` address,
+such as a tunnel, and keep it behind a key.
+
+For example, with Ollama behind a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+and a Cloudflare Access service token:
+
+```ts
+await agents.runtime.setProvider("home-ollama", {
+  type: "openai-completions",
+  baseUrl: "https://ollama.example.com/v1",
+  apiKey: null,
+  headers: { "CF-Access-Client-Id": process.env.ACCESS_CLIENT_ID!, "CF-Access-Client-Secret": process.env.ACCESS_CLIENT_SECRET! },
+  models: [{ id: "qwen3:32b", contextWindow: 40960, reasoning: true, compat: { maxTokensField: "max_tokens" } }],
+});
+```
+
+A [self-hosted runtime](/camelrun/self-hosting#networking) can reach servers on
+its own network through `AGENT_OUTBOUND_ALLOW_ORIGINS`.
+
+## Billing
+
+Your own providers never use the platform's keys, and their tokens are never
+charged to prepaid credit. Usage records what the declared `pricing` says each
+run cost, which feeds spend limits, the usage pages and webhooks.

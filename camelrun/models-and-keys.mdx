@@ -1,0 +1,87 @@
+---
+title: 'Models and keys'
+description: 'Choose a model, bring your own provider keys, give each customer a key scope, and cap spend'
+---
+
+## Choose a model
+
+Agents name a model as `provider/model-id` from the catalog, such as
+`anthropic/claude-sonnet-5-5` or `openrouter/anthropic/claude-sonnet-5`. List it
+with `GET /v1/models` (`?available=true` for the models your account can use
+now), or on the console's **Models & keys** page. Change an agent's model between
+runs with `upsert` (a changed `model`) or `agent.configure({ model })`; its
+history carries over.
+
+An agent that names no model gets the runtime's default, Claude Sonnet 5.5, on
+the first of Anthropic, OpenRouter and Bedrock you have a key for. It is chosen
+when the agent is made and stays its model. `GET /v1/me` returns it as
+`defaultModel`.
+
+A model call uses, in order:
+
+1. The key of the agent's [key scope](#key-scopes) for the model's provider.
+2. Your account's own key for the provider, set in the console or with
+   `PUT /v1/providers/{provider}/key`.
+3. For prepaid accounts, the platform's key, charged to your credit.
+
+An agent can't be made on a provider none of these has a key for.
+
+A model on a server of your own that speaks OpenAI's or Anthropic's API (vLLM,
+Ollama, a gateway, a hosted API the catalog lacks) works the same way once you
+add it as a provider. See [Custom models](/camelrun/custom-models).
+
+## Key scopes
+
+An application that serves many customers can give each one its own provider
+credentials, so their agents call providers with that customer's keys. Create a
+**key scope** per customer (such as `org_abc123`), with one entry per provider:
+
+```bash
+curl -X PUT https://agents.camelai.dev/v1/key-scopes/org_abc123/providers/openrouter \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"apiKey": "sk-or-..."}'
+```
+
+- An entry is `{apiKey?, baseUrl?, headers?, region?}`. `baseUrl` replaces the
+  provider's API root, for example to route through an AI gateway, and
+  `headers` are sent with every call. Keys and headers are stored sealed.
+- `apiKey` may be left out for `openrouter`, `anthropic` or `openai` behind a
+  `baseUrl` whose gateway holds the provider key itself.
+- For `amazon-bedrock`, the key is a Bedrock API key, and the entry needs a
+  `region`.
+- Give an agent its scope with `keyScope` at creation, or with
+  `PATCH /v1/agents/{id}/configuration` (`null` clears it). The agent's own
+  token can't change it.
+- Each call reads the key at call time, so a changed key applies to every agent
+  in the scope within five seconds.
+- `GET /v1/key-scopes/{scope}` lists the providers set, with each key's last four
+  characters, never a secret. `DELETE /v1/key-scopes/{scope}/providers/{provider}`
+  removes one entry, and `DELETE /v1/key-scopes/{scope}` the whole scope.
+
+Calls on scope keys aren't charged as platform tokens.
+
+## Model headers
+
+`modelHeaders: {name: value}`, set at creation or through
+`PATCH /v1/agents/{id}/configuration`, are non-secret headers sent on each of
+the agent's model calls. For example,
+`{"cf-aig-metadata": "{\"org\": ..., \"thread\": ...}"}` labels a shared
+gateway's logs per conversation. At most 20 headers and 8 KB. Auth and transport
+headers are refused with a 400.
+
+## Spend limits
+
+`spendLimit: {"usd": n}`, set at creation or through
+`PATCH /v1/agents/{id}/configuration`, is the most the agent may spend on model
+calls from then on, whoever's key they run on. Setting a value starts counting
+from zero; `null` removes it. `GET /v1/agents/{id}` shows
+`spendLimit: {usd, spent}`.
+
+- An agent at or over its limit gets a 402 for new runs.
+- A running turn ends after the response that crossed the limit, with
+  `stopped: "spend_limit"`. The SDKs' `run()` fails with code `spend_limit`.
+- Only you can set it, not the agent's own token.
+
+A single run can have its own budget: pass `spendLimit` to `run`, `stream` or
+`POST /v1/agents/{id}/prompt`. The run ends the same way once it has spent that,
+and the agent's own limit still counts it.
