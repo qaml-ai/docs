@@ -3,7 +3,7 @@ title: 'Authentication'
 description: 'API keys, agent tokens, browser tokens and OAuth for coding agents'
 ---
 
-Every request to `https://agents.camelai.dev` sends a token as
+Every request to `https://run.camelai.com` sends a token as
 `Authorization: Bearer <token>`. Which token depends on who is calling.
 
 | Token | Looks like | Who holds it | What it can do |
@@ -15,7 +15,7 @@ Every request to `https://agents.camelai.dev` sends a token as
 
 ## API keys
 
-Create API keys in the [console](https://agents.camelai.dev/console) under
+Create API keys in the [console](https://run.camelai.com/console) under
 **API tokens**, or with `POST /v1/tokens`. Each key has full access to your
 account, so give each application or script its own and revoke any you no
 longer use.
@@ -24,7 +24,7 @@ The SDKs and the CLI read `CAMELAI_API_KEY` from the environment:
 
 ```bash
 export CAMELAI_API_KEY=art_...
-curl https://agents.camelai.dev/v1/me -H "Authorization: Bearer $CAMELAI_API_KEY"
+curl https://run.camelai.com/v1/me -H "Authorization: Bearer $CAMELAI_API_KEY"
 ```
 
 `GET /v1/me` returns your `tenant` id (which [served tools](/camelrun/tools#served-tools)
@@ -51,7 +51,7 @@ any origin, for 5 to 3,600 seconds (default 900). See
 
 ## OAuth for coding agents
 
-The hosted MCP server at `https://agents.camelai.dev/mcp` signs clients in with
+The hosted MCP server at `https://run.camelai.com/mcp` signs clients in with
 OAuth 2.1, as MCP's authorization spec describes. Access tokens last an hour,
 and refresh tokens last 30 days and rotate on each use. Connected apps appear in
 the console under **API tokens**, where you revoke them (or
@@ -61,5 +61,5 @@ the console under **API tokens**, where you revoke them (or
 
 When camelRun calls your [served tools](/camelrun/tools#served-tools), it sends
 its own signed token (an EdDSA JWT) saying which agent the call is for and who is
-acting. Verify it against `https://agents.camelai.dev/.well-known/jwks.json`.
+acting. Verify it against `https://run.camelai.com/.well-known/jwks.json`.
 See [Identity](/camelrun/tools#identity).

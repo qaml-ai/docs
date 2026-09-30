@@ -45,7 +45,7 @@ const tools = {
     execute: (_args, { identity }) => db.todos({ user: identity!.user, org: identity!.context.org }),
   }),
 };
-export default { fetch: serveTools(tools, { runtime: "https://agents.camelai.dev", tenant: "acme" }) };
+export default { fetch: serveTools(tools, { runtime: "https://run.camelai.com", tenant: "acme" }) };
 ```
 
 ```ts

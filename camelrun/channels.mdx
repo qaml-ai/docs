@@ -9,7 +9,7 @@ lets any service that sends webhooks (Sentry, Linear, Stripe, your own) start
 agents. Manage channels with `/v1/channels` or the console's Channels page:
 
 ```bash
-curl https://agents.camelai.dev/v1/channels \
+curl https://run.camelai.com/v1/channels \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"type": "telegram", "credentials": {"botToken": "<from @BotFather>"},
        "definition": "def_...", "access": {"allow": ["@ada", "123456789"]}}'
@@ -79,7 +79,7 @@ stored encrypted, and the API returns only masked values.
 <Note>
   The runtime also supports email channels, an address that agents answer
   mail at. They require a runtime configured to receive mail, and aren't
-  enabled on agents.camelai.dev.
+  enabled on run.camelai.com.
 </Note>
 
 ## What all channels share
@@ -111,7 +111,7 @@ the secret the service signs with, then point the service at the channel's
 `webhookUrl`:
 
 ```bash
-curl https://agents.camelai.dev/v1/channels \
+curl https://run.camelai.com/v1/channels \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"type": "webhook", "credentials": {"secret": "<the signing secret>"}, "definition": "def_...",
        "settings": {"signature": {"type": "hmac-sha256", "header": "Sentry-Hook-Signature"},

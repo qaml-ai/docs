@@ -3,8 +3,8 @@ title: 'REST API'
 description: 'Create agents, send prompts, poll runs and read events over HTTP'
 ---
 
-The REST API is served under `https://agents.camelai.dev/v1`. The full
-specification is [`/v1/openapi.json`](https://agents.camelai.dev/v1/openapi.json)
+The REST API is served under `https://run.camelai.com/v1`. The full
+specification is [`/v1/openapi.json`](https://run.camelai.com/v1/openapi.json)
 (OpenAPI 3). Every request sends `Authorization: Bearer <API key>`; see
 [Authentication](/camelrun/authentication).
 
@@ -17,7 +17,7 @@ specification is [`/v1/openapi.json`](https://agents.camelai.dev/v1/openapi.json
 ## Create an agent
 
 ```bash
-curl https://agents.camelai.dev/v1/agents \
+curl https://run.camelai.com/v1/agents \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -H "Idempotency-Key: support-triage" \
   -d '{"model": "anthropic/claude-sonnet-5-5", "systemPrompt": "Be concise.", "builtins": ["web_search"]}'
@@ -40,7 +40,7 @@ poll, or `{error}` if it was refused. The agent is made either way.
 ## Send a message and get the result
 
 ```bash
-curl https://agents.camelai.dev/v1/agents/$AGENT/prompt \
+curl https://run.camelai.com/v1/agents/$AGENT/prompt \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"text": "Which tickets look urgent?", "requestId": "msg-8812", "from": {"id": "u_42", "name": "Ada"}}'
 ```
@@ -53,7 +53,7 @@ Other fields are `files`, `metadata`, `whileRunning` (`queue` or `steer`),
 Poll the request until `state` is `completed`:
 
 ```bash
-curl https://agents.camelai.dev/v1/agents/$AGENT/requests/msg-8812 \
+curl https://run.camelai.com/v1/agents/$AGENT/requests/msg-8812 \
   -H "Authorization: Bearer $CAMELAI_API_KEY"
 ```
 

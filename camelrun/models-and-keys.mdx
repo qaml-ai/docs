@@ -37,7 +37,7 @@ credentials, so their agents call providers with that customer's keys. Create a
 **key scope** per customer (such as `org_abc123`), with one entry per provider:
 
 ```bash
-curl -X PUT https://agents.camelai.dev/v1/key-scopes/org_abc123/providers/openrouter \
+curl -X PUT https://run.camelai.com/v1/key-scopes/org_abc123/providers/openrouter \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"apiKey": "sk-or-..."}'
 ```

@@ -32,7 +32,7 @@ agent = await agents.upsert("support", model="acme-llm/acme-70b")
 ```
 
 ```bash curl
-curl -X PUT https://agents.camelai.dev/v1/providers/acme-llm \
+curl -X PUT https://run.camelai.com/v1/providers/acme-llm \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"type": "openai-completions", "baseUrl": "https://llm.acme.example/v1", "apiKey": "'"$ACME_LLM_KEY"'",
        "models": [{"id": "acme-70b", "contextWindow": 131072, "maxOutputTokens": 8192,

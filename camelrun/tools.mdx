@@ -97,7 +97,7 @@ import { serveTools } from "@camelai/run/server";
 // A fetch handler: Cloudflare Workers, Bun and Deno serve it as is.
 // tenant: your tenant's id, from GET /v1/me or `await agents.runtime.me()`.
 export default {
-  fetch: serveTools({ refund }, { runtime: "https://agents.camelai.dev", tenant: "acme" }),
+  fetch: serveTools({ refund }, { runtime: "https://run.camelai.com", tenant: "acme" }),
 };
 ```
 
@@ -106,7 +106,7 @@ export default {
 from camelai_run import serve_tools
 
 # An ASGI app: run it with uvicorn, or mount it in FastAPI.
-app = serve_tools([refund], runtime="https://agents.camelai.dev", tenant="acme")
+app = serve_tools([refund], runtime="https://run.camelai.com", tenant="acme")
 ```
 </CodeGroup>
 
@@ -184,7 +184,7 @@ and should never take a user id from the model's arguments.
   ```
 
   ```ts
-  const jwks = createRemoteJWKSet(new URL("https://agents.camelai.dev/.well-known/jwks.json"));
+  const jwks = createRemoteJWKSet(new URL("https://run.camelai.com/.well-known/jwks.json"));
   const { payload } = await jwtVerify(token, jwks, {
     issuer: "https://agents.camelai.dev",
     audience: "https://tools.example.com/mcp",
@@ -192,7 +192,9 @@ and should never take a user id from the model's arguments.
   });
   ```
 
-  Tokens live two minutes and each request gets its own `jti`. `aud` is the
+  `iss` is `https://agents.camelai.dev`, the hosted runtime's first address, at
+  either of its URLs; the SDKs expect it for both. Tokens live two minutes and
+  each request gets its own `jti`. `aud` is the
   server's URL, so a token can't be replayed against another server. Check
   `tenant` yourself.
 </Accordion>
