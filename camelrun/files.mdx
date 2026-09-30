@@ -1,0 +1,124 @@
+---
+title: 'Files'
+description: 'Attach files to messages, read what the agent wrote, share volumes between agents, and sign links'
+---
+
+Every agent has files: its own workspace at `/workspace` by default, or the
+**volumes** you mount. Files you attach to a message land there, the model works
+on them with its file tools and with code, tools save their outputs there, and
+you read what the agent made by path.
+
+## Attach files to a message
+
+<CodeGroup>
+```ts TypeScript
+const run = await agent.run("What changed in Q3?", {
+  files: ["./q3.pdf", screenshotBytes, new File([csv], "data.csv"), { path: "/workspace/notes.md" }],
+});
+```
+
+```python Python
+run = await agent.run(
+    "What changed in Q3?",
+    files=[Path("q3.pdf"), screenshot_bytes, {"name": "data.csv", "data": csv}, {"path": "/workspace/notes.md"}],
+)
+```
+</CodeGroup>
+
+A file is bytes, a `Blob` or `File`, `{name, data, contentType?}`, a local path
+(from `@camelai/agent-runtime/node` in TypeScript, or a `str` or `Path` in
+Python), or `{path}` for a file already in the agent's mounts. The SDKs upload
+each file first, to `uploads/<run id>/<name>`, then send the message referring
+to them by path, so a retried run never uploads twice.
+
+- At most 20 files per message, each at most 256 MiB.
+- Over REST, upload with `PUT /v1/agents/{id}/uploads/{requestId}/{name}`, then
+  send `POST /v1/agents/{id}/prompt {text, requestId, files: [{path}]}`. The
+  prompt also takes small files inline, `{name, data: <base64>, contentType?}`,
+  up to 4 MiB in all.
+
+## What the model sees
+
+The message carries a line per file, such as
+`[File /workspace/uploads/r1/q3.pdf (application/pdf, 2.1 MB)]`, and the file
+itself where the model can take it:
+
+| | Shown natively | Limits |
+| --- | --- | --- |
+| Images (PNG, JPEG, GIF, WebP) | Models with image input | 5 MiB and 8,000 px a side each |
+| PDFs | Anthropic, Google, OpenAI and OpenRouter models with image input | 16 MiB and 100 pages each |
+
+Anything else is only named, and the model reads it with its file tools.
+
+## The agent's file tools
+
+`read`, `write`, `edit`, `ls`, `glob` and `grep` work on mount paths such as
+`/workspace/notes.md`. Every file has a version, and `write` and `edit` take
+one, so an edit based on a stale read fails and the model reads again. Pass
+`fileTools: false` when the agent is made to leave them out.
+
+Code in `js_exec` has `fs` over the same mounts:
+
+```js
+const csv = await fs.readFile("/workspace/data.csv", { encoding: "utf8" });
+await fs.writeFile("/workspace/out/chart.png", png, { contentType: "image/png" });
+await fs.list("/workspace/out");
+```
+
+## Files out
+
+A run lists what it wrote in `run.files` (`[{path, version, size, contentType}]`,
+up to 100). Files the model handed over with `present_file` are also sent as
+`file_presented` events, each with a signed download `url`.
+
+<CodeGroup>
+```ts TypeScript
+const { data, contentType } = await agent.files.download("/workspace/out/chart.png");
+const listing = await agent.files.list({ path: "/workspace/out" });
+const link = await agent.files.link("/workspace/out/report.pdf", { expiresIn: 3600 });
+await agent.files.upload("/workspace/in/config.json", JSON.stringify(config));
+```
+
+```python Python
+file = await agent.files.download("/workspace/out/chart.png")  # .data, .content_type
+listing = await agent.files.list(path="/workspace/out")
+link = await agent.files.link("/workspace/out/report.pdf", expires_in=3600)
+await agent.files.upload("/workspace/in/config.json", json.dumps(config))
+```
+</CodeGroup>
+
+## Volumes
+
+A volume is a shared file tree. Without `mounts`, each agent gets its own
+workspace volume at `/workspace`. Mount the same volume in several agents to
+share files, read-only or read-write:
+
+```ts
+const docs = await agents.runtime.createVolume({ name: "shared docs" });
+await agents.runtime.volume(docs.id).write("handbook.md", handbook);
+const agent = await agents.upsert("support", {
+  mounts: [{ volumeId: docs.id, path: "/docs", mode: "ro" }],
+  // ...
+});
+```
+
+- Mounts are `{volumeId, path, mode: "ro" | "rw", subpath?, notify?}`, at most
+  16 per agent. `notify` prompts the agent when others change files under the
+  mount. An agent's mounts are fixed when it is made.
+- `volume.write(path, data, { version })` writes only if nobody changed the file
+  since that version (`0` means it must not exist yet).
+- `volume.snapshot()` and `volume.fork({ snapshot })` copy metadata only: a fork
+  shares its source's content and diverges independently.
+- A volume holds up to 100,000 files.
+
+## Signed links
+
+`agent.files.link(path, options)` or `volume.link(path, options)` returns
+`{url, expiresAt}`: a URL that downloads (`GET`) or uploads (`PUT`, with
+`maxBytes` and `contentType`) that one file without a token, so a browser or
+another service moves the bytes directly. Links last 15 minutes by default and
+at most 24 hours, and can't be revoked sooner.
+
+From your server, `POST /v1/agents/{id}/links {path, method?, expiresIn?}` signs
+a link by the path the agent sees, and `POST /v1/volumes/{id}/links` by a
+volume's own path.

@@ -1,0 +1,293 @@
+---
+title: 'Build a chat app'
+description: 'Put a streaming chat with each user''s agent in your app: one server route and one component'
+---
+
+Your users talk to their own agents in your app. Replies stream in as the model
+writes them, tool calls show as cards (or as your own components), and questions
+and approvals are answered in place. Your API key stays on your server.
+
+## Start a new app
+
+```bash
+npm create @camelai/agent-app my-app -- --api-key $CAMELAI_API_KEY
+cd my-app && npm run dev
+```
+
+This creates a Next.js app with the chat, the server route it talks to, a tool
+drawn by its own component, and a demo sign-in for you to replace with your own.
+Pass `--base-url` to point it at a self-hosted runtime.
+
+<Warning>
+  The demo sign-in treats every browser as a user. Deployed with
+  `NODE_ENV=production`, it refuses everyone until you replace it in
+  `app/api/agent/route.ts` (or set `DEMO_AUTH=1`).
+</Warning>
+
+## Add it to an app you have
+
+```bash
+npm install @camelai/agent-runtime @camelai/agent-runtime-react
+```
+
+<Steps>
+  <Step title="Add the route">
+    One POST route does everything the browser needs. It checks who the user
+    is with your own sign-in, gives their browser a short-lived token to read
+    their agent, and sends their messages and answers.
+
+    ```ts app/api/agent/route.ts
+    import { createAgentHandler } from "@camelai/agent-runtime/server";
+
+    export const POST = createAgentHandler({
+      // Reads CAMELAI_API_KEY from the environment, or pass apiKey.
+      authorize: async request => {
+        const user = await getUser(request); // your session check
+        return user ? { userId: user.id, name: user.name } : null; // null: 401
+      },
+      agent: {
+        instructions: "You help customers with their orders.",
+        model: "anthropic/claude-sonnet-5-5",
+      },
+    });
+    ```
+
+    The handler is a standard `fetch` handler, so it runs anywhere:
+
+    ```ts
+    // Hono
+    app.post("/api/agent", c => handler(c.req.raw));
+
+    // Cloudflare Workers, Bun, Deno
+    export default { fetch: handler };
+
+    // Express or node:http, mounted before any body parser for this route
+    import { nodeListener } from "@camelai/agent-runtime/node";
+    app.post("/api/agent", nodeListener(handler));
+    ```
+  </Step>
+  <Step title="Add the chat">
+    ```tsx
+    "use client";
+    import { AgentChat } from "@camelai/agent-runtime-react/ui";
+    import "@camelai/agent-runtime-react/styles.css";
+
+    export default function Support() {
+      return <AgentChat endpoint="/api/agent" suggestions={["Where is my order?"]} />;
+    }
+    ```
+
+    `<AgentChat>` fills its container, so give the container a height.
+  </Step>
+</Steps>
+
+### Route options
+
+| Option | |
+| --- | --- |
+| `authorize(request, { thread, action })` | Required. Return `{ userId, name?, agentKey? }`, or `null` for a 401 |
+| `agent` | How the user's agent is made: `{ instructions, model, tools, definition, context, spendLimit, ... }`, or a function of the user |
+| `onSend({ auth, text, data, request })` | Runs before each message. Return `{ text?, metadata? }`, or `throw new Response(...)` to refuse it (quotas, moderation) |
+| `browserToken` | `{ ttlSeconds, events, redact, url }` for the tokens it mints. Default 15 minutes, with provider costs left out |
+| `allowedOrigins` | Other origins whose pages may call the route, with CORS |
+| `proxy` | `true`: browsers also read their agent through this route and only ever talk to your origin. See [below](#read-through-your-route) |
+| `linkAnyMountedPath` | `true`: users may download any file in the agent's mounts. By default, only files the agent presented or wrote to its own workspace |
+| `apiKey`, `url` | Default `CAMELAI_API_KEY`, and `CAMELAI_BASE_URL` or `https://agents.camelai.dev` |
+
+## How it stays secure
+
+- **The API key stays on your server.** The browser gets a
+  [browser token](/camelrun/browser) that reads one agent's events, history,
+  state and inputs for 15 minutes. It can't send, answer, stop, or read another
+  agent. The chat renews it through your route.
+- **Every write goes through your route**, after `authorize`. The browser
+  never names an agent: the route picks the user's agent from what `authorize`
+  returned, by default one per user and thread.
+- **Messages and answers are sent as the user** (`from: { id: userId, name }`),
+  never as whatever the browser claims.
+- **Sends are idempotent.** Each carries the id the browser gave the message,
+  so a retry never sends twice.
+- **Cross-site requests are refused.** The route only takes
+  `application/json` and refuses `Sec-Fetch-Site: cross-site` unless you list
+  the origin.
+- **Rendering is safe.** Markdown is rendered as elements, never raw HTML.
+  Links are only http(s) and mailto, and images the model links are shown as
+  links unless you set `allowImages`.
+
+## Customize the UI
+
+<Tabs>
+  <Tab title="AgentChat">
+    Replace any part of the prebuilt chat:
+
+    ```tsx
+    <AgentChat
+      endpoint="/api/agent"
+      tools={{ get_weather: WeatherCard }}             // your component per tool
+      components={{ Markdown: MyMarkdown, EmptyState: Welcome }}
+      labels={{ placeholder: "Ask about your order" }} // every string, for translation
+      theme="system"                                   // or "light" / "dark"
+    />
+    ```
+
+    Theme it with CSS variables on `.agent-chat`, such as `--agent-accent`,
+    `--agent-radius`, `--agent-font` and `--agent-max-width`. With shadcn/ui,
+    also import `@camelai/agent-runtime-react/shadcn.css` to use your theme's
+    tokens.
+  </Tab>
+  <Tab title="Hooks">
+    Build your own UI on the same state:
+
+    ```tsx
+    import { AgentProvider, useMessages, useSend, useAgentStatus, useInputs } from "@camelai/agent-runtime-react";
+
+    <AgentProvider endpoint="/api/agent">
+      <MyChat />
+    </AgentProvider>
+
+    function MyChat() {
+      const messages = useMessages(); // user bubbles and assistant turns, as typed parts
+      const send = useSend();
+      const { isRunning, stop } = useAgentStatus();
+      const { inputs, answer } = useInputs();
+      return messages.map(message => <Row key={message.id} message={message} />);
+    }
+    ```
+
+    Parts are `text`, `reasoning`, `tool` and `file`. Without React, the same
+    store is `createAgentChat` from `@camelai/agent-runtime/chat`, and Vue,
+    Svelte and Solid have their own bindings.
+  </Tab>
+  <Tab title="shadcn">
+    Copy the chat into your project, in your theme, and own the code:
+
+    ```bash
+    npx shadcn@latest add https://agents.camelai.dev/r/agent-chat.json
+    npx shadcn@latest add https://agents.camelai.dev/r/agent-route.json   # the Next.js route
+    ```
+  </Tab>
+  <Tab title="AI SDK">
+    Use the AI SDK's `useChat` (and AI Elements) with the agent:
+
+    ```tsx
+    import { useChat } from "@ai-sdk/react";
+    import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
+    import { AgentRuntimeChatTransport } from "@camelai/agent-runtime/ai-sdk";
+
+    const transport = useMemo(() => new AgentRuntimeChatTransport({ endpoint: "/api/agent" }), []);
+    const { messages, setMessages, sendMessage, addToolApprovalResponse, stop } = useChat({
+      id: threadId,
+      transport,
+      sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    });
+    // Load the conversation so far from the agent.
+    useEffect(() => { void transport.loadMessages({ chatId: threadId }).then(setMessages); }, [transport, threadId]);
+    ```
+
+    The agent keeps the conversation, so only the new message is sent.
+  </Tab>
+</Tabs>
+
+## Tools with their own UI
+
+Give the agent tools in the route, and draw their calls with your own
+components in the browser:
+
+<CodeGroup>
+```ts route.ts
+import { schema, tool } from "@camelai/agent-runtime";
+
+agent: {
+  tools: {
+    get_weather: tool({
+      description: "The weather in a city",
+      input: schema.Object({ city: schema.String() }),
+      execute: async ({ city }, { identity }) => weather.now(city), // identity.subject is the user
+    }),
+  },
+},
+```
+
+```tsx WeatherCard.tsx
+function WeatherCard({ args, state, result }: ToolRenderProps) {
+  if (state === "input_streaming") return <p>Looking up {String(args.city ?? "")}...</p>;
+  return <Card data={result?.data} loading={state !== "done"} />;
+}
+
+<AgentChat endpoint="/api/agent" tools={{ get_weather: WeatherCard }} />
+```
+</CodeGroup>
+
+A renderer gets `args` (partial while the model writes them), `state`
+(`input_streaming`, `running`, `input_required`, `done` or `error`), `result`,
+`progress`, and for a call that waits on the user, its `input` and
+`answer(value)`.
+
+<Note>
+  Tools given in the route run in that server process, so it must keep running
+  (`next start`, a container, a Node or Bun server). On serverless hosting,
+  serve the tools over HTTP with `serveTools` and name them in a definition:
+  `agent: { definition: "def_..." }`. See [Served tools](/camelrun/tools#served-tools).
+</Note>
+
+## Threads
+
+A `thread` is your name for one of the user's conversations. Each thread is its
+own agent, with its own history:
+
+```tsx
+<AgentChat endpoint="/api/agent" thread={conversationId} />
+```
+
+The route receives it in `authorize(request, { thread })`. To let several
+people share one agent (a team's assistant), check access and return the key
+yourself:
+
+```ts
+authorize: async (request, { thread }) => {
+  const user = await getUser(request);
+  if (!user) return null;
+  if (thread && !(await isMember(user.id, thread))) return null;
+  return { userId: user.id, name: user.name, agentKey: thread ? `team-${thread}` : undefined };
+},
+```
+
+Everyone in a shared thread sees the same conversation live, and it runs one
+turn at a time. Put private work in per-user agents.
+
+## Read through your route
+
+By default the browser reads its agent's stream straight from camelRun with its
+browser token. With `proxy: true`, your route passes those reads through too,
+so the browser only talks to your origin and the runtime can stay private:
+
+```ts app/api/agent/[[...path]]/route.ts
+const handler = createAgentHandler({ authorize, agent, proxy: true });
+export const GET = handler;
+export const POST = handler;
+```
+
+Each open chat then holds a request on your server. Serverless platforms cut
+long requests at their time limit; the chat reconnects, and falls back to long
+polls of at most 25 seconds. Use the proxy when policy requires a single origin.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="What does a 401 from the route mean?">
+    `authorize` returned `null`: the user isn't signed in, or the session
+    cookie didn't reach the route.
+  </Accordion>
+  <Accordion title="What if the browser says it could not reach the runtime (CORS)?">
+    camelRun allows any origin only for browser tokens on its read routes.
+    Check the route's `browserToken.url`, or `CAMELAI_BASE_URL`.
+  </Accordion>
+  <Accordion title="What if tool calls fail with &quot;not connected&quot;?">
+    The process serving the route's tools isn't running, which is typical on
+    serverless hosting. Serve the tools with `serveTools` and a definition.
+  </Accordion>
+  <Accordion title="Can I run several server instances?">
+    Tools given in the route belong to one process at a time. Run one instance,
+    or serve tools over HTTP.
+  </Accordion>
+</AccordionGroup>

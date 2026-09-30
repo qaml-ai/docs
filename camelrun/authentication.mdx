@@ -1,0 +1,65 @@
+---
+title: 'Authentication'
+description: 'API keys, agent tokens, browser tokens and OAuth for coding agents'
+---
+
+Every request to `https://agents.camelai.dev` sends a token as
+`Authorization: Bearer <token>`. Which token depends on who is calling.
+
+| Token | Looks like | Who holds it | What it can do |
+| --- | --- | --- | --- |
+| **API key** | `art_...` | Your servers | Everything in your account: create, run and delete agents, manage definitions, keys, channels and webhooks |
+| **Agent token** | Returned when an agent is made | The SDK, on your server | Run that one agent and nothing else |
+| **Browser token** | Minted per user | A browser | Read one agent's events, state, history and inputs for up to an hour |
+| **OAuth access token** | Issued to MCP clients | A coding agent | Act as your account at `/mcp` and the REST API, except creating API tokens |
+
+## API keys
+
+Create API keys in the [console](https://agents.camelai.dev/console) under
+**API tokens**, or with `POST /v1/tokens`. Each key has full access to your
+account, so give each application or script its own and revoke any you no
+longer use.
+
+The SDKs and the CLI read `CAMELAI_API_KEY` from the environment:
+
+```bash
+export CAMELAI_API_KEY=art_...
+curl https://agents.camelai.dev/v1/me -H "Authorization: Bearer $CAMELAI_API_KEY"
+```
+
+`GET /v1/me` returns your `tenant` id (which [served tools](/camelrun/tools#served-tools)
+need) and your `defaultModel`.
+
+<Warning>
+  Never put an API key in browser code, a mobile app, or a repository. Browsers
+  get [browser tokens](/camelrun/browser) instead.
+</Warning>
+
+## Agent tokens
+
+When an agent is made, `POST /v1/agents` returns its `id` and `token`. The SDKs
+use the token for the agent's own connection (`/clients/{id}/...`), and keep it
+out of logs and JSON. You rarely need it yourself: upserting by key with your API
+key gets the agent again. An agent's token can't change what only the account
+may, such as `keyScope`, `spendLimit` or `modelHeaders`.
+
+## Browser tokens
+
+`POST /v1/agents/{id}/browser-tokens` mints a token that reads one agent, from
+any origin, for 5 to 3,600 seconds (default 900). See
+[Show an agent in a browser](/camelrun/browser).
+
+## OAuth for coding agents
+
+The hosted MCP server at `https://agents.camelai.dev/mcp` signs clients in with
+OAuth 2.1, as MCP's authorization spec describes. Access tokens last an hour,
+and refresh tokens last 30 days and rotate on each use. Connected apps appear in
+the console under **API tokens**, where you revoke them (or
+`DELETE /v1/oauth/grants/{id}`). See [CLI and MCP server](/camelrun/cli#hosted-mcp-server).
+
+## Identity tokens for your servers
+
+When camelRun calls your [served tools](/camelrun/tools#served-tools), it sends
+its own signed token (an EdDSA JWT) saying which agent the call is for and who is
+acting. Verify it against `https://agents.camelai.dev/.well-known/jwks.json`.
+See [Identity](/camelrun/tools#identity).

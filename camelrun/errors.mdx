@@ -1,0 +1,93 @@
+---
+title: 'Errors'
+description: 'HTTP errors, failed runs, and tool calls that did not complete'
+---
+
+There are three kinds of failure:
+
+1. **The API refused a request.** An HTTP status and a JSON body. The SDKs throw
+   `AgentError` with `status` and `code`.
+2. **A run failed.** The request was accepted, and the run ended badly. The
+   SDKs' `run()` throws `RunError` with the run, unless `throwOnError: false`.
+3. **A tool call didn't complete** within a run that otherwise went on. The
+   model was told, and the run lists it in `toolErrors`. Nothing throws.
+
+## HTTP errors
+
+Error bodies are `{"error": "<message for people>", "code": "<CODE>"}`. The
+message may change and the code won't, so switch on `code`. New codes may be
+added; treat an unknown one by its status. Every 429 and 503 has `Retry-After`,
+and the SDKs honor it and retry.
+
+| Status | `code` | Meaning | What to do |
+| --- | --- | --- | --- |
+| 400 | `INVALID_REQUEST` | Malformed or invalid; the message says how | Fix the request |
+| 400 | `INVALID_HISTORY` | An imported `initialMessages` has a message it can't take | Fix the named message |
+| 401 | `UNAUTHORIZED` | No valid token, or an expired browser token | Send a valid key; mint a new browser token |
+| 402 | `SPEND_LIMIT` | The agent's spend limit, or the account's monthly cap | Raise the limit |
+| 402 | `INSUFFICIENT_CREDIT` | The account's prepaid credit is spent | Add credit in the console |
+| 403 | `FORBIDDEN` | The token may not do this, such as a browser token outside its agent | Use your API key, server-side |
+| 404 | `NOT_FOUND` | No such agent, request, input or other resource in your account | Check the id |
+| 409 | `IDEMPOTENCY_CONFLICT` | The Idempotency-Key or request id was used for another request | Use a new key for a new request |
+| 409 | `IDEMPOTENCY_IN_PROGRESS` | The first request with this key is still running | Retry shortly |
+| 409 | `APPLICATION_CONNECTED` | Another process serves this agent's tools | Close it, pass `takeover: true`, or connect with `attach: false` |
+| 409 | `APPLICATION_NOT_CONNECTED` | The agent's tools need their process and none is connected | Start it, serve tools over HTTP, or pass `allowDisconnected: true` |
+| 409 | `REPLAY_GAP` | The `Last-Event-ID` is behind the replay buffer | Reconnect with `?snapshot=1` and read `/state` |
+| 409 | `CONFLICT` | Another conflict, named in the message | See below |
+| 410 | `GONE` | The agent was deleted or expired | Upsert the key again for a fresh agent |
+| 413 | `TOO_LARGE` | The request body is too large | Upload large files first and attach them by path |
+| 413 | `HISTORY_TOO_LARGE` | An imported history is over 16 MB | Send recent messages after a `compactionSummary` |
+| 429 | `RATE_LIMITED` | Too many agents awake, requests queued, or subscribers | Retry after `Retry-After` |
+| 503 | `UNAVAILABLE` | A node is draining or starting, or an agent is moving | Retry after `Retry-After`; nothing happened |
+| 500 | `INTERNAL` | A bug | Retry, and report it with the request id |
+
+Common `CONFLICT` cases:
+
+- **An existing agent's subject, context, definition or mounts can't change.**
+  An upsert of an existing key changed a field that's set only at creation.
+  Delete the agent or use another key.
+- **This input is already answered.** Someone answered first. The body's
+  `input` says how it settled. Answering again the same way is a 200.
+- **The definition is at revision N, not M.** A definition update with a stale
+  `revision`. Read it again and retry.
+
+## Run failures
+
+| `RunError.code` | Meaning |
+| --- | --- |
+| `model_error` | The model provider refused or failed after 3 retries for transient failures: a bad request, an invalid key, refused content, or a context overflow compaction couldn't fix |
+| `spend_limit` | The agent's spend limit (or the account's cap) stopped the turn after the response that crossed it. Raise the limit and send the next message |
+| `runtime_error` | camelRun couldn't carry out the run: for example, the model has no key, or the agent was deleted |
+
+A run with `uncertain: true` was cut short by a restart where it couldn't
+resume. Its tool calls may or may not have taken effect, so check before
+retrying.
+
+## Tool errors
+
+A run lists each tool call that didn't complete as
+`toolErrors: [{tool, toolCallId?, code, outcomeUnknown?, message}]`. The model
+got the same message and carried on.
+
+| `code` | Meaning | Outcome unknown |
+| --- | --- | --- |
+| `timeout` | No answer or progress within the tool's deadline | Yes |
+| `connection_lost` | The connection closed before the answer arrived | Yes |
+| `not_connected` | No process served the agent's attached tools, so the call didn't run | No |
+| `source_unavailable` | Its MCP server couldn't be reached, listed or authenticated with | No |
+| `failed` | Anything else that kept it from running | No |
+
+A tool that ran and reported its own failure (threw, or answered `isError`) is
+not a tool error: that's the tool's answer, which the model reads.
+
+## SDK errors
+
+| | TypeScript | Python |
+| --- | --- | --- |
+| Any failure | `AgentError`: `message`, `status`, `code`, `requestId`, `uncertain`, `retryAfterMs` | `AgentError`: `status`, `code`, `request_id`, `uncertain`, `retry_after` |
+| A failed run | `RunError extends AgentError`, with `run` | `RunError`, with `run` |
+| Another process took the agent's tools | `code: "APPLICATION_REPLACED"`, through `onError` | The same, through `on_error` |
+| A served tool's token check failed | `RuntimeTokenError` | `RuntimeTokenError` |
+
+Stopping a wait (`signal`, or Python `timeout`) doesn't stop the run. Wait for
+it again with the same `idempotencyKey`.

@@ -1,0 +1,207 @@
+---
+title: 'SDKs'
+description: 'The TypeScript and Python SDKs: Agents, upsert, run, stream, tools and the lower-level API'
+---
+
+<CodeGroup>
+```bash TypeScript
+npm install @camelai/agent-runtime   # Node 22+, Bun, Deno, Cloudflare Workers
+```
+
+```bash Python
+pip install camelai-agent-runtime    # Python 3.11+
+pip install "camelai-agent-runtime[server]"   # adds serve_tools
+```
+</CodeGroup>
+
+| TypeScript entry | |
+| --- | --- |
+| `@camelai/agent-runtime` | Everything portable: `Agents`, `tool`, `schema`, the lower-level `AgentRuntime` and `AgentClient`, and the types |
+| `@camelai/agent-runtime/node` | The same for Node and Bun, plus local file paths as attachments and `nodeListener` |
+| `@camelai/agent-runtime/server` | `serveTools`, `verifyRuntimeToken`, `runtimeAuth`, `runtimeIdentity`, `createAgentHandler` |
+| `@camelai/agent-runtime/watch` | `watchAgent`, for reading an agent from a browser |
+| `@camelai/agent-runtime/chat` | `createAgentChat`, the framework-free chat store |
+| `@camelai/agent-runtime/ai-sdk` | `AgentRuntimeChatTransport`, for the AI SDK's `useChat` |
+| `@camelai/agent-runtime/mcp` | `fromMcpServer`, for attaching an MCP SDK server |
+| `@camelai/agent-runtime/testing` | `testRuntime`, for signing identity tokens in tests |
+
+## Agents
+
+<CodeGroup>
+```ts TypeScript
+const agents = new Agents({ apiKey, url }); // or `await using agents = new Agents()`
+```
+
+```python Python
+async with Agents(api_key, url=url) as agents:
+    ...
+```
+</CodeGroup>
+
+- `apiKey` defaults to `CAMELAI_API_KEY`, and `url` to `CAMELAI_BASE_URL`, else
+  `https://agents.camelai.dev`.
+- `agents.close()` closes every agent's connection so the process can exit.
+  Their runs go on in camelRun.
+- `agents.runtime` is the lower-level `AgentRuntime`: definitions, volumes,
+  `listAgents()`, `browserToken(agentId)`, `inbox()` and `toolSources(agentId)`.
+
+### `agents.upsert(key, config)`
+
+The agent for `key`, made if there's none and brought to `config` if it
+differs. Returns a connected `Agent`.
+
+| TypeScript | Python | |
+| --- | --- | --- |
+| `model` | `model=` | `"provider/model-id"` from `GET /v1/models` |
+| `instructions` | `instructions=` | The system prompt |
+| `instructionsAppend` | `instructions_append=` | Text after the prompt, such as per-conversation context |
+| `tools` | `tools=` | Tools served from this process: `{ name: tool({...}) }`, or a list of `@tool` functions |
+| `builtins` | `builtins=` | `web_search`, `web_fetch`, `schedule`, `ask_user` |
+| `definition` | `definition=` | Make it from a definition |
+| `thinkingLevel` | `thinking_level=` | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `subject`, `context` | `subject=`, `context=` | Whom it acts for, and claims for its tools. Fixed at creation |
+| `keyScope`, `spendLimit`, `modelHeaders` | `key_scope=`, `spend_limit=`, `model_headers=` | See [Models and keys](/camelrun/models-and-keys) |
+| `mounts`, `fileTools` | `mounts=`, `file_tools=` | Its volumes (fixed at creation), and whether it has file tools |
+| `name` | `name=` | A label shown in the console |
+| `attach` | `attach=` | `false`: declare `tools` without serving them |
+| `takeover` | `takeover=` | Replace the process serving the tools now |
+| `onEvent`, `onInput`, `onError` | `on_event=`, `on_input=`, `on_error=` | Callbacks for events, inputs as they're asked, and connection errors |
+
+### `Agent`
+
+| TypeScript | Python | |
+| --- | --- | --- |
+| `agent.id` | `agent.id` | `client_...`, safe to log and store |
+| `agent.run(text, options)` | `await agent.run(text, ...)` | Send a message and wait for the `Run` |
+| `agent.stream(text, options)` | `agent.stream(text, ...)` | The run as it happens: `for await` / `async for` over parts |
+| `agent.pendingInputs()` | `pending_inputs()` | Inputs waiting on people, each with `answer()` |
+| `agent.history()`, `historyPage({ before, limit })` | `history()`, `history_page(...)` | The whole history, or a page of whole turns |
+| `agent.steer(text)` | `steer()` | Join the running turn, or start one |
+| `agent.configure({ model, instructions, thinkingLevel, tools })` | `configure(...)` | Change it between runs |
+| `agent.schedule({ text, inSeconds, at, everySeconds })` | `schedule(...)` | Wake it later; `schedules()`, `unschedule(id)` |
+| `agent.files` | `agent.files` | `list`, `download`, `upload`, `link` by the paths the agent sees |
+| `agent.abort()` | `abort()` | Stop the running turn |
+| `agent.delete()` | `delete()` | Delete it, its history and files |
+| `agent.close()` | `close()` | Close this process's connection |
+
+Run options for `run` and `stream`:
+
+| TypeScript | Python | |
+| --- | --- | --- |
+| `user` | `user=` | Who sent it: your user id, or `{ id, name, username }` |
+| `files` | `files=` | Attachments. See [Files](/camelrun/files) |
+| `metadata` | `metadata=` | Your own key-value data (16 strings); the model never sees it |
+| `idempotencyKey` | `idempotency_key=` | The run's id. The same key returns the same run |
+| `signal` | `timeout=` | Stop waiting; the run goes on |
+| `throwOnError` | `throw_on_error=` | `false` returns a failed run instead of throwing `RunError` |
+| `whileRunning` | `while_running=` | `"queue"` (default) or `"steer"` |
+| `spendLimit` | `spend_limit=` | `{usd}`: this run's own budget |
+| `allowDisconnected` | `allow_disconnected=` | Run even with nobody serving the agent's tools |
+
+### `Run` and stream parts
+
+A `Run` is `{ id, status, text, inputs, error, usage, files, toolErrors, sourceErrors, raw }`.
+`status` is `completed`, `input_required` or `failed`. Each of `run.inputs` has
+`answer(value, { from })` and `decline({ from })`, which resolve with the
+resumed run.
+
+| Part `type` | Fields |
+| --- | --- |
+| `text` | `text`: reply text as it's written |
+| `tool_call` | `id`, `name`, `arguments` |
+| `tool_result` | `id`, `name`, `output`, `isError` |
+| `input_required` | `input`, with `answer()` |
+| `done` | `run`, always last |
+
+## Tools
+
+<CodeGroup>
+```ts TypeScript
+tool({ description, input: schema.Object({ ... }), execute: (args, context) => result,
+       timeoutMs?, needsApproval?, exposure? })
+```
+
+```python Python
+@tool(name=None, description=None, timeout=None, needs_approval=None)
+def my_tool(arg: str, context: ToolContext): ...
+```
+</CodeGroup>
+
+| `context` (TypeScript) | Python | |
+| --- | --- | --- |
+| `idempotencyKey` | `idempotency_key` | The same for every attempt of this call |
+| `callId` | `call_id` | This attempt's id |
+| `identity` | `identity` | Who the call is for. See [Identity](/camelrun/tools#identity) |
+| `signal` | (task cancellation) | Aborted when camelRun cancels the call |
+| `progress(message)` | `progress(message, progress=, total=)` | Report progress; restarts the deadline |
+| `confirm`, `ask`, `requireUrl` | `confirm`, `ask`, `require_url` | Ask the user. See [Human input](/camelrun/human-input) |
+
+## The lower-level API
+
+`Agents` and `Agent` are built on `AgentRuntime` and `AgentClient`, which stay
+available for code that needs the wire's shape: `agents.runtime`,
+`agent.client`, or `new AgentRuntime({ url, apiKey })` directly.
+
+| TypeScript | Python | |
+| --- | --- | --- |
+| `runtime.upsertAgent(key, options)` | `upsert_agent(key, ...)` | Upsert, returning credentials without connecting |
+| `runtime.connectAgent(session, { tools, attach, takeover })` | `connect_agent(...)` | Connect with stored credentials |
+| `runtime.me()` | `me()` | Your `tenant` id and default model |
+| `runtime.upsertDefinition(key, input)` | `upsert_definition(key, ...)` | Definitions; also `createDefinition`, `updateDefinition`, `deleteDefinition` |
+| `runtime.setProvider(name, config)` | `set_provider(name, ...)` | A [custom provider](/camelrun/custom-models) |
+| `runtime.createVolume`, `volume(id)` | `create_volume`, `volume(id)` | Volumes |
+| `runtime.inbox(state)` | `inbox(state=)` | Inputs across all agents |
+| `client.execute(code)` | `execute(code)` | Run code in the sandbox with the agent's tools, outside its history |
+| `client.waitForRequest(id)` | `wait_for_request(id)` | Wait for a request already sent, from any process |
+
+## Examples
+
+Both examples read `CAMELAI_API_KEY`:
+
+<AccordionGroup>
+  <Accordion title="A tool that needs approval">
+    ```ts
+    import { Agents, schema, tool } from "@camelai/agent-runtime";
+
+    const agents = new Agents();
+    const agent = await agents.upsert("approval-example", {
+      model: "anthropic/claude-sonnet-5-5",
+      instructions: "You manage preview environments. Delete the ones you are asked to, with the tool.",
+      tools: {
+        delete_environment: tool({
+          description: "Delete a preview environment",
+          input: schema.Object({ name: schema.String() }),
+          needsApproval: true,
+          execute: ({ name }, context) => previews.delete(name, { idempotencyKey: context.idempotencyKey }),
+        }),
+      },
+    });
+
+    let run = await agent.run("Delete the preview environment pr-4312.", { user: "alice" });
+    while (run.status === "input_required") {
+      const input = run.inputs[0];
+      console.log(`waiting for ${input.kind}: ${input.message}`);
+      run = await input.answer(true, { from: "alice" });
+    }
+    console.log(run.text);
+    await agents.close();
+    ```
+  </Accordion>
+  <Accordion title="Files in and out">
+    ```ts
+    import { Agents } from "@camelai/agent-runtime/node";
+
+    const agents = new Agents();
+    const agent = await agents.upsert("reporter", {
+      model: "anthropic/claude-sonnet-5-5",
+      instructions: "You are an analyst. Write reports to /workspace/out and present them with present_file.",
+    });
+    const run = await agent.run("Summarize this CSV into a report", { files: ["./sales.csv"] });
+    for (const file of run.files) {
+      const { data } = await agent.files.download(file.path);
+      console.log(file.path, data.byteLength);
+    }
+    await agents.close();
+    ```
+  </Accordion>
+</AccordionGroup>

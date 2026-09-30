@@ -1,0 +1,71 @@
+---
+title: 'Production checklist'
+description: 'What to check before you ship an application on camelRun'
+---
+
+Before you ship an application on camelRun, check each of these.
+
+## Keys and access
+
+- Your API key is only on your servers, in a secret store, never in a browser,
+  a mobile app or a repository. Browsers get [browser tokens](/camelrun/browser),
+  minted per user after your own access checks.
+- An agent's token (`agent.session.token`) is secret too. You rarely need it:
+  upsert by key instead.
+- Tools authorize every call as `context.identity.user` within
+  `identity.context`, never from ids in the model's arguments. See
+  [Identity](/camelrun/tools#identity).
+- Served tools verify camelRun's token (`serveTools`, `serve_tools` and
+  `runtimeAuth` do) with `tenant` set to your own tenant, so another account's
+  agents can't act as your users.
+- Behind a TLS-terminating proxy, pass `origin` to `nodeListener` so tokens are
+  checked against your public URL.
+
+## Agents
+
+- Agents are keyed by your ids (`upsert("user-123", ...)`), so any process finds
+  them and a retry never makes a second one. Delete the ones you no longer need,
+  for example when the user or thread is deleted.
+- Configuration lives in one place: the `upsert` call, or a definition with
+  `apply: "all"` to roll changes out. Fields fixed at creation (`subject`,
+  `context`, `definition`, `mounts`) are a 409 if they change.
+- You pick a model your account has a key for, and set `spendLimit` on agents
+  that act for untrusted users.
+
+## Tools
+
+- Every tool with side effects passes `context.idempotencyKey` to what it calls,
+  so a retried call acts once.
+- Long tools set `timeoutMs` and report `context.progress()`. Nothing relies on
+  a call finishing within the default 15 seconds.
+- Tools that ask a person (`needsApproval`, `context.confirm` or `ask`) ask
+  before they act, because everything before an ask runs again once answered.
+- Where tools run matches how you deploy. A long-lived process attaches them;
+  serverless or several instances serve them over HTTP. Agents woken by
+  schedules, channels or webhooks use served tools.
+- Exactly one process attaches an agent's tools. Others run it with
+  `attach: false`, or without tools.
+
+## Runs
+
+- You reply to users from the run's result (`run.text`), not from the event
+  stream.
+- Failures are handled: `run()` throws `RunError` (with `code`, and `uncertain`
+  when a restart cut the run short), and `run.toolErrors` lists tool calls that
+  didn't complete.
+- Runs that wait on people are shown to someone who can answer, or answered from
+  your inbox (`agents.runtime.inbox("pending")` and the `input.requested`
+  webhook). Inputs expire after 7 days by default.
+- Retries reuse the run's `idempotencyKey`, so a request retried after a timeout
+  finds the same run instead of starting another.
+- `onEvent` handlers are quick or queue their work.
+
+## Operations
+
+- Your process closes its agents on shutdown (`await agents.close()`), so it
+  exits promptly and releases the agents' tools.
+- You register a [webhook](/camelrun/webhooks) endpoint for `run.failed` and
+  `input.requested` (and `usage.recorded` to meter spend), verify signatures,
+  dedupe by event `id`, and answer within 10 seconds.
+- You handle 429 and 503 by waiting `Retry-After` (the SDKs retry them), and
+  know the [limits](/camelrun/limits) your workload approaches.

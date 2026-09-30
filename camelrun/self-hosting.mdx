@@ -1,0 +1,120 @@
+---
+title: 'Self-host camelRun'
+sidebarTitle: 'Self-hosting'
+description: 'Run the camelRun runtime on your own host with Docker Compose and Postgres'
+---
+
+<Warning>
+  The runtime's source repository and container image aren't publicly available
+  yet. To self-host camelRun now, contact us through
+  [camelai.com](https://camelai.com). This page describes what a deployment
+  looks like.
+</Warning>
+
+camelRun runs on any host with Docker: one container, and Postgres. Nothing in
+it needs AWS. Your application talks to it the same way it talks to
+agents.camelai.dev: point the SDKs at it with `CAMELAI_BASE_URL` (or `url`), and
+the CLI with `CAMELAI_URL`.
+
+## Licensing
+
+The runtime is licensed under the GNU AGPL-3.0. The SDKs, frontend packages,
+CLI and examples are MIT, so the code you write against camelRun can use them in
+any application. If the AGPL-3.0 doesn't work for your organization, commercial
+licenses for the runtime are available: contact us through
+[camelai.com](https://camelai.com).
+
+## What you need
+
+- Docker Engine with Compose v2, on `linux/amd64` or `linux/arm64`.
+- 1 vCPU and 2 GB of memory for the runtime, which is enough for tens of agents
+  awake at once. Agents asleep cost only storage.
+- Postgres 14 or later.
+- Outbound HTTPS to your model providers.
+
+The runtime doesn't need to be public. Your application can reach it on a
+private network, and browsers through your application (see
+[Networking](#networking)).
+
+The container needs no extra privileges: no `--privileged`, no added
+capabilities, no Docker socket. It runs each sandbox process for model-written
+code as its own user under a seccomp filter. A seccomp or AppArmor profile
+stricter than Docker's default can stop that, and the runtime then refuses to
+start rather than run code unsandboxed.
+
+## Start it
+
+The deployment ships a Compose file and an example environment:
+
+<Steps>
+  <Step title="Configure">
+    ```bash
+    cp .env.example .env    # fill it in; generate secrets with: openssl rand -hex 32
+    ```
+
+    Set at least `AGENT_OPERATOR_TOKEN`, `AGENT_SESSION_SECRET`,
+    `AGENT_SECRETS_KEY` and `POSTGRES_PASSWORD`. The example defaults to a
+    private runtime at `http://runtime:8790` on the Compose network. See
+    [Configuration](/camelrun/configuration).
+  </Step>
+  <Step title="Start the runtime">
+    ```bash
+    docker compose up -d
+    curl -s localhost:8790/healthz
+    ```
+  </Step>
+  <Step title="Check your token">
+    The operator token from `.env` is your API key:
+
+    ```bash
+    curl -s localhost:8790/v1/me -H "Authorization: Bearer $AGENT_OPERATOR_TOKEN"
+    ```
+  </Step>
+</Steps>
+
+Upgrade by changing `AGENT_RUNTIME_IMAGE` to the new version and running `docker compose up -d` again.
+The new container applies database migrations as it starts. On
+`docker compose stop`, the runtime lets running turns finish (up to 100 seconds
+by default) before it exits.
+
+## Storage
+
+By default, agents' data (transcripts, files and volumes) is on the `data`
+volume, and indexes are in Postgres. Back up both.
+
+For S3 or a service that speaks it, set `AGENT_STORAGE=s3`, `AGENT_S3_BUCKET`,
+`AWS_REGION` and credentials, and for anything but AWS, `AGENT_S3_ENDPOINT` (and
+`AGENT_S3_FORCE_PATH_STYLE=true` if the service wants path-style requests). The
+service must support conditional writes (`If-None-Match: *`). AWS S3,
+Cloudflare R2, SeaweedFS and RustFS do.
+
+## Networking
+
+**Private runtime.** Leave out the Compose file's `ports`, put your application
+on the same Docker network, and call `http://runtime:8790`. Browsers then read
+agents through your application, with
+[`createAgentHandler({ proxy: true })`](/camelrun/chat-app#read-through-your-route).
+Set:
+
+- `AGENT_PUBLIC_URL=http://runtime:8790`, the address your application and tool
+  servers reach the runtime at.
+- `AGENT_BROWSER_URL=` (empty), so browser tokens name no URL.
+
+**Public runtime.** Route a hostname through a TLS-terminating proxy to port
+8790 and set `AGENT_PUBLIC_URL` to that URL. Keep single sign-on off the
+browser read routes (`/v1/agents/{id}/events`, `/state`, `/history`,
+`/inputs`), since the browser token is their credential.
+
+**Reaching your own services.** The runtime refuses to call private and
+loopback addresses, so an agent can't reach your network. Allow the exact
+origins of your own services it must call (a tool server, a model server) with
+`AGENT_OUTBOUND_ALLOW_ORIGINS=http://app:3000,http://10.1.2.3:8000`. Each is
+reachable at that scheme, host and port only. `web_fetch` and `web_search` never
+use them, since the model chooses those URLs.
+
+## More than one node
+
+One node is the default and needs nothing more. Several nodes share Postgres
+and S3 storage (`AGENT_STORAGE=s3`), each with `AGENT_NODE_URL`, the address its
+peers reach it at. A load balancer in front sends each request to any node, and
+nodes forward to the one serving an agent.
