@@ -68,7 +68,7 @@ New types may be added, so ignore ones you don't know.
 `assistantMessageEvent.type` is `text_delta` for reply text, `thinking_delta`
 for reasoning, and `toolcall_delta` for a tool call's arguments as partial JSON,
 each with its `start` and `end`. Fold deltas into the message from its
-`message_start`; `@camelai/agent-runtime/watch` does this for you.
+`message_start`; `@camelai/run/watch` does this for you.
 
 ### Tools, people and the runtime
 

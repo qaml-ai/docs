@@ -11,7 +11,7 @@ is for. For the short version, see [Where tools run](/camelrun/concepts#where-to
 
 <CodeGroup>
 ```ts TypeScript
-import { schema, tool } from "@camelai/agent-runtime";
+import { schema, tool } from "@camelai/run";
 
 const refund = tool({
   description: "Refund an order in full",
@@ -25,7 +25,7 @@ const refund = tool({
 ```
 
 ```python Python
-from camelai_agent_runtime import ToolContext, tool
+from camelai_run import ToolContext, tool
 
 @tool(timeout=60)
 async def refund(order_id: str, context: ToolContext) -> dict:
@@ -81,7 +81,7 @@ credentials, and nothing is exposed on the network.
 
 An existing MCP SDK server can be attached as is:
 `upsert(key, { mcp: await fromMcpServer(server) })`, from
-`@camelai/agent-runtime/mcp`.
+`@camelai/run/mcp`.
 
 ## Served tools
 
@@ -92,7 +92,7 @@ agent it is for, whom the agent acts for, and who is acting.
 
 <CodeGroup>
 ```ts TypeScript
-import { serveTools } from "@camelai/agent-runtime/server";
+import { serveTools } from "@camelai/run/server";
 
 // A fetch handler: Cloudflare Workers, Bun and Deno serve it as is.
 // tenant: your tenant's id, from GET /v1/me or `await agents.runtime.me()`.
@@ -102,8 +102,8 @@ export default {
 ```
 
 ```python Python
-# pip install "camelai-agent-runtime[server]"
-from camelai_agent_runtime import serve_tools
+# pip install "camelai-run[server]"
+from camelai_run import serve_tools
 
 # An ASGI app: run it with uvicorn, or mount it in FastAPI.
 app = serve_tools([refund], runtime="https://agents.camelai.dev", tenant="acme")
@@ -136,7 +136,7 @@ tenant, the audience (your server's URL) and the expiry.
 
 - **On Node,** wrap the handler:
   `createServer(nodeListener(handler, { origin: "https://tools.example.com" }))`,
-  with `nodeListener` from `@camelai/agent-runtime/node`. Set `origin` to your
+  with `nodeListener` from `@camelai/run/node`. Set `origin` to your
   public URL behind a proxy that ends TLS. `trustProxy: true` reads
   `X-Forwarded-*` instead; only use it where the proxy overwrites those headers.
 - **In Python,** behind a proxy, run uvicorn with `--proxy-headers`, or pass
@@ -144,7 +144,7 @@ tenant, the audience (your server's URL) and the expiry.
 - **Built with the MCP SDK** or Cloudflare's `createMcpHandler`? Verify with
   `runtimeAuth(request, { runtime, tenant })` and read `runtimeIdentity(extra)`
   in a handler.
-- **In tests,** `testRuntime()` (`@camelai/agent-runtime/testing`, Python
+- **In tests,** `testRuntime()` (`@camelai/run/testing`, Python
   `TestRuntime()`) signs tokens with its own key:
 
   ```ts

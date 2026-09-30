@@ -39,7 +39,7 @@ Python: `await agents.runtime.browser_token(agent.id, ttl_seconds=900)`. REST:
 ## 2. Watch from the browser
 
 ```ts
-import { watchAgent } from "@camelai/agent-runtime/watch";
+import { watchAgent } from "@camelai/run/watch";
 
 const mint = () => fetch(`/api/threads/${id}/token`, { method: "POST" }).then(r => r.json());
 const { token, expiresAt, agentId, url } = await mint();
@@ -53,7 +53,7 @@ const watcher = watchAgent({
 // Later: watcher.loadOlder() on scroll-up; watcher.close() when the view goes away.
 ```
 
-`@camelai/agent-runtime/watch` has no dependencies and no Node APIs, and bundles
+`@camelai/run/watch` has no dependencies and no Node APIs, and bundles
 to under 30 KB. `state` is:
 
 | Field | |

@@ -10,7 +10,7 @@ and approvals are answered in place. Your API key stays on your server.
 ## Start a new app
 
 ```bash
-npm create @camelai/agent-app my-app -- --api-key $CAMELAI_API_KEY
+npm create @camelai/run-app my-app -- --api-key $CAMELAI_API_KEY
 cd my-app && npm run dev
 ```
 
@@ -27,7 +27,7 @@ Pass `--base-url` to point it at a self-hosted runtime.
 ## Add it to an app you have
 
 ```bash
-npm install @camelai/agent-runtime @camelai/agent-runtime-react
+npm install @camelai/run @camelai/run-react
 ```
 
 <Steps>
@@ -37,7 +37,7 @@ npm install @camelai/agent-runtime @camelai/agent-runtime-react
     their agent, and sends their messages and answers.
 
     ```ts app/api/agent/route.ts
-    import { createAgentHandler } from "@camelai/agent-runtime/server";
+    import { createAgentHandler } from "@camelai/run/server";
 
     export const POST = createAgentHandler({
       // Reads CAMELAI_API_KEY from the environment, or pass apiKey.
@@ -62,15 +62,15 @@ npm install @camelai/agent-runtime @camelai/agent-runtime-react
     export default { fetch: handler };
 
     // Express or node:http, mounted before any body parser for this route
-    import { nodeListener } from "@camelai/agent-runtime/node";
+    import { nodeListener } from "@camelai/run/node";
     app.post("/api/agent", nodeListener(handler));
     ```
   </Step>
   <Step title="Add the chat">
     ```tsx
     "use client";
-    import { AgentChat } from "@camelai/agent-runtime-react/ui";
-    import "@camelai/agent-runtime-react/styles.css";
+    import { AgentChat } from "@camelai/run-react/ui";
+    import "@camelai/run-react/styles.css";
 
     export default function Support() {
       return <AgentChat endpoint="/api/agent" suggestions={["Where is my order?"]} />;
@@ -132,14 +132,14 @@ npm install @camelai/agent-runtime @camelai/agent-runtime-react
 
     Theme it with CSS variables on `.agent-chat`, such as `--agent-accent`,
     `--agent-radius`, `--agent-font` and `--agent-max-width`. With shadcn/ui,
-    also import `@camelai/agent-runtime-react/shadcn.css` to use your theme's
+    also import `@camelai/run-react/shadcn.css` to use your theme's
     tokens.
   </Tab>
   <Tab title="Hooks">
     Build your own UI on the same state:
 
     ```tsx
-    import { AgentProvider, useMessages, useSend, useAgentStatus, useInputs } from "@camelai/agent-runtime-react";
+    import { AgentProvider, useMessages, useSend, useAgentStatus, useInputs } from "@camelai/run-react";
 
     <AgentProvider endpoint="/api/agent">
       <MyChat />
@@ -155,7 +155,7 @@ npm install @camelai/agent-runtime @camelai/agent-runtime-react
     ```
 
     Parts are `text`, `reasoning`, `tool` and `file`. Without React, the same
-    store is `createAgentChat` from `@camelai/agent-runtime/chat`, and Vue,
+    store is `createAgentChat` from `@camelai/run/chat`, and Vue,
     Svelte and Solid have their own bindings.
   </Tab>
   <Tab title="shadcn">
@@ -172,7 +172,7 @@ npm install @camelai/agent-runtime @camelai/agent-runtime-react
     ```tsx
     import { useChat } from "@ai-sdk/react";
     import { lastAssistantMessageIsCompleteWithApprovalResponses } from "ai";
-    import { AgentRuntimeChatTransport } from "@camelai/agent-runtime/ai-sdk";
+    import { AgentRuntimeChatTransport } from "@camelai/run/ai-sdk";
 
     const transport = useMemo(() => new AgentRuntimeChatTransport({ endpoint: "/api/agent" }), []);
     const { messages, setMessages, sendMessage, addToolApprovalResponse, stop } = useChat({
@@ -195,7 +195,7 @@ components in the browser:
 
 <CodeGroup>
 ```ts route.ts
-import { schema, tool } from "@camelai/agent-runtime";
+import { schema, tool } from "@camelai/run";
 
 agent: {
   tools: {

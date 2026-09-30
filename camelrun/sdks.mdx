@@ -5,25 +5,25 @@ description: 'The TypeScript and Python SDKs: Agents, upsert, run, stream, tools
 
 <CodeGroup>
 ```bash TypeScript
-npm install @camelai/agent-runtime   # Node 22+, Bun, Deno, Cloudflare Workers
+npm install @camelai/run   # Node 22+, Bun, Deno, Cloudflare Workers
 ```
 
 ```bash Python
-pip install camelai-agent-runtime    # Python 3.11+
-pip install "camelai-agent-runtime[server]"   # adds serve_tools
+pip install camelai-run    # Python 3.11+
+pip install "camelai-run[server]"   # adds serve_tools
 ```
 </CodeGroup>
 
 | TypeScript entry | |
 | --- | --- |
-| `@camelai/agent-runtime` | Everything portable: `Agents`, `tool`, `schema`, the lower-level `AgentRuntime` and `AgentClient`, and the types |
-| `@camelai/agent-runtime/node` | The same for Node and Bun, plus local file paths as attachments and `nodeListener` |
-| `@camelai/agent-runtime/server` | `serveTools`, `verifyRuntimeToken`, `runtimeAuth`, `runtimeIdentity`, `createAgentHandler` |
-| `@camelai/agent-runtime/watch` | `watchAgent`, for reading an agent from a browser |
-| `@camelai/agent-runtime/chat` | `createAgentChat`, the framework-free chat store |
-| `@camelai/agent-runtime/ai-sdk` | `AgentRuntimeChatTransport`, for the AI SDK's `useChat` |
-| `@camelai/agent-runtime/mcp` | `fromMcpServer`, for attaching an MCP SDK server |
-| `@camelai/agent-runtime/testing` | `testRuntime`, for signing identity tokens in tests |
+| `@camelai/run` | Everything portable: `Agents`, `tool`, `schema`, the lower-level `AgentRuntime` and `AgentClient`, and the types |
+| `@camelai/run/node` | The same for Node and Bun, plus local file paths as attachments and `nodeListener` |
+| `@camelai/run/server` | `serveTools`, `verifyRuntimeToken`, `runtimeAuth`, `runtimeIdentity`, `createAgentHandler` |
+| `@camelai/run/watch` | `watchAgent`, for reading an agent from a browser |
+| `@camelai/run/chat` | `createAgentChat`, the framework-free chat store |
+| `@camelai/run/ai-sdk` | `AgentRuntimeChatTransport`, for the AI SDK's `useChat` |
+| `@camelai/run/mcp` | `fromMcpServer`, for attaching an MCP SDK server |
+| `@camelai/run/testing` | `testRuntime`, for signing identity tokens in tests |
 
 ## Agents
 
@@ -161,7 +161,7 @@ Both examples read `CAMELAI_API_KEY`:
 <AccordionGroup>
   <Accordion title="A tool that needs approval">
     ```ts
-    import { Agents, schema, tool } from "@camelai/agent-runtime";
+    import { Agents, schema, tool } from "@camelai/run";
 
     const agents = new Agents();
     const agent = await agents.upsert("approval-example", {
@@ -189,7 +189,7 @@ Both examples read `CAMELAI_API_KEY`:
   </Accordion>
   <Accordion title="Files in and out">
     ```ts
-    import { Agents } from "@camelai/agent-runtime/node";
+    import { Agents } from "@camelai/run/node";
 
     const agents = new Agents();
     const agent = await agents.upsert("reporter", {

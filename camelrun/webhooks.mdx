@@ -55,7 +55,7 @@ Standard Webhooks library verifies them:
 
 ```ts
 import { Webhook } from "standardwebhooks";
-import type { WebhookEvent } from "@camelai/agent-runtime";
+import type { WebhookEvent } from "@camelai/run";
 
 const event = new Webhook(process.env.WEBHOOK_SECRET!.replace(/^whsec_/, "")).verify(body, headers) as WebhookEvent;
 ```

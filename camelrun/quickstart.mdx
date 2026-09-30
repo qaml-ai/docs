@@ -27,19 +27,19 @@ history and its files. Your tools stay in your code, with your credentials.
     <CodeGroup>
     ```bash TypeScript
     # Node 22 or later, or Bun
-    npm install @camelai/agent-runtime
+    npm install @camelai/run
     ```
 
     ```bash Python
     # Python 3.11 or later
-    pip install camelai-agent-runtime
+    pip install camelai-run
     ```
     </CodeGroup>
   </Step>
   <Step title="Run an agent">
     <CodeGroup>
     ```ts quickstart.ts
-    import { Agents, schema, tool } from "@camelai/agent-runtime";
+    import { Agents, schema, tool } from "@camelai/run";
 
     const agents = new Agents(); // reads CAMELAI_API_KEY
 
@@ -65,7 +65,7 @@ history and its files. Your tools stay in your code, with your credentials.
 
     ```python quickstart.py
     import asyncio
-    from camelai_agent_runtime import Agents, tool
+    from camelai_run import Agents, tool
 
     @tool
     def weather(city: str) -> dict:
