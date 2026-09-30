@@ -4,13 +4,6 @@ sidebarTitle: 'Self-hosting'
 description: 'Run the camelRun runtime on your own host with Docker Compose and Postgres'
 ---
 
-<Warning>
-  The runtime's source repository and container image aren't publicly available
-  yet. To self-host camelRun now, contact us through
-  [camelai.com](https://camelai.com). This page describes what a deployment
-  looks like.
-</Warning>
-
 camelRun runs on any host with Docker: one container, and Postgres. Nothing in
 it needs AWS. Your application talks to it the same way it talks to
 agents.camelai.dev: point the SDKs at it with `CAMELAI_BASE_URL` (or `url`), and
@@ -18,7 +11,7 @@ the CLI with `CAMELAI_URL`.
 
 ## Licensing
 
-The runtime is licensed under the GNU AGPL-3.0. The SDKs, frontend packages,
+The runtime is licensed under the GNU AGPL-3.0 ([LICENSE](https://github.com/qaml-ai/agent-runtime/blob/main/LICENSE)). The SDKs, frontend packages,
 CLI and examples are MIT, so the code you write against camelRun can use them in
 any application. If the AGPL-3.0 doesn't work for your organization, commercial
 licenses for the runtime are available: contact us through
@@ -36,19 +29,23 @@ The runtime doesn't need to be public. Your application can reach it on a
 private network, and browsers through your application (see
 [Networking](#networking)).
 
-The container needs no extra privileges: no `--privileged`, no added
-capabilities, no Docker socket. It runs each sandbox process for model-written
+The image is `ghcr.io/qaml-ai/agent-runtime:<version>` (for example `0.1.0`,
+or `latest`), built for `linux/amd64` and `linux/arm64`. The container needs
+no extra privileges: no `--privileged`, no added capabilities, no Docker socket. It runs each sandbox process for model-written
 code as its own user under a seccomp filter. A seccomp or AppArmor profile
 stricter than Docker's default can stop that, and the runtime then refuses to
 start rather than run code unsandboxed.
 
 ## Start it
 
-The deployment ships a Compose file and an example environment:
+[`deploy/selfhost/`](https://github.com/qaml-ai/agent-runtime/tree/main/deploy/selfhost)
+in the repository has a Compose file and an example environment:
 
 <Steps>
   <Step title="Configure">
     ```bash
+    git clone https://github.com/qaml-ai/agent-runtime
+    cd agent-runtime/deploy/selfhost
     cp .env.example .env    # fill it in; generate secrets with: openssl rand -hex 32
     ```
 
@@ -72,8 +69,10 @@ The deployment ships a Compose file and an example environment:
   </Step>
 </Steps>
 
-Upgrade by changing `AGENT_RUNTIME_IMAGE` to the new version and running `docker compose up -d` again.
-The new container applies database migrations as it starts. On
+The Compose file runs `ghcr.io/qaml-ai/agent-runtime:latest` unless you set
+`AGENT_RUNTIME_IMAGE`. Pin a version in production, for example
+`AGENT_RUNTIME_IMAGE=ghcr.io/qaml-ai/agent-runtime:0.1.0`, and upgrade by
+changing it and running `docker compose up -d` again. The new container applies database migrations as it starts. On
 `docker compose stop`, the runtime lets running turns finish (up to 100 seconds
 by default) before it exits.
 
@@ -86,7 +85,8 @@ For S3 or a service that speaks it, set `AGENT_STORAGE=s3`, `AGENT_S3_BUCKET`,
 `AWS_REGION` and credentials, and for anything but AWS, `AGENT_S3_ENDPOINT` (and
 `AGENT_S3_FORCE_PATH_STYLE=true` if the service wants path-style requests). The
 service must support conditional writes (`If-None-Match: *`). AWS S3,
-Cloudflare R2, SeaweedFS and RustFS do.
+Cloudflare R2, SeaweedFS and RustFS do. `docker compose --profile s3 up -d` runs
+SeaweedFS alongside, with the bucket made for you.
 
 ## Networking
 
