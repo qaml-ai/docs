@@ -114,6 +114,7 @@
               "camelrun/custom-models",
               "camelrun/definitions",
               "camelrun/channels",
+              "camelrun/mcp-server",
               "camelrun/production"
             ]
           },
