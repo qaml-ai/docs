@@ -92,7 +92,7 @@ npm install @camelai/run @camelai/run-react
 | `allowedOrigins` | Other origins whose pages may call the route, with CORS |
 | `proxy` | `true`: browsers also read their agent through this route and only ever talk to your origin. See [below](#read-through-your-route) |
 | `linkAnyMountedPath` | `true`: users may download any file in the agent's mounts. By default, only files the agent presented or wrote to its own workspace |
-| `apiKey`, `url` | Default `CAMELAI_API_KEY`, and `CAMELAI_BASE_URL` or `https://agents.camelai.dev` |
+| `apiKey`, `url` | Default `CAMELAI_API_KEY`, and `CAMELAI_BASE_URL` or `https://run.camelai.com` |
 
 ## How it stays secure
 
@@ -162,8 +162,8 @@ npm install @camelai/run @camelai/run-react
     Copy the chat into your project, in your theme, and own the code:
 
     ```bash
-    npx shadcn@latest add https://agents.camelai.dev/r/agent-chat.json
-    npx shadcn@latest add https://agents.camelai.dev/r/agent-route.json   # the Next.js route
+    npx shadcn@latest add https://run.camelai.com/r/agent-chat.json
+    npx shadcn@latest add https://run.camelai.com/r/agent-route.json   # the Next.js route
     ```
   </Tab>
   <Tab title="AI SDK">

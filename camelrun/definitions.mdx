@@ -72,7 +72,7 @@ only new agents get the new revision by default.
 To move live agents too, apply the change to all of them:
 
 ```bash
-curl -X PATCH https://agents.camelai.dev/v1/definitions/def_... \
+curl -X PATCH https://run.camelai.com/v1/definitions/def_... \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"systemPrompt": "You answer support tickets. Be brief.", "apply": "all"}'
 ```
@@ -92,7 +92,7 @@ uses can't be deleted.
 or `modelHeaders` without touching its definition or history:
 
 ```bash
-curl -X PATCH https://agents.camelai.dev/v1/agents/client_.../configuration \
+curl -X PATCH https://run.camelai.com/v1/agents/client_.../configuration \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"requestId": "model-change-1", "model": "openrouter/openai/gpt-6-luna"}'
 ```

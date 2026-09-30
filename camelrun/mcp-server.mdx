@@ -4,7 +4,7 @@ description: 'Connect Claude, Cursor or any MCP client to one of your agents and
 ---
 
 Every agent is also an MCP server, at
-`https://agents.camelai.dev/v1/agents/<agent id>/mcp` (Streamable HTTP).
+`https://run.camelai.com/v1/agents/<agent id>/mcp` (Streamable HTTP).
 Connect Claude, Cursor or any MCP client to it, and the model there can talk to
 your agent. The server has one tool, `message`, which sends the agent a message
 and returns its reply. The agent's own tools stay its own.
@@ -12,9 +12,9 @@ and returns its reply. The agent's own tools stay its own.
 <Tabs>
   <Tab title="Claude Code">
     ```bash
-    claude mcp add --transport http support https://agents.camelai.dev/v1/agents/client_.../mcp
+    claude mcp add --transport http support https://run.camelai.com/v1/agents/client_.../mcp
     # Then run /mcp in Claude Code to sign in. Or skip signing in with a token:
-    claude mcp add --transport http support https://agents.camelai.dev/v1/agents/client_.../mcp --header "Authorization: Bearer art_..."
+    claude mcp add --transport http support https://run.camelai.com/v1/agents/client_.../mcp --header "Authorization: Bearer art_..."
     ```
   </Tab>
   <Tab title="Claude">
@@ -23,7 +23,7 @@ and returns its reply. The agent's own tools stay its own.
   </Tab>
   <Tab title="Cursor and others">
     ```json
-    { "mcpServers": { "support": { "url": "https://agents.camelai.dev/v1/agents/client_.../mcp" } } }
+    { "mcpServers": { "support": { "url": "https://run.camelai.com/v1/agents/client_.../mcp" } } }
     ```
   </Tab>
 </Tabs>

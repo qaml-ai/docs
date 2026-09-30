@@ -8,7 +8,7 @@ person for input, and what each model response cost, so you can react without
 holding a connection open. Register an endpoint with the event types it wants:
 
 ```bash
-curl https://agents.camelai.dev/v1/webhooks \
+curl https://run.camelai.com/v1/webhooks \
   -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
   -d '{"url": "https://example.com/hooks/agents", "events": ["run.completed", "run.failed", "input.requested"], "description": "prod"}'
 ```

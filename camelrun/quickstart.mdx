@@ -9,7 +9,7 @@ history and its files. Your tools stay in your code, with your credentials.
 
 <Steps>
   <Step title="Get an API key">
-    Sign in to the [console](https://agents.camelai.dev/console), then:
+    Sign in to the [console](https://run.camelai.com/console), then:
 
     - Under **Models & keys**, check that a model is marked *Usable*. New
       accounts start with credit for the platform's models, or you can add your
@@ -100,7 +100,7 @@ Without an SDK, an agent can't call tools in your process, but everything else
 works over REST. Create an agent with a first prompt, then poll the run:
 
 ```bash
-BASE=https://agents.camelai.dev; AUTH="Authorization: Bearer $CAMELAI_API_KEY"
+BASE=https://run.camelai.com; AUTH="Authorization: Bearer $CAMELAI_API_KEY"
 
 # The Idempotency-Key is the agent's key: the same key is the same agent.
 CREATED=$(curl -s $BASE/v1/agents -H "$AUTH" -H "Content-Type: application/json" \

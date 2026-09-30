@@ -6,7 +6,7 @@ description: 'Deploy and manage agents from a terminal, CI, or a coding agent ov
 `camelrun` deploys and manages agents from a terminal, a script or CI. Coding
 agents such as Claude Code, Cursor and Codex get the same operations over MCP,
 so they can write an agent's manifest, deploy it, talk to the agent and read what
-it did. Use the hosted MCP server at `https://agents.camelai.dev/mcp` with
+it did. Use the hosted MCP server at `https://run.camelai.com/mcp` with
 nothing to install, or run `camelrun mcp` on your machine.
 
 ## Hosted MCP server
@@ -18,19 +18,19 @@ client, which then acts for your account until you revoke it.
 <Tabs>
   <Tab title="Claude Code">
     ```bash
-    claude mcp add --transport http camelrun https://agents.camelai.dev/mcp
+    claude mcp add --transport http camelrun https://run.camelai.com/mcp
     # Then run /mcp in Claude Code to sign in. Or skip signing in with a key:
-    claude mcp add --transport http camelrun https://agents.camelai.dev/mcp --header "Authorization: Bearer art_..."
+    claude mcp add --transport http camelrun https://run.camelai.com/mcp --header "Authorization: Bearer art_..."
     ```
   </Tab>
   <Tab title="Claude">
     In claude.ai or the desktop app, go to **Settings**, then **Connectors**,
     then **Add custom connector**, and enter
-    `https://agents.camelai.dev/mcp`.
+    `https://run.camelai.com/mcp`.
   </Tab>
   <Tab title="Cursor and others">
     ```json
-    { "mcpServers": { "camelrun": { "url": "https://agents.camelai.dev/mcp" } } }
+    { "mcpServers": { "camelrun": { "url": "https://run.camelai.com/mcp" } } }
     ```
   </Tab>
 </Tabs>
