@@ -9,3 +9,15 @@
   --primary-foreground: oklch(0.141 0.005 285.823);
   --ring: oklch(0.746 0.16 232.661);
 }
+
+/* Keep desktop navigation within the content area, above the site footer. */
+aside > .docs-sidebar-scroll {
+  position: sticky;
+}
+
+/* The footer covers the page behind it in both light and dark themes. */
+div:has(> main) + footer {
+  position: relative;
+  z-index: 1;
+  background-color: var(--background);
+}
