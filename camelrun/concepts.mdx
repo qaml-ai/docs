@@ -55,6 +55,7 @@ const run = await agent.run("Summarize ticket 123", { user: "alice" });
 | `inputs` | What it waits on, each with `answer()` |
 | `error` | `{code, message, uncertain?}` when it failed |
 | `toolErrors` (Python `tool_errors`) | Tool calls that didn't complete (timed out, connection lost, nobody serving the tools). The model was told and carried on |
+| `toolCalls` (Python `tool_calls`) | Every tool call the run made (the first 100), calls from `js_exec`'s code included: `{tool, toolCallId, innerCallId?, ok, code?}`. Arguments and results are in history |
 | `files` | Files the run wrote |
 | `usage` | What its model calls used |
 

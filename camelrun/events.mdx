@@ -102,13 +102,18 @@ A prompt's `outcome.result`, from a `response` frame or
 | `files` | Files the run wrote (at most 100) |
 | `presented` | Files the run presented (at most 20) |
 | `toolErrors` | Tool calls that didn't complete. See [Tool errors](/camelrun/errors#tool-errors) |
+| `toolCalls` | Every tool call the run made, in order, the first 100: `{tool, toolCallId?, innerCallId?, ok, code?}`. A call from `js_exec`'s code has js_exec's `toolCallId` and its own `innerCallId`; `js_exec` itself isn't listed. When `ok` is false, `code` is a `toolErrors` code, `tool_error` (the tool answered with an error), `input_required` (it waits on a person; the run that resumes it lists it again) or `aborted`. Arguments and results are left out: read them from history by `toolCallId` |
 | `sourceErrors` | Tool sources (MCP servers, OpenAPI specs) that couldn't be listed |
 
 `outcome.error` without a `result` means camelRun couldn't carry the request
 out, and `uncertain: true` means a restart cut it short so nobody can tell
 whether its work took effect. The request record also puts `error` and `stopped`
 on top, so a failed run reads as failed without looking inside `result`.
+`GET /v1/agents/{id}/requests/{requestId}?wait=25` waits for a running request
+(up to 25 seconds): it answers as soon as the request settles, or when the wait
+ends with it still `running`, so you can ask again.
 
 The SDKs turn this into a typed `Run`: `status` (`completed`, `input_required`
-or `failed`), `text`, `inputs`, `error`, `files`, `toolErrors` and
-`sourceErrors`.
+or `failed`), `text`, `inputs`, `error`, `files`, `toolErrors`, `toolCalls` and
+`sourceErrors`. A browser token never sees a run's result, `toolCalls`
+included: only whether and why it stopped.
