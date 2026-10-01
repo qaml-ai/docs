@@ -52,17 +52,19 @@ makes the prompt idempotent, so sending the same one again returns the same run.
 Other fields are `files`, `metadata`, `whileRunning` (`queue` or `steer`),
 `spendLimit` and `allowDisconnected`.
 
-Poll the request until `state` is `completed`:
+Read the request with `?wait=25`: it answers as soon as the run ends, or after
+25 seconds with `state: "running"`, and you ask again:
 
 ```bash
-curl https://run.camelai.com/v1/agents/$AGENT/requests/msg-8812 \
+curl "https://run.camelai.com/v1/agents/$AGENT/requests/msg-8812?wait=25" \
   -H "Authorization: Bearer $CAMELAI_API_KEY"
 ```
 
 ```json
 {"id": "msg-8812", "method": "prompt", "state": "completed",
  "outcome": {"result": {"reply": "Tickets 4411 and 4417...", "replyIndex": 5, "messages": 6,
-                        "error": null, "files": [], "toolErrors": []}}}
+                        "error": null, "files": [],
+                        "toolCalls": [{"tool": "helpdesk__list_tickets", "toolCallId": "call_1", "ok": true}]}}}
 ```
 
 An ended request with `error` set failed; `stopped: "input_required"` means it
@@ -82,7 +84,7 @@ and `run.failed`.
     | `DELETE /v1/agents/{id}` | Stop an agent and delete its history and files |
     | `PATCH /v1/agents/{id}/configuration` | Change model, prompt, thinking level, key scope, spend limit or headers between turns |
     | `POST /v1/agents/{id}/prompt` | Send a message |
-    | `GET /v1/agents/{id}/requests/{requestId}` | A request's state and outcome |
+    | `GET /v1/agents/{id}/requests/{requestId}` | A request's state and outcome; `?wait=<seconds>` (at most 25) waits for it to settle |
     | `POST /v1/agents/{id}/abort` | Stop the running turn |
     | `GET /v1/agents/{id}/state` | Every request's state, and the stream's cursor |
     | `GET /v1/agents/{id}/history` | Messages, in pages of whole turns (`?limit=`, `?before=`) |

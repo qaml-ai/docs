@@ -181,8 +181,9 @@ CREATED=$(curl -s $BASE/v1/agents -H "$AUTH" -H "Content-Type: application/json"
        "prompt": {"text": "Write a haiku about durable agents."}}')
 AGENT=$(echo "$CREATED" | jq -r .id); REQ=$(echo "$CREATED" | jq -r .prompt.id)
 
-until curl -s $BASE/v1/agents/$AGENT/requests/$REQ -H "$AUTH" | jq -e '.state == "completed"' > /dev/null; do sleep 1; done
-curl -s $BASE/v1/agents/$AGENT/requests/$REQ -H "$AUTH" | jq -r '.outcome.result.reply // .error'
+# ?wait=25 answers as soon as the run ends (or after 25 s, still running: ask again).
+until RUN=$(curl -s "$BASE/v1/agents/$AGENT/requests/$REQ?wait=25" -H "$AUTH") && jq -e '.state == "completed"' <<< "$RUN" > /dev/null; do :; done
+jq -r '.outcome.result.reply // .error' <<< "$RUN"
 ```
 
 Send later messages with `POST /v1/agents/{id}/prompt {"text": "..."}`, which
@@ -228,8 +229,8 @@ resolves with it.
   HTTP instead, which also keeps them working through deploys; see [Several
   processes, workers and deploys](/camelrun/tools#several-processes-workers-and-deploys).
 - `run()` resolved with a `Run`: `status` (`completed`, `input_required` or
-  `failed`), `text`, `inputs`, `error` and `toolErrors` (Python
-  `tool_errors`). A failed run throws a `RunError` unless you pass
+  `failed`), `text`, `inputs`, `error`, `toolErrors` and `toolCalls` (Python
+  `tool_errors`, `tool_calls`). A failed run throws a `RunError` unless you pass
   `throwOnError: false` (`throw_on_error=False`).
 - `agents.close()` let the process exit. The agent stays in camelRun.
 

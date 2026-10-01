@@ -68,6 +68,9 @@ in the repository has a Compose file and an example environment:
     ```bash
     curl -s localhost:8790/v1/me -H "Authorization: Bearer $AGENT_OPERATOR_TOKEN"
     ```
+
+    Agents can be made before any model key is set, but their runs fail until
+    one is: set `AGENT_TENANT_API_KEYS`, or `PUT /v1/providers/{provider}/key`.
   </Step>
 </Steps>
 
