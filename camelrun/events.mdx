@@ -94,9 +94,11 @@ A prompt's `outcome.result`, from a `response` frame or
 | Field | |
 | --- | --- |
 | `reply` | The final assistant message's text |
+| `output` | A prompt sent with `output`: the answer, which fits its schema. See [Structured output](/camelrun/structured-output) |
 | `replyIndex` | That message's index in the agent's history |
 | `messages` | How many messages the history holds after the run |
 | `error` | The model's error (a provider refusal after retries), or `null` |
+| `code` | A stable name for `error`, where there is one: `output_missing` (a structured run ended without its output) |
 | `stopped` | Why the run stopped early: `input_required` or `spend_limit` |
 | `inputs` | When `stopped` is `input_required`, the pending inputs |
 | `files` | Files the run wrote (at most 100) |
