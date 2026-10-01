@@ -3,17 +3,20 @@ title: 'CLI and MCP server'
 description: 'Deploy and manage agents from a terminal, CI, or a coding agent over MCP'
 ---
 
+[View as Markdown](https://camelai.com/docs/camelrun/cli.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
 `camelrun` deploys and manages agents from a terminal, a script or CI. Coding
 agents such as Claude Code, Cursor and Codex get the same operations over MCP,
 so they can write an agent's manifest, deploy it, talk to the agent and read what
 it did. Use the hosted MCP server at `https://run.camelai.com/mcp` with
 nothing to install, or run `camelrun mcp` on your machine.
 
-## Hosted MCP server
+## Connect your coding agent
 
-The hosted server speaks Streamable HTTP. Add it by URL and sign in when your
-client asks: the sign-in page (GitHub, or an API token) asks you to allow the
-client, which then acts for your account until you revoke it.
+The hosted MCP server needs no API key. Add it by URL and sign in when your
+client asks: the sign-in page (GitHub, Google, or an API token) asks you to
+allow the client, which then acts for your account until you revoke it. Signing
+in for the first time creates your account. The server speaks Streamable HTTP.
 
 <Tabs>
   <Tab title="Claude Code">
@@ -23,15 +26,28 @@ client, which then acts for your account until you revoke it.
     claude mcp add --transport http camelrun https://run.camelai.com/mcp --header "Authorization: Bearer art_..."
     ```
   </Tab>
+  <Tab title="Codex">
+    ```bash
+    codex mcp add camelrun --url https://run.camelai.com/mcp
+    codex mcp login camelrun
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=camelrun&config=eyJ1cmwiOiJodHRwczovL3J1bi5jYW1lbGFpLmNvbS9tY3AifQ==">Add camelRun to Cursor</a>,
+    or add it to `.cursor/mcp.json`:
+
+    ```json
+    { "mcpServers": { "camelrun": { "url": "https://run.camelai.com/mcp" } } }
+    ```
+  </Tab>
+  <Tab title="VS Code">
+    [Add camelRun to VS Code](https://vscode.dev/redirect/mcp/install?name=camelrun&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Frun.camelai.com%2Fmcp%22%7D),
+    then start the server and sign in when VS Code asks.
+  </Tab>
   <Tab title="Claude">
     In claude.ai or the desktop app, go to **Settings**, then **Connectors**,
     then **Add custom connector**, and enter
     `https://run.camelai.com/mcp`.
-  </Tab>
-  <Tab title="Cursor and others">
-    ```json
-    { "mcpServers": { "camelrun": { "url": "https://run.camelai.com/mcp" } } }
-    ```
   </Tab>
 </Tabs>
 
@@ -63,7 +79,6 @@ start from.
 ```yaml agent.yaml
 key: support                     # the same key is the same definition
 name: Support
-model: anthropic/claude-sonnet-5-5
 systemPromptFile: prompts/support.md
 builtins: [web_search, ask_user]
 mcpServers:

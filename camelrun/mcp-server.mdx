@@ -3,6 +3,8 @@ title: 'Agents as MCP servers'
 description: 'Connect Claude, Cursor or any MCP client to one of your agents and talk to it as a tool'
 ---
 
+[View as Markdown](https://camelai.com/docs/camelrun/mcp-server.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
 Every agent is also an MCP server, at
 `https://run.camelai.com/v1/agents/<agent id>/mcp` (Streamable HTTP).
 Connect Claude, Cursor or any MCP client to it, and the model there can talk to
@@ -76,7 +78,7 @@ new message instead sets the waiting inputs aside.
 Anyone who may prompt the agent: the agent's own token (the `token` it was
 created with), an API key of your account, or an OAuth sign-in. A `401` names the
 agent's protected-resource metadata, so clients sign in the same way as with the
-[hosted MCP server](/camelrun/cli#hosted-mcp-server). Other accounts' tokens get
+[hosted MCP server](/camelrun/cli#connect-your-coding-agent). Other accounts' tokens get
 a `404`.
 
 <Warning>

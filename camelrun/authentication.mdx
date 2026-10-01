@@ -3,6 +3,8 @@ title: 'Authentication'
 description: 'API keys, agent tokens, browser tokens and OAuth for coding agents'
 ---
 
+[View as Markdown](https://camelai.com/docs/camelrun/authentication.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
 Every request to `https://run.camelai.com` sends a token as
 `Authorization: Bearer <token>`. Which token depends on who is calling.
 
@@ -55,7 +57,7 @@ The hosted MCP server at `https://run.camelai.com/mcp` signs clients in with
 OAuth 2.1, as MCP's authorization spec describes. Access tokens last an hour,
 and refresh tokens last 30 days and rotate on each use. Connected apps appear in
 the console under **API tokens**, where you revoke them (or
-`DELETE /v1/oauth/grants/{id}`). See [CLI and MCP server](/camelrun/cli#hosted-mcp-server).
+`DELETE /v1/oauth/grants/{id}`). See [CLI and MCP server](/camelrun/cli#connect-your-coding-agent).
 
 ## Identity tokens for your servers
 
