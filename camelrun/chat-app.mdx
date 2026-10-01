@@ -3,6 +3,8 @@ title: 'Build a chat app'
 description: 'Put a streaming chat with each user''s agent in your app: one server route and one component'
 ---
 
+[View as Markdown](https://camelai.com/docs/camelrun/chat-app.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
 Your users talk to their own agents in your app. Replies stream in as the model
 writes them, tool calls show as cards (or as your own components), and questions
 and approvals are answered in place. Your API key stays on your server.
@@ -47,7 +49,6 @@ npm install @camelai/run @camelai/run-react
       },
       agent: {
         instructions: "You help customers with their orders.",
-        model: "anthropic/claude-sonnet-5-5",
       },
     });
     ```

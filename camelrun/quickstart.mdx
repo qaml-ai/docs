@@ -3,18 +3,67 @@ title: 'Quickstart'
 description: 'An agent that runs in camelRun, calls a tool in your own process, and answers you'
 ---
 
+[View as Markdown](https://camelai.com/docs/camelrun/quickstart.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+<Tip>
+**Set up with your coding agent.** Paste this into Claude Code, Codex, Cursor
+or any coding agent. It installs the SDK, connects your account without pasting
+keys into chat, and runs your first agent.
+
+```text
+Read https://run.camelai.com/SKILL.md and set up camelRun in this project.
+```
+</Tip>
+
 In five minutes you will have an agent that runs in camelRun, calls a tool in
 your own process, and answers you. camelRun keeps the model loop, the agent's
 history and its files. Your tools stay in your code, with your credentials.
 
+## Credit
+
+Signing in to the [console](https://run.camelai.com/console) with GitHub or
+Google creates your account. GitHub accounts older than 30 days start with free
+credit. Everyone else verifies a card on the
+[Billing](https://run.camelai.com/console/billing) page to unlock starting
+credit: the card is saved, not charged. Runs use credit even when you bring
+your own provider key.
+
+## Try it from your coding agent (no key)
+
+Connect the hosted MCP server and sign in. There is no key to create or copy.
+
+<Steps>
+  <Step title="Add the camelRun MCP server">
+    <CodeGroup>
+    ```bash Claude Code
+    claude mcp add --transport http camelrun https://run.camelai.com/mcp
+    # then run /mcp in Claude Code and sign in with GitHub or Google
+    ```
+
+    ```bash Codex
+    codex mcp add camelrun --url https://run.camelai.com/mcp
+    codex mcp login camelrun
+    ```
+    </CodeGroup>
+
+    Cursor, VS Code and Claude: see [Connect your coding agent](/camelrun/cli#connect-your-coding-agent).
+  </Step>
+  <Step title="Ask for an agent">
+    ```text
+    Use the camelrun MCP server to create my first camelRun agent: ask me what it should do, create it, run it once, and show me its reply.
+    ```
+
+    Your agent appears under **Agents** in the
+    [console](https://run.camelai.com/console).
+  </Step>
+</Steps>
+
+## Build it into your app
+
 <Steps>
   <Step title="Get an API key">
-    Sign in to the [console](https://run.camelai.com/console), then:
-
-    - Under **Models & keys**, check that a model is marked *Usable*. New
-      accounts start with credit for the platform's models, or you can add your
-      own provider key.
-    - Under **API tokens**, create a token and export it:
+    Sign in to the [console](https://run.camelai.com/console). Under
+    **API tokens**, create a token and export it:
 
     ```bash
     export CAMELAI_API_KEY=art_...
@@ -52,7 +101,6 @@ history and its files. Your tools stay in your code, with your credentials.
 
     // The same key is the same agent, with its history, every time you run this.
     const agent = await agents.upsert("quickstart", {
-      model: "anthropic/claude-sonnet-5-5",
       instructions: "You are a concise assistant.",
       tools: { weather },
     });
@@ -76,7 +124,6 @@ history and its files. Your tools stay in your code, with your credentials.
         async with Agents() as agents:  # reads CAMELAI_API_KEY
             agent = await agents.upsert(
                 "quickstart",
-                model="anthropic/claude-sonnet-5-5",
                 instructions="You are a concise assistant.",
                 tools=[weather],
             )
@@ -91,8 +138,27 @@ history and its files. Your tools stay in your code, with your credentials.
   </Step>
 </Steps>
 
-If you see `No ... API key configured`, pick a model your account can use: the
-console's **Models & keys** page, or `GET /v1/models?available=true`.
+The examples name no model, so the agent gets your account's default: a model
+your account can use.
+
+### Choose a model (optional)
+
+List the models your account can use, then name one:
+
+```bash
+npx -y @camelai/camelrun models --available
+```
+
+```ts
+const agent = await agents.upsert("quickstart", {
+  model: "<a model from the list>", // e.g. provider/model-id
+  instructions: "You are a concise assistant.",
+  tools: { weather },
+});
+```
+
+If a run fails with `No ... API key configured`, the agent names a model your
+account has no key for: pick one from the list, or leave `model` out.
 
 ## With curl
 
@@ -105,7 +171,7 @@ BASE=https://run.camelai.com; AUTH="Authorization: Bearer $CAMELAI_API_KEY"
 # The Idempotency-Key is the agent's key: the same key is the same agent.
 CREATED=$(curl -s $BASE/v1/agents -H "$AUTH" -H "Content-Type: application/json" \
   -H "Idempotency-Key: quickstart-curl" \
-  -d '{"model": "anthropic/claude-sonnet-5-5", "systemPrompt": "You are a concise assistant.",
+  -d '{"systemPrompt": "You are a concise assistant.",
        "prompt": {"text": "Write a haiku about durable agents."}}')
 AGENT=$(echo "$CREATED" | jq -r .id); REQ=$(echo "$CREATED" | jq -r .prompt.id)
 

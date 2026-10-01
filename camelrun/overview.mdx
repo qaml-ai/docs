@@ -4,6 +4,18 @@ sidebarTitle: 'Overview'
 description: 'A hosted runtime for durable agents. Your tools stay in your code; camelRun runs the model loop, keeps history and files, and wakes agents when there is work.'
 ---
 
+[View as Markdown](https://camelai.com/docs/camelrun/overview.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+<Tip>
+**Set up with your coding agent.** Paste this into Claude Code, Codex, Cursor
+or any coding agent. It installs the SDK, connects your account without pasting
+keys into chat, and runs your first agent.
+
+```text
+Read https://run.camelai.com/SKILL.md and set up camelRun in this project.
+```
+</Tip>
+
 camelRun is camelAI's hosted agent runtime. You define an agent's tools in your
 own code with the TypeScript or Python SDK, or serve them over HTTP. camelRun
 runs the model loop, keeps each agent's history and files, compacts long
@@ -15,7 +27,6 @@ import { Agents } from "@camelai/run";
 
 const agents = new Agents(); // reads CAMELAI_API_KEY
 const agent = await agents.upsert("support-triage", {
-  model: "anthropic/claude-sonnet-5-5",
   instructions: "Be concise.",
 });
 console.log((await agent.run("Which tickets look urgent?")).text);
@@ -29,6 +40,47 @@ await agents.close();
 | **OpenAPI spec** | [`/v1/openapi.json`](https://run.camelai.com/v1/openapi.json) |
 | **Docs for agents** | [`/llms.txt`](https://run.camelai.com/llms.txt) |
 | **Source** | [github.com/qaml-ai/run](https://github.com/qaml-ai/run) |
+
+## Connect your coding agent
+
+The hosted MCP server at `https://run.camelai.com/mcp` needs no API key: sign
+in with GitHub or Google when your client asks, which creates your account.
+GitHub accounts older than 30 days start with free credit; everyone else
+verifies a card on the [Billing](https://run.camelai.com/console/billing) page
+(no charge).
+
+<Tabs>
+  <Tab title="Claude Code">
+    ```bash
+    claude mcp add --transport http camelrun https://run.camelai.com/mcp
+    # Then run /mcp in Claude Code to sign in. Or skip signing in with a key:
+    claude mcp add --transport http camelrun https://run.camelai.com/mcp --header "Authorization: Bearer art_..."
+    ```
+  </Tab>
+  <Tab title="Codex">
+    ```bash
+    codex mcp add camelrun --url https://run.camelai.com/mcp
+    codex mcp login camelrun
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=camelrun&config=eyJ1cmwiOiJodHRwczovL3J1bi5jYW1lbGFpLmNvbS9tY3AifQ==">Add camelRun to Cursor</a>,
+    or add it to `.cursor/mcp.json`:
+
+    ```json
+    { "mcpServers": { "camelrun": { "url": "https://run.camelai.com/mcp" } } }
+    ```
+  </Tab>
+  <Tab title="VS Code">
+    [Add camelRun to VS Code](https://vscode.dev/redirect/mcp/install?name=camelrun&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Frun.camelai.com%2Fmcp%22%7D),
+    then start the server and sign in when VS Code asks.
+  </Tab>
+  <Tab title="Claude">
+    In claude.ai or the desktop app, go to **Settings**, then **Connectors**,
+    then **Add custom connector**, and enter
+    `https://run.camelai.com/mcp`.
+  </Tab>
+</Tabs>
 
 ## What you get
 
