@@ -54,7 +54,7 @@ const run = await agent.run("Summarize ticket 123", { user: "alice" });
 | `text` | The final reply |
 | `inputs` | What it waits on, each with `answer()` |
 | `error` | `{code, message, uncertain?}` when it failed |
-| `toolErrors` | Tool calls that didn't complete (timed out, connection lost, nobody serving the tools). The model was told and carried on |
+| `toolErrors` (Python `tool_errors`) | Tool calls that didn't complete (timed out, connection lost, nobody serving the tools). The model was told and carried on |
 | `files` | Files the run wrote |
 | `usage` | What its model calls used |
 
@@ -84,13 +84,14 @@ Pick by where your code runs:
 
 | Your situation | Use | How |
 | --- | --- | --- |
-| A long-lived server or worker, and the tools touch its state | **Attached tools** | `tools` on `upsert`. The SDK holds a connection and camelRun calls your functions over it. One process serves an agent's tools at a time |
-| Serverless functions, several instances, or one backend serving many users' agents | **Served tools** | `serveTools(tools)` on an HTTPS endpoint of yours, named in a definition with `auth: { type: "runtime" }`. camelRun calls it with a signed token saying who each call is for |
+| A long-lived server or worker, and the tools touch its state | **Attached tools** | `tools` on `upsert`. The SDK holds a connection and camelRun calls your functions over it. One process serves an agent's tools at a time, and a call running when it restarts is lost |
+| Serverless functions, several instances, or one backend serving many users' agents | **Served tools** | `serveTools(tools)` on an HTTPS endpoint of yours, named in a definition with `auth: { type: "runtime" }`. camelRun calls it with a signed token saying who each call is for. Safe through your deploys and restarts |
 | A third-party API | **OpenAPI** or **MCP** sources in a definition | camelRun calls the API itself, with credentials it stores sealed |
 | Web search, fetching pages, scheduling, asking the user | **Built-ins** | `builtins: ["web_search", "web_fetch", "schedule", "ask_user"]` |
 
 The same `tool({...})` definitions work attached and served, so you can start
-attached and move to served without changing a tool. Every agent also has file
+attached and move to served without changing a tool (see [Several processes,
+workers and deploys](/camelrun/tools#several-processes-workers-and-deploys)). Every agent also has file
 tools over its [files](/camelrun/files), and `js_exec`, a sandbox where the
 model writes JavaScript that calls its tools. See [Tools](/camelrun/tools).
 

@@ -27,7 +27,8 @@ run = await agent.run(
 ```
 </CodeGroup>
 
-A file is bytes, a `Blob` or `File`, `{name, data, contentType?}`, a local path
+A file is bytes, a `Blob` or `File`, `{name, data, contentType?}` (Python
+`{"name", "data", "content_type"?}`), a local path
 (from `@camelai/run/node` in TypeScript, or a `str` or `Path` in
 Python), or `{path}` for a file already in the agent's mounts. The SDKs upload
 each file first, to `uploads/<run id>/<name>`, then send the message referring

@@ -65,13 +65,13 @@ const deleteApp = tool({
 
 ## Answering
 
-`input.answer(value, { from })` takes a plain value by the input's `kind`:
+`input.answer(value, { from })` (Python `answer(value, from_=)`) takes a plain value by the input's `kind`:
 
 | Kind | Value |
 | --- | --- |
 | `approval` | `true` to approve, `false` to decline |
 | `question` | The chosen option's label (or labels, or free text where allowed). For several questions, `{ "<question>": answer }` |
-| `form` | The fields, as an object |
+| `form` | The fields, as an object. A confirmation (`context.confirm`, a form without fields) takes `true` or `false` |
 | `url` | `true` once the person has done what the page asks |
 
 `input.decline()` declines any input. Answering the same way twice is safe; a

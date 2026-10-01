@@ -40,6 +40,11 @@ async with Agents(api_key, url=url) as agents:
 ```
 </CodeGroup>
 
+The Python SDK is async-only: every call is awaited inside `async def`. From
+synchronous code (a script, a Django view, a Celery task), run it with
+`asyncio.run(...)`. Its names are the TypeScript ones in snake_case
+(`throw_on_error`, `run.tool_errors`, `part.is_error`), as the tables below show.
+
 - `apiKey` defaults to `CAMELAI_API_KEY`, and `url` to `CAMELAI_BASE_URL`, else
   `https://run.camelai.com`.
 - `agents.close()` closes every agent's connection so the process can exit.
@@ -102,16 +107,17 @@ Run options for `run` and `stream`:
 
 ### `Run` and stream parts
 
-A `Run` is `{ id, status, text, inputs, error, usage, files, toolErrors, sourceErrors, raw }`.
-`status` is `completed`, `input_required` or `failed`. Each of `run.inputs` has
-`answer(value, { from })` and `decline({ from })`, which resolve with the
-resumed run.
+A `Run` is `{ id, status, text, inputs, error, usage, files, toolErrors, sourceErrors, raw }`
+(Python: `tool_errors`, `source_errors`). `status` is `completed`,
+`input_required` or `failed`. Each of `run.inputs` has `answer(value, { from })`
+and `decline({ from })` (Python: `answer(value, from_=)` and `decline(from_=)`),
+which resolve with the resumed run.
 
 | Part `type` | Fields |
 | --- | --- |
 | `text` | `text`: reply text as it's written |
 | `tool_call` | `id`, `name`, `arguments` |
-| `tool_result` | `id`, `name`, `output`, `isError` |
+| `tool_result` | `id`, `name`, `output`, `isError` (Python `is_error`) |
 | `input_required` | `input`, with `answer()` |
 | `done` | `run`, always last |
 
@@ -137,6 +143,16 @@ def my_tool(arg: str, context: ToolContext): ...
 | `signal` | (task cancellation) | Aborted when camelRun cancels the call |
 | `progress(message)` | `progress(message, progress=, total=)` | Report progress; restarts the deadline |
 | `confirm`, `ask`, `requireUrl` | `confirm`, `ask`, `require_url` | Ask the user. See [Human input](/camelrun/human-input) |
+
+With several processes (web workers, task queues, serverless), serve tools over
+HTTP: see [Several processes, workers and deploys](/camelrun/tools#several-processes-workers-and-deploys).
+
+## Errors
+
+`AgentError` has `status` (HTTP, or 0), `code` (a stable name where camelRun
+gives one), `requestId`, `uncertain` and `retryAfterMs` (Python `request_id`,
+and `retry_after` in seconds). `RunError` is an `AgentError` for a failed run,
+with `run`.
 
 ## The lower-level API
 
