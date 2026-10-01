@@ -22,9 +22,15 @@ in for the first time creates your account. The server speaks Streamable HTTP.
   <Tab title="Claude Code">
     ```bash
     claude mcp add --transport http camelrun https://run.camelai.com/mcp
-    # Then run /mcp in Claude Code to sign in. Or skip signing in with a key:
-    claude mcp add --transport http camelrun https://run.camelai.com/mcp --header "Authorization: Bearer art_..."
+    # Then run /mcp in Claude Code to sign in. Or skip signing in with a key from your environment:
+    claude mcp add --scope project --transport http camelrun https://run.camelai.com/mcp \
+      --header 'Authorization: Bearer ${CAMELAI_API_KEY}'
     ```
+
+    The single quotes keep `${CAMELAI_API_KEY}` as written: `--scope project`
+    saves it in the project's `.mcp.json`, and Claude Code reads the variable
+    from its environment each time it starts. The file is safe to commit; a key
+    is not.
   </Tab>
   <Tab title="Codex">
     ```bash
@@ -156,28 +162,48 @@ environment variables it names.
   <Tab title="Claude Code">
     ```bash
     claude mcp add camelrun -- npx -y @camelai/camelrun mcp
-    # or with a key of its own:
-    claude mcp add camelrun -e CAMELAI_API_KEY=art_... -- npx -y @camelai/camelrun mcp
     ```
-  </Tab>
-  <Tab title="Cursor and others">
-    ```json
+
+    It uses `CAMELAI_API_KEY` from the environment Claude Code starts it in, or
+    else your `camelrun login`. To name the key in the project's `.mcp.json`, as
+    a variable rather than its value:
+
+    ```json .mcp.json
     {
       "mcpServers": {
-        "camelrun": { "command": "npx", "args": ["-y", "@camelai/camelrun", "mcp"], "env": { "CAMELAI_API_KEY": "art_..." } }
+        "camelrun": { "command": "npx", "args": ["-y", "@camelai/camelrun", "mcp"], "env": { "CAMELAI_API_KEY": "${CAMELAI_API_KEY}" } }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    Cursor reads the environment as `${env:NAME}`:
+
+    ```json .cursor/mcp.json
+    {
+      "mcpServers": {
+        "camelrun": { "command": "npx", "args": ["-y", "@camelai/camelrun", "mcp"], "env": { "CAMELAI_API_KEY": "${env:CAMELAI_API_KEY}" } }
       }
     }
     ```
   </Tab>
   <Tab title="Codex">
+    Codex passes the variables `env_vars` names through:
+
     ```toml ~/.codex/config.toml
     [mcp_servers.camelrun]
     command = "npx"
     args = ["-y", "@camelai/camelrun", "mcp"]
-    env = { CAMELAI_API_KEY = "art_..." }
+    env_vars = ["CAMELAI_API_KEY"]
     ```
   </Tab>
 </Tabs>
+
+### Keys stay out of MCP configs
+
+MCP configs such as `.mcp.json` and `.cursor/mcp.json` are often committed.
+Never write a key's value into one: name the variable, as above, and keep the
+key in your shell's environment or an ignored file such as `.env.local`.
 
 ## MCP tools
 
@@ -190,8 +216,18 @@ Both servers offer `deploy`, `list_agents`, `get_agent`, `create_agent`,
 stays inside clients' tool timeouts. A run still going comes back as `running`
 with its `requestId`. A run that asks a person something comes back as
 `input_required`, and the coding agent should ask you and answer with what you
-decided. `delete_agent` and `delete_definition` are marked destructive, so
-clients that confirm such calls ask you first.
+decided.
+
+The tools that overwrite, delete, stop or irreversibly answer something
+(`deploy`, `configure_agent`, the deletes, `abort_agent`, `answer_input`) are
+marked destructive, so clients that confirm such calls ask you first.
+`create_agent` is not: it adds an agent, or brings the one with that key to the
+configuration given, keeping its history.
+
+`list_agents` gives each agent's key, id, name and model, with `loaded`
+(whether it is in a runtime's memory now, idle or not; not whether a run is
+going, which `run_agent` and `get_run` say) and `toolsConnected` (whether an
+application serving its attached tools is connected).
 
 <Warning>
   A key or a connected app can create and delete every agent in your account.
