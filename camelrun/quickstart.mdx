@@ -7,11 +7,12 @@ description: 'An agent that runs in camelRun, calls a tool in your own process, 
 
 <Tip>
 **Set up with your coding agent.** Paste this into Claude Code, Codex, Cursor
-or any coding agent. It installs the SDK, connects your account without pasting
-keys into chat, and runs your first agent.
+or any coding agent, saying what the agent should do in place of `<does X>`. It
+installs the SDK, connects your account without pasting keys into chat, and
+runs your first agent.
 
 ```text
-Read https://run.camelai.com/SKILL.md and set up camelRun in this project.
+Read https://run.camelai.com/SKILL.md, set up camelRun in this project, and build an agent that <does X>.
 ```
 </Tip>
 
@@ -87,7 +88,7 @@ Connect the hosted MCP server and sign in. There is no key to create or copy.
   </Step>
   <Step title="Run an agent">
     <CodeGroup>
-    ```ts quickstart.ts
+    ```ts quickstart.mts
     import { Agents, schema, tool } from "@camelai/run";
 
     const agents = new Agents(); // reads CAMELAI_API_KEY
@@ -134,7 +135,12 @@ Connect the hosted MCP server and sign in. There is no key to create or copy.
     ```
     </CodeGroup>
 
-    Run it with `npx tsx quickstart.ts` or `python quickstart.py`.
+    Run it with `npx tsx quickstart.mts` or `python quickstart.py`.
+
+    `.mts` makes the TypeScript an ES module, which top-level `await` needs; in
+    a project with `"type": "module"`, `.ts` works too. The Python SDK is
+    async-only: call it from `async` code, and from synchronous code (a script,
+    a Django view, a Celery task) with `asyncio.run(...)`.
   </Step>
 </Steps>
 
@@ -217,11 +223,14 @@ resolves with it.
   running the file again continues the same conversation.
 - Because the agent has `tools`, this process served them. camelRun called
   `weather` here, over the connection the SDK holds. One process at a time
-  serves an agent's tools. Serverless functions and multi-user backends serve
-  tools over HTTP instead; see [Tools](/camelrun/tools).
+  serves an agent's tools, and only while it runs. Serverless functions,
+  several web workers or task workers, and multi-user backends serve tools over
+  HTTP instead, which also keeps them working through deploys; see [Several
+  processes, workers and deploys](/camelrun/tools#several-processes-workers-and-deploys).
 - `run()` resolved with a `Run`: `status` (`completed`, `input_required` or
-  `failed`), `text`, `inputs`, `error` and `toolErrors`. A failed run throws a
-  `RunError` unless you pass `throwOnError: false` (`throw_on_error=False`).
+  `failed`), `text`, `inputs`, `error` and `toolErrors` (Python
+  `tool_errors`). A failed run throws a `RunError` unless you pass
+  `throwOnError: false` (`throw_on_error=False`).
 - `agents.close()` let the process exit. The agent stays in camelRun.
 
 ## Next steps

@@ -10,7 +10,7 @@ There are three kinds of failure:
 1. **The API refused a request.** An HTTP status and a JSON body. The SDKs throw
    `AgentError` with `status` and `code`.
 2. **A run failed.** The request was accepted, and the run ended badly. The
-   SDKs' `run()` throws `RunError` with the run, unless `throwOnError: false`.
+   SDKs' `run()` throws `RunError` with the run, unless `throwOnError: false` (Python `throw_on_error=False`).
 3. **A tool call didn't complete** within a run that otherwise went on. The
    model was told, and the run lists it in `toolErrors`. Nothing throws.
 

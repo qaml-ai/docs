@@ -8,13 +8,19 @@ description: 'A hosted runtime for durable agents. Your tools stay in your code;
 
 <Tip>
 **Set up with your coding agent.** Paste this into Claude Code, Codex, Cursor
-or any coding agent. It installs the SDK, connects your account without pasting
-keys into chat, and runs your first agent.
+or any coding agent, saying what the agent should do in place of `<does X>`. It
+installs the SDK, connects your account without pasting keys into chat, and
+runs your first agent.
 
 ```text
-Read https://run.camelai.com/SKILL.md and set up camelRun in this project.
+Read https://run.camelai.com/SKILL.md, set up camelRun in this project, and build an agent that <does X>.
 ```
 </Tip>
+
+<Note>
+**Self-host it.** The runtime is open source and runs anywhere with Docker: one
+container and Postgres. See [Self-hosting](/camelrun/self-hosting).
+</Note>
 
 camelRun is camelAI's hosted agent runtime. You define an agent's tools in your
 own code with the TypeScript or Python SDK, or serve them over HTTP. camelRun
@@ -53,9 +59,15 @@ verifies a card on the [Billing](https://run.camelai.com/console/billing) page
   <Tab title="Claude Code">
     ```bash
     claude mcp add --transport http camelrun https://run.camelai.com/mcp
-    # Then run /mcp in Claude Code to sign in. Or skip signing in with a key:
-    claude mcp add --transport http camelrun https://run.camelai.com/mcp --header "Authorization: Bearer art_..."
+    # Then run /mcp in Claude Code to sign in. Or skip signing in with a key from your environment:
+    claude mcp add --scope project --transport http camelrun https://run.camelai.com/mcp \
+      --header 'Authorization: Bearer ${CAMELAI_API_KEY}'
     ```
+
+    The single quotes keep `${CAMELAI_API_KEY}` as written: the project's
+    `.mcp.json` names the variable, and Claude Code reads its value from the
+    environment. Never write a key's value into an MCP config; they are often
+    committed.
   </Tab>
   <Tab title="Codex">
     ```bash
