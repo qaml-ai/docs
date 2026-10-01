@@ -52,6 +52,7 @@ const run = await agent.run("Summarize ticket 123", { user: "alice" });
 | `id` | The run's id. Pass `idempotencyKey` to choose it; sending the same key again returns the same run |
 | `status` | `completed`, `input_required` (it waits on a person, see `inputs`), or `failed` |
 | `text` | The final reply |
+| `output` | With `output: schema`, the answer in that shape. See [Structured output](/camelrun/structured-output) |
 | `inputs` | What it waits on, each with `answer()` |
 | `error` | `{code, message, uncertain?}` when it failed |
 | `toolErrors` (Python `tool_errors`) | Tool calls that didn't complete (timed out, connection lost, nobody serving the tools). The model was told and carried on |

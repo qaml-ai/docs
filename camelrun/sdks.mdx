@@ -104,13 +104,16 @@ Run options for `run` and `stream`:
 | `whileRunning` | `while_running=` | `"queue"` (default) or `"steer"` |
 | `spendLimit` | `spend_limit=` | `{usd}`: this run's own budget |
 | `allowDisconnected` | `allow_disconnected=` | Run even with nobody serving the agent's tools |
+| `output` | `output=` | Structured output: a zod, TypeBox or JSON Schema (Python: a pydantic model class, or a JSON Schema dict) for an object. The answer is `run.output`. See [Structured output](/camelrun/structured-output) |
 
 ### `Run` and stream parts
 
-A `Run` is `{ id, status, text, inputs, error, usage, files, toolErrors, toolCalls, sourceErrors, raw }`
+A `Run` is `{ id, status, text, output?, inputs, error, usage, files, toolErrors, toolCalls, sourceErrors, raw }`
 (Python: `tool_errors`, `tool_calls`, `source_errors`). `toolCalls` lists every
 tool call the run made, with `ok` or an error `code`, not their arguments or
-results (see [Run outcomes](/camelrun/events#run-outcomes)). `status` is `completed`,
+results (see [Run outcomes](/camelrun/events#run-outcomes)). `output` is the
+answer of a run sent with `output`, typed by its schema (Python: an instance of
+the pydantic model). `status` is `completed`,
 `input_required` or `failed`. Each of `run.inputs` has `answer(value, { from })`
 and `decline({ from })` (Python: `answer(value, from_=)` and `decline(from_=)`),
 which resolve with the resumed run.
