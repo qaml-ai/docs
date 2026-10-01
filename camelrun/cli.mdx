@@ -219,10 +219,12 @@ with its `requestId`. A run that asks a person something comes back as
 decided.
 
 The tools that overwrite, delete, stop or irreversibly answer something
-(`deploy`, `configure_agent`, the deletes, `abort_agent`, `answer_input`) are
-marked destructive, so clients that confirm such calls ask you first.
-`create_agent` is not: it adds an agent, or brings the one with that key to the
-configuration given, keeping its history.
+(`deploy`, `configure_agent`, `create_agent`, the deletes, `abort_agent`,
+`answer_input`) are marked destructive, so clients that confirm such calls ask
+you first. `create_agent` is because, for a key that already has an agent, it
+brings that agent to the configuration given (keeping its history).
+`run_agent`, `answer_input` and `add_schedule` are open-world: the runs they
+start can search and fetch the web and call the agent's tool servers.
 
 `list_agents` gives each agent's key, id, name and model, with `loaded`
 (whether it is in a runtime's memory now, idle or not; not whether a run is
