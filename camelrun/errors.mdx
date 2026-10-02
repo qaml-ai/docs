@@ -57,11 +57,18 @@ Common `CONFLICT` cases:
 
 | `RunError.code` | Meaning |
 | --- | --- |
-| `model_error` | The model provider refused or failed after 3 retries for transient failures: a bad request, an invalid key, refused content, or a context overflow compaction couldn't fix |
+| `model_key_missing` | No key is set for the agent's model. The error names the model and the remedy: set a key with `PUT /v1/providers/{provider}/key` (or the key scope's entry), or move the agent to a model you can use (`GET /v1/models?available=true`) |
+| `model_key_invalid` | The provider refused the key (HTTP 401). The error says the same remedy, then the provider's own words |
+| `model_error` | The model provider refused or failed after 3 retries for transient failures: a bad request, refused content, or a context overflow compaction couldn't fix |
 | `output_missing` | A run sent with `output` ended without the model calling `final_output`: it answered in prose twice, the second time after a reminder. `text` has what it said. Send the prompt again, make the instructions say what the answer is for, or use a stronger model |
 | `output_invalid` | (SDKs only) The output fit the JSON Schema camelRun checked, but not the zod or pydantic schema the SDK parsed it with |
 | `spend_limit` | The agent's spend limit (or the account's cap) stopped the turn after the response that crossed it. Raise the limit and send the next message |
-| `runtime_error` | camelRun couldn't carry out the run: for example, the model has no key, or the agent was deleted |
+| `runtime_error` | camelRun couldn't carry out the run: for example, the agent was deleted |
+
+Over REST, an ended request record (`GET /v1/agents/{id}/requests/{requestId}`)
+has `status` on top: `completed`, `input_required` or `failed`, as the SDKs' runs
+say it. Its `state` says only whether it ended (`running`, `completed`), so a
+failed run is `state: "completed"`, `status: "failed"`, with `error` saying why.
 
 A run with `uncertain: true` was cut short by a restart where it couldn't
 resume. Its tool calls may or may not have taken effect, so check before

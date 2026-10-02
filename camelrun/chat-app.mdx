@@ -12,9 +12,13 @@ and approvals are answered in place. Your API key stays on your server.
 ## Start a new app
 
 ```bash
-npm create @camelai/run-app my-app -- --api-key $CAMELAI_API_KEY
+export CAMELAI_API_KEY=art_...   # https://run.camelai.com/console/tokens
+npm create @camelai/run-app my-app
 cd my-app && npm run dev
 ```
+
+It writes the key from `CAMELAI_API_KEY` to the app's `.env.local`, so the key
+never lands in your shell history.
 
 This creates a Next.js app with the chat, the server route it talks to, a tool
 drawn by its own component, and a demo sign-in for you to replace with your own.
