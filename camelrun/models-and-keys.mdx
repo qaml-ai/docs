@@ -26,7 +26,18 @@ A model call uses, in order:
    `PUT /v1/providers/{provider}/key`.
 3. For prepaid accounts, the platform's key, charged to your credit.
 
-An agent can't be made on a provider none of these has a key for.
+An agent on a provider none of these has a key for is still made, and its runs
+fail with `model_key_missing`, naming the key to set.
+
+`PUT /v1/providers/{provider}/key` checks the key with the provider before it
+stores it, and refuses one the provider rejects. `{"apiKey": "...", "verify": false}`
+stores it unchecked (a placeholder, or a key for a provider the runtime can't
+reach yet). A run on a key the provider refuses fails with `model_key_invalid`.
+
+Running camelRun yourself? An operator can also give an account keys, and route
+its model calls through a gateway of its own: see
+[Billing](https://run.camelai.com/docs/operations/billing.md) and
+[Model endpoints](https://run.camelai.com/docs/operations/model-endpoints.md).
 
 A model on a server of your own that speaks OpenAI's or Anthropic's API (vLLM,
 Ollama, a gateway, a hosted API the catalog lacks) works the same way once you

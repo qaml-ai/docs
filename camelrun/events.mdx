@@ -98,7 +98,7 @@ A prompt's `outcome.result`, from a `response` frame or
 | `replyIndex` | That message's index in the agent's history |
 | `messages` | How many messages the history holds after the run |
 | `error` | The model's error (a provider refusal after retries), or `null` |
-| `code` | A stable name for `error`, where there is one: `output_missing` (a structured run ended without its output) |
+| `code` | A stable name for `error`, where there is one: `model_key_missing` (no key for the agent's model), `model_key_invalid` (the provider refused the key), `output_missing` (a structured run ended without its output) |
 | `stopped` | Why the run stopped early: `input_required` or `spend_limit` |
 | `inputs` | When `stopped` is `input_required`, the pending inputs |
 | `files` | Files the run wrote (at most 100) |
@@ -109,8 +109,10 @@ A prompt's `outcome.result`, from a `response` frame or
 
 `outcome.error` without a `result` means camelRun couldn't carry the request
 out, and `uncertain: true` means a restart cut it short so nobody can tell
-whether its work took effect. The request record also puts `error` and `stopped`
-on top, so a failed run reads as failed without looking inside `result`.
+whether its work took effect. An ended request record (`state: "completed"`)
+also puts `status` (`completed`, `input_required` or `failed`), `error` and
+`stopped` on top, so a failed run reads as failed without looking inside
+`result`.
 `GET /v1/agents/{id}/requests/{requestId}?wait=25` waits for a running request
 (up to 25 seconds): it answers as soon as the request settles, or when the wait
 ends with it still `running`, so you can ask again.
