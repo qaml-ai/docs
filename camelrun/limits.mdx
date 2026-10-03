@@ -97,7 +97,7 @@ and the next one; the console's Billing page shows the same.
 | Approvers | 100 |
 | `ask_user` | 1 to 4 questions, each with 2 to 4 options |
 
-## Sub-agents and handoffs
+## Sub-agents
 
 See [Multi-agent](/camelrun/multi-agent).
 
@@ -108,8 +108,7 @@ See [Multi-agent](/camelrun/multi-agent).
 | A sub-agent's spend | what its parent's run and agent spend limits have left when it starts, as its run's spend limit; what it spent counts against both |
 | A sub-agent's lifetime | a day (86,400 s), as a scratch agent's; one named by key (`{ agent }`) is yours and keeps its own |
 | A `delegate` task | 100,000 characters; inline `instructions` 32,000 |
-| Handoffs per run (`handoff.maxPerRun`) | 3 by default, 1–20 |
-| Agents in one allowlist (`delegate.agents`, `handoff.definitions`) | 32; a name 1–64 letters, digits, `_` and `-`; a description at most 1,000 characters |
+| Agents in one allowlist (`delegate.agents`) | 32; a name 1–64 letters, digits, `_` and `-`; a description at most 1,000 characters |
 
 Sub-agents are agents: each counts against busy agents, the run rate and your
 spend limits like any other.
@@ -135,6 +134,16 @@ spend limits like any other.
 | Channel attachments | 10 files a message, 25 MiB each |
 | Webhook endpoints | 16 per account |
 | A webhook delivery | 10 seconds to answer; retried for up to 3 days |
+
+## Trace export
+
+| Limit | Value |
+| --- | --- |
+| Endpoints | 1 per account (`PUT /v1/telemetry`), OTLP/HTTP only (protobuf or JSON) |
+| Headers | 16, each value at most 4,096 characters |
+| Spans waiting to be sent | 5,000 per account per node; more are dropped |
+| An export request | At most 512 spans; 10 seconds to answer; 5 attempts |
+| A content attribute (with `include.content`) | 16,384 characters, then cut |
 
 ## Spending
 

@@ -64,6 +64,55 @@ const run = await agent.run("Summarize ticket 123", { user: "alice" });
 can wait for days. Pass an `AbortSignal` (Python: `timeout=`) to stop waiting;
 the run itself goes on until it ends or you call `agent.abort()`.
 
+## Forking
+
+A **fork** is a new agent made from an existing one: the same configuration
+(model, instructions, definition, tools, built-ins, who it acts for, key scope,
+spend and run limits), a copy of its history, and a copy of its workspace
+files. From then on each is its own: a turn, a summary or a file written in one
+never shows in the other. Fork to try another direction without losing the
+first, to branch a conversation where a user edits an earlier message, or to
+start many agents from one prepared one.
+
+```ts
+const branch = await agent.fork({ key: "thread-9f2c-b" });
+const earlier = await agent.fork({ atMessage: 4 }); // history through message 4
+```
+
+```python
+branch = await agent.fork(key="thread-9f2c-b")
+earlier = await agent.fork(at_message=4)
+```
+
+- **Where it ends.** By default the copy ends with the agent's last finished
+  turn, never inside one that is running or waiting on a person, so forking a
+  busy agent is safe. `atMessage` ends it earlier: a history index keeps that
+  message and the tool results that answer it, and a run's request id keeps
+  that run's whole turn. A message in a turn that hasn't ended is a 409
+  `FORK_POINT_RUNNING`.
+- **Long conversations.** The copy keeps the source's summaries, so the fork's
+  model sees what the source's would at that point. History keeps every
+  message.
+- **Files.** The fork's `/workspace` is a fork of the source's volume as it is
+  when you fork, not as it was at `atMessage`. Other volumes the source mounts
+  stay shared. Files its history refers to stay available to the fork, whatever
+  becomes of the source.
+- **Not copied:** schedules, channel bindings, pending inputs, runs and their
+  events, and what the source has spent.
+- **Its own:** `subject`, `context`, `systemPromptAppend` and `modelHeaders` can be given for
+  the fork instead of the source's, so a fork for another conversation names
+  that conversation.
+- **Keys.** A fork made with a `key` lives until deleted, and forking again with
+  the same key returns the same fork. Without one it's a scratch agent that
+  lives a day, unless you set `ttlSeconds`.
+- `forkedFrom: {agentId, atMessage}` on the fork (`GET /v1/agents/{id}`, the
+  console) says where it came from.
+
+A fork is an agent like any other: it counts toward your agents and storage.
+The copy itself costs only storage, and shares stored content with the source.
+Over REST it's `POST /v1/agents/{id}/fork`; in the console, **Fork** on the
+agent's page, or **Fork from here** under a reply.
+
 ## The result is the truth; events are for display
 
 An agent's **events** stream every step: text as the model writes it, tool
@@ -90,7 +139,7 @@ Pick by where your code runs:
 | Serverless functions, several instances, or one backend serving many users' agents | **Served tools** | `serveTools(tools)` on an HTTPS endpoint of yours, named in a definition with `auth: { type: "runtime" }`. camelRun calls it with a signed token saying who each call is for. Safe through your deploys and restarts |
 | A third-party API | **OpenAPI** or **MCP** sources in a definition | camelRun calls the API itself, with credentials it stores sealed |
 | Web search, fetching pages, scheduling, asking the user | **Built-ins** | `builtins: ["web_search", "web_fetch", "schedule", "ask_user"]` |
-| Other agents: sub-agents for tasks, or another definition taking the conversation | **`delegate`** and **`handoff`** built-ins | `delegate: { agents: ["researcher"] }`, `handoff: { definitions: ["billing"] }`. See [Multi-agent](/camelrun/multi-agent) |
+| Other agents doing tasks for this one | The **`delegate`** built-in | `delegate: { agents: ["researcher"] }`. See [Multi-agent](/camelrun/multi-agent) |
 
 The same `tool({...})` definitions work attached and served, so you can start
 attached and move to served without changing a tool (see [Several processes,
