@@ -142,10 +142,23 @@ key or id (`def_...`).
 | `inputs [agent]`, `answer <agent> <inputId> <value>` | Questions and approvals waiting on someone, and answering them |
 | `schedules list\|add\|delete <agent>` | Wake-ups: `add --text t --in 3600 [--every 86400]` |
 | `definitions list\|get\|agents\|delete` | Definitions, and the revision each agent has |
+| `telemetry get\|set\|test\|clear` | [Trace export](/camelrun/observability): where traces go, header names, the last export |
 
 `run` waits for the run to end. `--wait 30` waits at most 30 seconds, and
 `--no-wait` prints the request id to follow with `runs get`. `--from user-1`
 says who is sending, and `--steer` gives the message to a running turn.
+
+`telemetry set` changes only what it is given: an endpoint, `--header`,
+`--protocol http/protobuf|http/json`, `--sample-rate 0..1`, `--content` or `--no-content`. Take header values from the environment or stdin,
+so your collector's key stays out of shell history and the process list:
+
+```bash
+camelrun telemetry set https://api.smith.langchain.com/otel/v1/traces --header x-api-key=@env:LANGSMITH_API_KEY
+camelrun telemetry test      # one span, sent now; exits 1 if the endpoint refused it
+```
+
+No command prints a header's value. `run --traceparent 00-<trace-id>-<span-id>-01`
+continues your trace.
 
 `answer` takes `true` or `false` for an approval, the chosen label or your own
 words for a question, the fields as JSON for a form, or `decline`.
