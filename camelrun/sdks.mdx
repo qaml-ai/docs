@@ -96,7 +96,31 @@ It throws an `AgentError` with `status` 404 when no live agent has the key or
 id, and 409 `AGENT_KEYLESS` for an agent made without a key. It takes `tools`,
 the callbacks, `attach` and `takeover` as `upsert` does. Over REST,
 `GET /v1/agents/{keyOrId}/credentials` returns `{id, token, expiresAt}`.
-Available from `@camelai/run` 0.13.1 and `camelai-run` 0.9.1.
+Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
+
+### `agent.fork(options)`
+
+A new agent made from this one: its configuration, a copy of its history and a
+fork of its workspace, each its own from then on.
+
+```ts
+const fork = await agent.fork({ key: "support-b", atMessage: 5 });
+await fork.run("Try the other approach");
+```
+
+```python
+fork = await agent.fork(key="support-b", at_message=5)
+```
+
+`atMessage` ends the copied history at a history index (that message and the
+tool results that answer it) or a request id (that run's whole turn); by
+default it ends with the last turn that finished, never mid-turn. Forking again
+with the same `key` returns the same fork, and `agents.get(key)` finds it.
+Without a key the fork lives a day (`ttlSeconds` changes that). `subject`,
+`context`, `instructionsAppend` (`instructions_append=`) and `modelHeaders` (`model_headers=`) are the fork's own
+instead of the source's. `fork.forkedFrom`
+(`forked_from`) is `{agentId, atMessage}`, and `agents.fork(id, options)` forks
+an agent by id. Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
 
 ### `Agent`
 
@@ -112,6 +136,7 @@ Available from `@camelai/run` 0.13.1 and `camelai-run` 0.9.1.
 | `agent.schedule({ text, inSeconds, at, everySeconds })` | `schedule(...)` | Wake it later; `schedules()`, `unschedule(id)` |
 | `agent.files` | `agent.files` | `list`, `download`, `upload`, `link` by the paths the agent sees |
 | `agent.abort()` | `abort()` | Stop the running turn |
+| `agent.fork({ key, name, atMessage })` | `fork(key=, name=, at_message=)` | A new agent with its configuration, a copy of its history and of its files. See [Forking](/camelrun/concepts#forking) |
 | `agent.delete()` | `delete()` | Delete it, its history and files |
 | `agent.close()` | `close()` | Close this process's connection |
 
@@ -151,8 +176,8 @@ which resolve with the resumed run.
 | `done` | `run`, always last |
 
 `run.toolCalls` names a call's tool `tool` and its id `toolCallId`. Stream parts
-carry the same values as `name` and `id`, and, from `@camelai/run` 0.13.1 and
-`camelai-run` 0.9.1, also as `tool` and `toolCallId` (Python `tool_call_id`).
+carry the same values as `name` and `id`, and, from `@camelai/run` 0.14.0 and
+`camelai-run` 0.10.0, also as `tool` and `toolCallId` (Python `tool_call_id`).
 `name` and `id` stay.
 
 ## Tools

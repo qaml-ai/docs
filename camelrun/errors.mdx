@@ -25,6 +25,7 @@ and the SDKs honor it and retry.
 | --- | --- | --- | --- |
 | 400 | `INVALID_REQUEST` | Malformed or invalid; the message says how | Fix the request |
 | 400 | `INVALID_HISTORY` | An imported `initialMessages` has a message it can't take | Fix the named message |
+| 400 | `FORK_POINT_INVALID` | A fork's `atMessage` is no index in the history, nor a request id in it | Check the index or id |
 | 401 | `UNAUTHORIZED` | No valid token, or an expired browser token | Send a valid key; mint a new browser token |
 | 402 | `SPEND_LIMIT` | The agent's spend limit, or the account's monthly cap | Raise the limit |
 | 402 | `INSUFFICIENT_CREDIT` | The account's prepaid credit is spent | Add credit in the console |
@@ -34,6 +35,7 @@ and the SDKs honor it and retry.
 | 409 | `IDEMPOTENCY_IN_PROGRESS` | The first request with this key is still running | Retry shortly |
 | 409 | `APPLICATION_CONNECTED` | Another process serves this agent's tools | Close it, pass `takeover: true`, or connect with `attach: false` |
 | 409 | `APPLICATION_NOT_CONNECTED` | The agent's tools need their process and none is connected | Start it, serve tools over HTTP, or pass `allowDisconnected: true` |
+| 409 | `FORK_POINT_RUNNING` | A fork's `atMessage` is in a turn that hasn't ended | Fork at an earlier message, or once it ends |
 | 409 | `REPLAY_GAP` | The `Last-Event-ID` is behind the replay buffer | Reconnect with `?snapshot=1` and read `/state` |
 | 409 | `CONFLICT` | Another conflict, named in the message | See below |
 | 410 | `GONE` | The agent was deleted or expired | Upsert the key again for a fresh agent |

@@ -83,6 +83,7 @@ and `run.failed`.
     | `GET /v1/agents` | List your agents, each with its key and name |
     | `GET /v1/agents/{id}` | One agent: configuration, definition, `spendLimit`, `toolSources` |
     | `DELETE /v1/agents/{id}` | Stop an agent and delete its history and files |
+    | `POST /v1/agents/{id}/fork` | A new agent with its configuration, a copy of its history and of its workspace: `{key?, name?, atMessage?, ttlSeconds?, subject?, context?, systemPromptAppend?, modelHeaders?}`. See [Forking](/camelrun/concepts#forking) |
     | `PATCH /v1/agents/{id}/configuration` | Change model, prompt, thinking level, key scope, spend limit or headers between turns |
     | `POST /v1/agents/{id}/prompt` | Send a message |
     | `GET /v1/agents/{id}/requests/{requestId}` | A request's state and outcome; `?wait=<seconds>` (at most 25) waits for it to settle |

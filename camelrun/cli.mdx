@@ -133,6 +133,7 @@ key or id (`def_...`).
 | `agents list`, `agents get <agent>` | List agents, or show one's configuration and tool sources |
 | `agents create <key> [--definition d] [--model m] [--prompt text]` | Create an agent outside a manifest |
 | `agents configure <agent> [--model m] [--prompt text] [--prompt-append text] [--thinking level]` | Change one agent between runs |
+| `agents fork <agent> [--key k] [--name n] [--at message]` | A new agent with its configuration, history and files; `--at` ends the history at a message index or a request id |
 | `agents delete <agent> --yes` | Stop an agent and delete its history and files |
 | `run <agent> <message...>` | Send a message and print the reply |
 | `runs get <agent> <requestId> [--wait s]` | A run's result |
@@ -209,7 +210,7 @@ key in your shell's environment or an ignored file such as `.env.local`.
 ## MCP tools
 
 Both servers offer `deploy`, `list_agents`, `get_agent`, `create_agent`,
-`configure_agent`, `delete_agent`, `run_agent`, `get_run`, `agent_history`,
+`configure_agent`, `fork_agent`, `delete_agent`, `run_agent`, `get_run`, `agent_history`,
 `abort_agent`, `list_inputs`, `answer_input`, the schedule and definition tools,
 `list_models`, `whoami`, and `read_docs`, which reads the camelRun docs.
 
@@ -224,7 +225,7 @@ The tools that overwrite, delete, stop or irreversibly answer something
 `answer_input`) are marked destructive, so clients that confirm such calls ask
 you first. `create_agent` is because, for a key that already has an agent, it
 brings that agent to the configuration given (keeping its history).
-`run_agent`, `answer_input` and `add_schedule` are open-world: the runs they
+`fork_agent` only adds an agent, so it isn't. `run_agent`, `answer_input` and `add_schedule` are open-world: the runs they
 start can search and fetch the web and call the agent's tool servers.
 
 `list_agents` gives each agent's key, id, name and model, with `loaded`
