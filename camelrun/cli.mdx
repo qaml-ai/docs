@@ -147,9 +147,8 @@ key or id (`def_...`).
 `--no-wait` prints the request id to follow with `runs get`. `--from user-1`
 says who is sending, and `--steer` gives the message to a running turn.
 
-`telemetry set [<endpoint>] [--header name=@env:VAR | name=@stdin | name=value]
-[--protocol http/protobuf|http/json] [--sample-rate 0..1] [--content | --no-content]`
-changes only what it is given. Take header values from the environment or stdin,
+`telemetry set` changes only what it is given: an endpoint, `--header`,
+`--protocol http/protobuf|http/json`, `--sample-rate 0..1`, `--content` or `--no-content`. Take header values from the environment or stdin,
 so your collector's key stays out of shell history and the process list:
 
 ```bash

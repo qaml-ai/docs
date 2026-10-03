@@ -94,7 +94,7 @@ docker run --rm -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one:latest
 camelrun telemetry set http://localhost:4318      # a self-hosted runtime that allows that origin
 ```
 
-Jaeger's UI is at <http://localhost:16686>, under the service `camelrun`.
+Jaeger's UI is at [localhost:16686](http://localhost:16686), under the service `camelrun`.
 
 ## Continuing your trace
 
@@ -123,8 +123,8 @@ With the OpenTelemetry API in your process, take the header from the active span
 prompt) and on the SDKs' `POST /clients/:id/requests`. It is not part of the
 request's idempotency: a retry under another span is the same run.
 
-A run's record (`GET /v1/agents/:id/requests/:requestId`) carries `trace:
-{traceId, spanId, parentSpanId?, sampled}` when its tenant exports telemetry, so
+A run's record (`GET /v1/agents/:id/requests/:requestId`) carries
+`trace: {traceId, spanId, parentSpanId?, sampled}` when its tenant exports telemetry, so
 you can link from your own logs to the trace.
 
 ## Spans
