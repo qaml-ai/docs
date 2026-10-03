@@ -12,7 +12,9 @@ Agents name a model as `provider/model-id` from the catalog, such as
 with `GET /v1/models` (`?available=true` for the models your account can use
 now), or on the console's **Models & keys** page. Change an agent's model between
 runs with `upsert` (a changed `model`) or `agent.configure({ model })`; its
-history carries over.
+history carries over. `?available=true` answers `[]` when your account has no
+key any model can use (a self-hosted runtime before its first key, say); that
+response's `X-Camelrun-Hint` header says how to set one.
 
 An agent that names no model gets the runtime's default, Claude Sonnet 5.5, on
 the first of Anthropic, OpenRouter and Bedrock you have a key for. It is chosen
