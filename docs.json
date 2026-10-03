@@ -112,6 +112,7 @@
               "camelrun/files",
               "camelrun/multi-user",
               "camelrun/webhooks",
+              "camelrun/observability",
               "camelrun/models-and-keys",
               "camelrun/custom-models",
               "camelrun/definitions",
