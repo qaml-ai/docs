@@ -82,6 +82,16 @@ each with its `start` and `end`. Fold deltas into the message from its
 | `file_presented` | The agent presented a file, with a signed download `url` |
 | `input_required` | The turn waits on a person. `input` has `id`, `kind` (`question`, `approval`, `form` or `url`), `message`, `detail` and `expiresAt` |
 | `input_resolved` | An input settled: `answered`, `declined`, `cancelled`, `expired` or `superseded` |
+
+### Sub-agents
+
+See [Multi-agent](/camelrun/multi-agent). These events reach only streams that ask for them (`?subagents=1`, or `subagents: true` in the SDKs).
+
+| Type | When |
+| --- | --- |
+| `subagent_start` | A `delegate` call started its sub-agent: `toolCallId`, `agentId`, `requestId`, `name`, `depth` |
+| `subagent_event` | One of the sub-agent's events (`event`), its streamed text left out; a grandchild's arrive nested in its parent's |
+| `subagent_end` | The sub-agent's run ended (`status`: `completed`, `input_required`, `failed`; `error?`), or its parent stopped waiting |
 | `auto_retry_start`, `auto_retry_end` | A transient provider failure is being retried |
 | `compaction_start`, `compaction_end` | The conversation is being summarized to fit the model's context |
 | `turn_resumed` | The node running this turn was lost, and it continues on another |
@@ -104,8 +114,9 @@ A prompt's `outcome.result`, from a `response` frame or
 | `files` | Files the run wrote (at most 100) |
 | `presented` | Files the run presented (at most 20) |
 | `toolErrors` | Tool calls that didn't complete. See [Tool errors](/camelrun/errors#tool-errors) |
-| `toolCalls` | Every tool call the run made, in order, the first 100: `{tool, toolCallId?, innerCallId?, ok, code?}`. A call from `js_exec`'s code has js_exec's `toolCallId` and its own `innerCallId`; `js_exec` itself isn't listed. When `ok` is false, `code` is a `toolErrors` code, `tool_error` (the tool answered with an error), `input_required` (it waits on a person; the run that resumes it lists it again) or `aborted`. Arguments and results are left out: read them from history by `toolCallId` |
+| `toolCalls` | Every tool call the run made, in order, the first 100: `{tool, toolCallId?, innerCallId?, ok, code?, agentId?}`; `agentId` is the sub-agent a `delegate` call ran. A call from `js_exec`'s code has js_exec's `toolCallId` and its own `innerCallId`; `js_exec` itself isn't listed. When `ok` is false, `code` is a `toolErrors` code, `tool_error` (the tool answered with an error), `input_required` (it waits on a person; the run that resumes it lists it again) or `aborted`. Arguments and results are left out: read them from history by `toolCallId` |
 | `sourceErrors` | Tool sources (MCP servers, OpenAPI specs) that couldn't be listed |
+| `usage` | What its model responses used; `subagentCostUsd`, what its sub-agents spent |
 
 `outcome.error` without a `result` means camelRun couldn't carry the request
 out, and `uncertain: true` means a restart cut it short so nobody can tell

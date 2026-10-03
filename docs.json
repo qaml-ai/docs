@@ -116,6 +116,7 @@
               "camelrun/models-and-keys",
               "camelrun/custom-models",
               "camelrun/definitions",
+              "camelrun/multi-agent",
               "camelrun/channels",
               "camelrun/mcp-server",
           "camelrun/migrating",
