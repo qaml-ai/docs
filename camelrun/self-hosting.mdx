@@ -8,8 +8,7 @@ description: 'Run the camelRun runtime on your own host with Docker Compose and 
 
 camelRun runs on any host with Docker: one container, and Postgres. Nothing in
 it needs AWS. Your application talks to it the same way it talks to
-run.camelai.com: point the SDKs at it with `CAMELAI_BASE_URL` (or `url`), and
-the CLI with `CAMELAI_URL`.
+run.camelai.com: point the SDKs and the CLI at it with `CAMELAI_BASE_URL` (or `url`).
 
 ## Licensing
 
@@ -49,6 +48,9 @@ in the repository has a Compose file and an example environment:
     git clone https://github.com/qaml-ai/run
     cd run/deploy/selfhost
     cp .env.example .env    # fill it in; generate secrets with: openssl rand -hex 32
+    # or fill every empty secret at once:
+    for v in AGENT_OPERATOR_TOKEN AGENT_SESSION_SECRET AGENT_SECRETS_KEY POSTGRES_PASSWORD; do
+      sed -i.bak "s/^$v=$/$v=$(openssl rand -hex 32)/" .env; done; rm .env.bak
     ```
 
     Set at least `AGENT_OPERATOR_TOKEN`, `AGENT_SESSION_SECRET`,
@@ -64,10 +66,10 @@ in the repository has a Compose file and an example environment:
 
     The runtime listens on `127.0.0.1:8790` on the host. `AGENT_RUNTIME_PORT`
     and `AGENT_RUNTIME_BIND` in `.env` change the port and the address
-    (`0.0.0.0` for every interface). The Compose project is named
-    `agent-runtime`, and its volumes after it. To run a second copy beside
-    another stack of that name, give it its own with `docker compose -p <name>`
-    (or `COMPOSE_PROJECT_NAME`), the same one every time: a different name
+    (`0.0.0.0` for every interface). The Compose project is
+    `COMPOSE_PROJECT_NAME` in `.env` (`agent-runtime`), and its volumes are
+    named after it. To run a second copy beside another stack of that name,
+    give it its own name there, the same one every time: a different name
     starts with empty volumes.
   </Step>
   <Step title="Check your token">
@@ -80,9 +82,9 @@ in the repository has a Compose file and an example environment:
     Agents can be made before any model key is set (image `0.2.0` and later;
     earlier images refuse to make one with `400 INVALID_REQUEST` until a key
     is set). Their runs fail with `model_key_missing`, saying which key to
-    set, until one is: set `AGENT_TENANT_API_KEYS`, or
-    `PUT /v1/providers/{provider}/key` (add `"verify": false` to store a key
-    without checking it with the provider).
+    set, until one is: set `AGENT_TENANT_API_KEYS` (the error names it too),
+    or `PUT /v1/providers/{provider}/key` (add `"verify": false` to store a
+    key without checking it with the provider).
   </Step>
   <Step title="Point your application at it">
     The SDKs, the CLI and `npm create @camelai/run-app` read the runtime's URL
@@ -101,12 +103,44 @@ in the repository has a Compose file and an example environment:
   </Step>
 </Steps>
 
-The Compose file runs `ghcr.io/qaml-ai/run:latest` unless you set
-`AGENT_RUNTIME_IMAGE`. Pin a version in production, for example
-`AGENT_RUNTIME_IMAGE=ghcr.io/qaml-ai/run:0.1.0`, and upgrade by
-changing it and running `docker compose up -d` again. The new container applies database migrations as it starts. On
-`docker compose stop`, the runtime lets running turns finish (up to 100 seconds
-by default) before it exits.
+## Upgrade
+
+The Compose file runs a pinned release, `ghcr.io/qaml-ai/run:0.2.0`. Each
+release is a version in the [release
+notes](https://run.camelai.com/docs/operations/release-notes.md); read the notes
+of every version between yours and the new one, then set it in `.env` and
+restart:
+
+```bash
+echo 'AGENT_RUNTIME_IMAGE=ghcr.io/qaml-ai/run:<version>' >> .env
+docker compose up -d
+```
+
+The new container applies database migrations as it starts, and an older image
+does not undo them, so back up first (below). On `docker compose stop`, the
+runtime lets running turns finish (up to 100 seconds by default) before it
+exits.
+
+The SDKs (`@camelai/run`, `camelai-run`) are versioned apart from the runtime.
+A new SDK can call API your runtime does not have yet: upgrade the runtime when
+you upgrade the SDKs, or keep the SDK release from your runtime's date.
+
+## Backup
+
+Back up Postgres and the agents' data together (with `AGENT_STORAGE=s3`, the
+bucket instead of the volume):
+
+```bash
+docker compose exec -T postgres pg_dump -U agent_runtime agent_runtime | gzip > runtime-$(date +%F).sql.gz
+docker run --rm -v "${COMPOSE_PROJECT_NAME:-agent-runtime}_data:/data:ro" -v "$PWD:/out" alpine \
+  tar czf "/out/data-$(date +%F).tar.gz" -C /data .
+```
+
+Restore into a stopped stack: `gunzip -c runtime-….sql.gz | docker compose exec -T
+postgres psql -U agent_runtime agent_runtime` into an empty database, and the
+tarball back into the `data` volume. Keep `AGENT_SECRETS_KEY` and
+`AGENT_SESSION_SECRET` with the backup: stored keys cannot be read without the
+first.
 
 ## Storage
 

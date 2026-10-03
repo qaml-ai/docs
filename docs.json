@@ -98,7 +98,8 @@
           {
             "group": "Concepts",
             "pages": [
-              "camelrun/concepts"
+              "camelrun/concepts",
+              "camelrun/pricing"
             ]
           },
           {
@@ -117,6 +118,7 @@
               "camelrun/channels",
               "camelrun/mcp-server",
           "camelrun/migrating",
+              "camelrun/export",
               "camelrun/production"
             ]
           },
