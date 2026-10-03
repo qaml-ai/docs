@@ -78,6 +78,26 @@ differs. Returns a connected `Agent`.
 | `takeover` | `takeover=` | Replace the process serving the tools now |
 | `onEvent`, `onInput`, `onError` | `on_event=`, `on_input=`, `on_error=` | Callbacks for events, inputs as they're asked, and connection errors |
 
+### `agents.get(keyOrId, config)`
+
+The existing agent with this key (or id), as it is. `upsert` sets an agent to
+the config it's given; `get` changes nothing, so use it where a process only
+runs or reads agents that another process configures.
+
+```ts
+const agent = await agents.get("support-triage");      // or its id
+```
+
+```python
+agent = await agents.get("support-triage")
+```
+
+It throws an `AgentError` with `status` 404 when no live agent has the key or
+id, and 409 `AGENT_KEYLESS` for an agent made without a key. It takes `tools`,
+the callbacks, `attach` and `takeover` as `upsert` does. Over REST,
+`GET /v1/agents/{keyOrId}/credentials` returns `{id, token, expiresAt}`.
+Available from `@camelai/run` 0.13.1 and `camelai-run` 0.9.1.
+
 ### `Agent`
 
 | TypeScript | Python | |
@@ -129,6 +149,11 @@ which resolve with the resumed run.
 | `tool_result` | `id`, `name`, `output`, `isError` (Python `is_error`) |
 | `input_required` | `input`, with `answer()` |
 | `done` | `run`, always last |
+
+`run.toolCalls` names a call's tool `tool` and its id `toolCallId`. Stream parts
+carry the same values as `name` and `id`, and, from `@camelai/run` 0.13.1 and
+`camelai-run` 0.9.1, also as `tool` and `toolCallId` (Python `tool_call_id`).
+`name` and `id` stay.
 
 ## Tools
 
