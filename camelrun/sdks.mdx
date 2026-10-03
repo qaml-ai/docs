@@ -96,7 +96,7 @@ It throws an `AgentError` with `status` 404 when no live agent has the key or
 id, and 409 `AGENT_KEYLESS` for an agent made without a key. It takes `tools`,
 the callbacks, `attach` and `takeover` as `upsert` does. Over REST,
 `GET /v1/agents/{keyOrId}/credentials` returns `{id, token, expiresAt}`.
-Available from `@camelai/run` 0.13.1 and `camelai-run` 0.9.1.
+Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
 
 ### `agent.fork(options)`
 
@@ -120,7 +120,7 @@ Without a key the fork lives a day (`ttlSeconds` changes that). `subject`,
 `context`, `instructionsAppend` (`instructions_append=`) and `modelHeaders` (`model_headers=`) are the fork's own
 instead of the source's. `fork.forkedFrom`
 (`forked_from`) is `{agentId, atMessage}`, and `agents.fork(id, options)` forks
-an agent by id. Available from `@camelai/run` 0.13.1 and `camelai-run` 0.9.1.
+an agent by id. Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
 
 ### `Agent`
 
@@ -176,8 +176,8 @@ which resolve with the resumed run.
 | `done` | `run`, always last |
 
 `run.toolCalls` names a call's tool `tool` and its id `toolCallId`. Stream parts
-carry the same values as `name` and `id`, and, from `@camelai/run` 0.13.1 and
-`camelai-run` 0.9.1, also as `tool` and `toolCallId` (Python `tool_call_id`).
+carry the same values as `name` and `id`, and, from `@camelai/run` 0.14.0 and
+`camelai-run` 0.10.0, also as `tool` and `toolCallId` (Python `tool_call_id`).
 `name` and `id` stay.
 
 ## Tools
