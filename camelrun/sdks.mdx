@@ -116,7 +116,9 @@ fork = await agent.fork(key="support-b", at_message=5)
 tool results that answer it) or a request id (that run's whole turn); by
 default it ends with the last turn that finished, never mid-turn. Forking again
 with the same `key` returns the same fork, and `agents.get(key)` finds it.
-Without a key the fork lives a day (`ttlSeconds` changes that). `fork.forkedFrom`
+Without a key the fork lives a day (`ttlSeconds` changes that). `subject`,
+`context` and `instructionsAppend` (`instructions_append=`) are the fork's own
+instead of the source's. `fork.forkedFrom`
 (`forked_from`) is `{agentId, atMessage}`, and `agents.fork(id, options)` forks
 an agent by id. Available from `@camelai/run` 0.13.1 and `camelai-run` 0.9.1.
 

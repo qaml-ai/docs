@@ -99,6 +99,9 @@ earlier = await agent.fork(at_message=4)
   becomes of the source.
 - **Not copied:** schedules, channel bindings, pending inputs, runs and their
   events, and what the source has spent.
+- **Its own:** `subject`, `context` and `systemPromptAppend` can be given for
+  the fork instead of the source's, so a fork for another conversation names
+  that conversation.
 - **Keys.** A fork made with a `key` lives until deleted, and forking again with
   the same key returns the same fork. Without one it's a scratch agent that
   lives a day, unless you set `ttlSeconds`.
