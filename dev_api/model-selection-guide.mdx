@@ -10,11 +10,11 @@ Selecting the appropriate model is crucial for optimizing your users' experience
 
 ## How Model Selection Works
 
-When you create an iframe through the camelAI API, you specify which model to use. This model choice is locked for that specific chat conversation - ensuring consistency throughout the user's interaction. If users access previous conversations, camelAI uses the model that was originally selected for that chat, or its successor if that model has been replaced (see [Older Model IDs Are Aliases](#older-model-ids-are-aliases)).
+When you create an iframe through the camelAI API, you specify which model to use. This model choice is locked for that specific chat conversation - ensuring consistency throughout the user's interaction. If users access previous conversations, camelAI uses the model that was originally selected for that chat. If the provider has shut that model down, the chat continues on its successor (see [Older Model IDs Are Aliases](#older-model-ids-are-aliases)).
 
 ## Available Models
 
-We currently support six models across two providers. Pass the model ID as `model` when you create an iframe or call Ask Camel.
+We currently support seven models across two providers. Pass the model ID as `model` when you create an iframe or call Ask Camel.
 
 ### Model Comparison
 
@@ -26,6 +26,7 @@ We currently support six models across two providers. Pass the model ID as `mode
 | **Claude Sonnet 5.5** | `sonnet-5.5` | Anthropic | In-depth research, comprehensive analysis | Medium | Medium | Very High |
 | **Claude Opus 5.5** | `opus-5.5` | Anthropic | Long, open-ended investigations | Slow | High | Highest |
 | **Claude Haiku 5.5** | `haiku-5.5` | Anthropic | Fast, straightforward questions | Very Fast | Lowest | High |
+| **Claude Fable 5.1** | `fable-5.1` | Anthropic | The most demanding analysis, regardless of cost | Slow | Highest | Highest |
 
 ## Model Characteristics
 
@@ -83,11 +84,21 @@ The fastest and cheapest Anthropic model.
 - Questions are simple and predictable
 - Cost or speed is the priority
 </Tab>
+
+<Tab title="Claude Fable 5.1">
+Anthropic's most capable model.
+
+**Considerations:**
+- The highest cost in the lineup, and long responses on hard questions
+
+**Use Claude Fable 5.1 when:**
+- Questions are the hardest you have and accuracy matters more than speed or cost
+</Tab>
 </Tabs>
 
 ## Older Model IDs Are Aliases
 
-Model IDs from earlier versions of this guide still work. Each one is an alias for the current model in the same family and tier, so requests that name an older ID run on its successor. Conversations started on an older model continue on its successor too.
+Model IDs from earlier versions of this guide still work. Each one is an alias for the current model in the same family and tier. Aliases apply to new conversations: a new iframe chat or Ask Camel request that names an older ID runs on its successor.
 
 | Older ID | Runs on |
 |----------|---------|
@@ -101,6 +112,8 @@ Model IDs from earlier versions of this guide still work. Each one is an alias f
 | `haiku-4.5` | `haiku-5.5` |
 
 New chats record the model that actually ran, so a request for `o3` creates a chat on `gpt-6.1-sol`. An ID that is neither a current model nor an alias returns a `400` error.
+
+Existing conversations keep the model they were created with. The exception is a model the provider has shut down: chats on `sonnet-4`, `gpt-5-codex` or `o4-mini` continue on `sonnet-5.5`, `gpt-6.1-sol` and `gpt-6-luna`.
 
 ## Best Practices
 
