@@ -10,107 +10,97 @@ Selecting the appropriate model is crucial for optimizing your users' experience
 
 ## How Model Selection Works
 
-When you create an iframe through the camelAI API, you specify which model to use. This model choice is locked for that specific chat conversation - ensuring consistency throughout the user's interaction. If users access previous conversations, camelAI automatically uses the model that was originally selected for that chat.
+When you create an iframe through the camelAI API, you specify which model to use. This model choice is locked for that specific chat conversation - ensuring consistency throughout the user's interaction. If users access previous conversations, camelAI uses the model that was originally selected for that chat, or its successor if that model has been replaced (see [Older Model IDs Are Aliases](#older-model-ids-are-aliases)).
 
 ## Available Models
 
-We currently support five models across two providers:
+We currently support six models across two providers. Pass the model ID as `model` when you create an iframe or call Ask Camel.
 
 ### Model Comparison
 
-| Model | Provider | Best For | Speed | Cost | Intelligence |
-|-------|----------|----------|-------|------|--------------|
-| **GPT-5** (Default) | OpenAI | Complex multi-step workflows, long-context | Medium | Medium | Very High |
-| **O3** | OpenAI | Complex queries, tool-heavy workflows | Medium | Highest | Very High |
-| **Sonnet 4.0** | Anthropic | In-depth research, comprehensive analysis | Medium | Highest | Very High |
-| **O4 Mini** | OpenAI | Simple data, cost-conscious deployments | Fast | Low | High |
-| **4.1** | OpenAI | Speed-critical applications, straightforward data | Very Fast | Lowest | Medium |
+| Model | Model ID | Provider | Best For | Speed | Cost | Intelligence |
+|-------|----------|----------|----------|-------|------|--------------|
+| **GPT-6.1 Sol** (Default) | `gpt-6.1-sol` | OpenAI | Most workloads: complex queries, multi-step analysis | Medium | Medium | Very High |
+| **GPT-6 Astra** | `gpt-6-astra` | OpenAI | The hardest questions, where accuracy matters most | Slow | Highest | Highest |
+| **GPT-6 Luna** | `gpt-6-luna` | OpenAI | Simple data, high-volume or cost-conscious deployments | Very Fast | Lowest | High |
+| **Claude Sonnet 5.5** | `sonnet-5.5` | Anthropic | In-depth research, comprehensive analysis | Medium | Medium | Very High |
+| **Claude Opus 5.5** | `opus-5.5` | Anthropic | Long, open-ended investigations | Slow | High | Highest |
+| **Claude Haiku 5.5** | `haiku-5.5` | Anthropic | Fast, straightforward questions | Very Fast | Lowest | High |
 
 ## Model Characteristics
 
 <Tabs>
-<Tab title="OpenAI GPT-5">
-Our recommended default model offering state-of-the-art reasoning and reliability.
+<Tab title="GPT-6.1 Sol">
+Our recommended default, with strong reasoning at a moderate cost.
 
-**Strengths:**
-- Strong long-context understanding
-- Excellent multi-turn coherence and instruction following
-
-**Considerations:**
-- Typically slower than lightweight models for simple tasks
-
-**Use GPT-5 when:**
+**Use GPT-6.1 Sol when:**
 - Your data requires complex joins or calculations
-- Accuracy is more important than speed
+- You want one model that handles most questions well
 </Tab>
 
-<Tab title="OpenAI O3">
-A strong general-purpose model that balances capability and cost for many use cases.
-
-**Strengths:**
-- Excellent at complex reasoning and tool calling
-- Provides concise, focused responses  
+<Tab title="GPT-6 Astra">
+OpenAI's most capable model.
 
 **Considerations:**
-- Higher cost than O4 Mini and GPT-5
-- Medium response times
+- The highest cost and slowest responses in the lineup
 
-**Use O3 when:**
-- Your data requires complex joins or calculations
-- Accuracy is more important than speed
+**Use GPT-6 Astra when:**
+- Questions are hard and accuracy matters more than speed or cost
 </Tab>
 
-<Tab title="Claude Sonnet 4.0">
-An exceptionally capable model that excels at thorough analysis.
+<Tab title="GPT-6 Luna">
+The fastest and cheapest OpenAI model.
 
-**Strengths:**
-- Extremely helpful and proactive
-- Excellent for exploratory data analysis
+**Use GPT-6 Luna when:**
+- Your data schema is simple and well-structured
+- Most queries are straightforward lookups
+- Cost or speed is the priority
+</Tab>
+
+<Tab title="Claude Sonnet 5.5">
+A capable, proactive model that excels at thorough analysis.
 
 **Considerations:**
-- Provides more information than requested
-- Slower response times
+- Often provides more information than requested
 
-**Use Claude Sonnet 4.0 when:**
+**Use Claude Sonnet 5.5 when:**
 - Users perform in-depth research or exploration
 - User questions tend to be open-ended
 </Tab>
 
-<Tab title="OpenAI O4 Mini">
-A cost-effective model that handles straightforward queries well.
+<Tab title="Claude Opus 5.5">
+Anthropic's most capable model in the lineup.
 
-**Strengths:**
-- Significantly lower cost than O3
-- Faster response times
-- Clear, direct communication style
-
-**Considerations:**
-- Less capable with complex reasoning
-- May struggle with nuanced queries
-
-**Use O4 Mini when:**
-- Your data schema is simple and well-structured
-- Most queries are straightforward lookups
-- Cost optimization is a priority
+**Use Claude Opus 5.5 when:**
+- Investigations are long and open-ended
+- Accuracy matters more than speed or cost
 </Tab>
 
-<Tab title="OpenAI 4.1">
-The fastest model in our lineup, optimized for speed.
+<Tab title="Claude Haiku 5.5">
+The fastest and cheapest Anthropic model.
 
-**Strengths:**
-- Fastest response times by far
-- Efficient for simple tasks
-
-**Considerations:**
-- Limited reasoning capabilities
-- Best suited for basic queries only
-- More expensive per token, but generates less tokens so typically cheaper overall
-
-**Use 4.1 when:**
-- Speed is the absolute priority
-- User queries are simple and predictable
+**Use Claude Haiku 5.5 when:**
+- Questions are simple and predictable
+- Cost or speed is the priority
 </Tab>
 </Tabs>
+
+## Older Model IDs Are Aliases
+
+Model IDs from earlier versions of this guide still work. Each one is an alias for the current model in the same family and tier, so requests that name an older ID run on its successor. Conversations started on an older model continue on its successor too.
+
+| Older ID | Runs on |
+|----------|---------|
+| `gpt-5` | `gpt-6.1-sol` |
+| `gpt-5-codex` | `gpt-6.1-sol` |
+| `o3` | `gpt-6.1-sol` |
+| `gpt-4.1` | `gpt-6.1-sol` |
+| `o4-mini` | `gpt-6-luna` |
+| `sonnet-4` | `sonnet-5.5` |
+| `sonnet-4.5` | `sonnet-5.5` |
+| `haiku-4.5` | `haiku-5.5` |
+
+New chats record the model that actually ran, so a request for `o3` creates a chat on `gpt-6.1-sol`. An ID that is neither a current model nor an alias returns a `400` error.
 
 ## Best Practices
 
