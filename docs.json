@@ -250,6 +250,10 @@
   "navbar": {
     "links": [
       {
+        "label": "Discord",
+        "href": "https://discord.gg/7aMc7s9V3h"
+      },
+      {
         "label": "Support",
         "href": "mailto:support@camelai.com"
       }
@@ -261,6 +265,8 @@
     }
   },
   "footer": {
-    "socials": {}
+    "socials": {
+      "Discord": "https://discord.gg/7aMc7s9V3h"
+    }
   }
 }
