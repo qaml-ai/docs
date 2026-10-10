@@ -5,9 +5,9 @@
 	"scripts": {
 		"postinstall": "node scripts/prepare-open-mdx-docs.mjs",
 		"dev": "node scripts/prepare-open-mdx-docs.mjs && open-mdx-docs dev",
-		"build": "open-mdx-docs build",
+		"build": "node scripts/prepare-open-mdx-docs.mjs && open-mdx-docs build",
 		"start": "open-mdx-docs start",
-		"deploy": "open-mdx-docs deploy",
+		"deploy": "node scripts/prepare-open-mdx-docs.mjs && open-mdx-docs deploy",
 		"ci:deploy": "wrangler deploy -c .open-mdx-docs/wrangler.json --keep-vars",
 		"ci:preview": "wrangler versions upload -c .open-mdx-docs/wrangler.json --keep-vars",
 		"doctor": "open-mdx-docs doctor"

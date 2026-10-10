@@ -37,9 +37,17 @@ bun run dev -- --port "$CONDUCTOR_PORT"
 
 Open `http://localhost:$CONDUCTOR_PORT/docs/`.
 
+## Product names
+
+The coding agent product is **camelCode**. Its tabs are **camelCode** and
+**Self-host camelCode**, and the matching global anchor and header button in `docs.json`
+read "camelCode" and "Open camelCode" (all four said "Coding Agent" until October 2026).
+Use "camelCode" wherever the product is named. Keep the lowercase generic term, as in
+"a coding agent such as Claude Code or Codex," and don't rename URL paths or files.
+
 ## Partner guides
 
-Per-tool integration guides live in the **Partners** group under the Getting Started tab
+Per-tool integration guides live in the **Partners** group under the **camelCode** tab
 (one `getting-started/partners/<tool>.mdx` page per guide). The first guide is Resend;
 OpenRouter is planned next.
 
@@ -71,38 +79,28 @@ bot builder at bots.camelai.com. The product repository is
 - People use camelBot through the web app and Discord, not an API. Don't document
   internals (runtime, sandbox, storage engine, infrastructure, internal APIs).
 
-## camelStream documentation
+## Hidden: Changelog
 
-The **Stream (Legacy)** tab follows **Changelog**. camelStream is shutting down;
-new subscriptions and renewals are closed. Keep the existing `/stream/*` URLs
-and the shutdown warning on every Stream page so existing customers can find
-reference material through their remaining paid period. The overview links to
-Settings for each account's end date and invoice history; the installer page
-leads with removal instructions. Do not restore purchase, stream-increase or
-new-enterprise-plan calls to action. Do not mention refunds in public notices.
-The product repository is `/Users/illiana/Projects/qaml-api-dashboard`.
+The Changelog tab is hidden from the navigation (October 2026) because it hasn't
+been kept up to date. Its pages (`changelog/platform`, `changelog/legacy`) stay in
+the repo. To bring it back, add a "Changelog" tab to `docs.json` with an
+"Updates" group listing those two pages.
 
-`stream/fleet.mdx` is the canonical fleet list for every camelAI property. When the fleet
-or a model version changes, update the table and the "Last updated" line. Use `auto` as the
-model ID everywhere. Document the legacy `deepseek-v4-flash` ID only in the fleet-page
-migration FAQ.
+## Redirects
 
-`stream/reasoning.mdx` documents the reasoning controls (`reasoning_effort`, `reasoning.effort`,
-`thinking.budget_tokens`, `output_config.effort`). Effort levels are passed through as the caller
-sends them; do not document any effort remapping. The old remap of `medium` to `high` existed only
-because DeepSeek V4 Flash rejected `medium`, and a product PR removes it as of September 2026.
-Do not document the gateway's thinking-budget cap from `normalizeReasoningLimit` either; it is a
-relic and reads as too much detail (CTO decision, September 2026). Describe the parameters and
-their pass-through, not internal limits. Budgets are optional on every endpoint: present effort as
-the primary control and budgets as an optional ceiling, never as something the caller must send.
-Live-tested against staging in September 2026: every effort level and both Messages `thinking`
-forms are accepted and return reasoning, while `reasoning_effort: "none"` and
-`thinking: {"type": "disabled"}` are rejected with a 400 by fleet models that require reasoning.
-Re-test with a staging key from Illiana before changing those claims.
+open-mdx-docs ignores a `redirects` list in `docs.json`, and the root `worker.ts` is an
+unused stub, so redirects are added to the renderer's own Worker entry
+(`node_modules/open-mdx-docs/workers/app.ts`) by `scripts/prepare-open-mdx-docs.mjs`. That
+script runs on `bun install` and before `dev`, `build` and `deploy`, and the same Worker
+entry serves the dev server and production. Today there is one redirect: `/docs/stream` and
+every path under it go permanently (301) to `https://camelai.com/stream`, the sales site's
+page for the retired Stream product, so old links still land somewhere useful. Don't add
+pages under `stream/`; the redirect would hide them. If an open-mdx-docs update changes the
+Worker entry, the script stops with an error instead of skipping the redirect.
 
 ## Self-hosting guides
 
-Operator documentation lives in the **Self-hosting** tab under `self-hosting/`.
+Operator documentation lives in the **Self-host camelCode** tab under `self-hosting/`.
 Keep it aligned with `SELF_HOSTING.md`, `infra/selfhost/README.md`, the Compose
 files, and the deployment scripts in the public `qaml-ai/camelAI` repository.
 The product repository is the source of truth for exact variables and release

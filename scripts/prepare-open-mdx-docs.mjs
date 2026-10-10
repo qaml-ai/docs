@@ -19,6 +19,17 @@ const edits = [
 		patched:
 			"\tserver: {\n\t\tport: 3000,\n\t\tfs: {\n\t\t\tallow: [process.cwd(), process.env.DOCS_DIR ?? process.cwd()],\n\t\t},\n\t},",
 	},
+	{
+		// Redirects. open-mdx-docs has no redirect config, so they go at the top
+		// of its Worker entry, which serves both `dev` and production. The
+		// retired Stream docs (`/docs/stream` and everything under it) go to the
+		// sales site's Stream page. See "Redirects" in CLAUDE.md.
+		file: 'workers/app.ts',
+		original:
+			'\tasync fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {\n\t\tconst url = new URL(request.url);\n',
+		patched:
+			"\tasync fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {\n\t\tconst url = new URL(request.url);\n\t\tif (url.pathname === '/docs/stream' || url.pathname.startsWith('/docs/stream/')) {\n\t\t\treturn Response.redirect('https://camelai.com/stream', 301);\n\t\t}\n",
+	},
 ];
 
 let changed = 0;
@@ -48,6 +59,6 @@ for (const edit of edits) {
 
 console.log(
 	changed === 0
-		? 'open-mdx-docs preview compatibility patch already applied.'
-		: `Applied open-mdx-docs preview compatibility patch (${changed} files).`,
+		? 'open-mdx-docs patches (preview compatibility, redirects) already applied.'
+		: `Applied open-mdx-docs patches (preview compatibility, redirects) to ${changed} files.`,
 );
