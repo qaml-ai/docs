@@ -10,7 +10,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Coding Agent",
+        "tab": "camelCode",
         "groups": [
           {
             "group": "Start Here",
@@ -52,7 +52,7 @@
         ]
       },
       {
-        "tab": "Self-host Coding Agent",
+        "tab": "Self-host camelCode",
         "groups": [
           {
             "group": "Plan",
@@ -207,7 +207,7 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Coding Agent",
+          "anchor": "camelCode",
           "href": "https://camelai.dev",
           "icon": "browser"
         },
@@ -242,7 +242,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Open Coding Agent",
+      "label": "Open camelCode",
       "href": "https://camelai.dev"
     }
   },

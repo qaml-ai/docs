@@ -37,9 +37,17 @@ bun run dev -- --port "$CONDUCTOR_PORT"
 
 Open `http://localhost:$CONDUCTOR_PORT/docs/`.
 
+## Product names
+
+The coding agent product is **camelCode**. Its tabs are **camelCode** and
+**Self-host camelCode**, and the matching global anchor and header button in `docs.json`
+read "camelCode" and "Open camelCode" (all four said "Coding Agent" until October 2026).
+Use "camelCode" wherever the product is named. Keep the lowercase generic term, as in
+"a coding agent such as Claude Code or Codex," and don't rename URL paths or files.
+
 ## Partner guides
 
-Per-tool integration guides live in the **Partners** group under the Getting Started tab
+Per-tool integration guides live in the **Partners** group under the **camelCode** tab
 (one `getting-started/partners/<tool>.mdx` page per guide). The first guide is Resend;
 OpenRouter is planned next.
 
@@ -65,7 +73,7 @@ Worker entry, the script stops with an error instead of skipping the redirect.
 
 ## Self-hosting guides
 
-Operator documentation lives in the **Self-hosting** tab under `self-hosting/`.
+Operator documentation lives in the **Self-host camelCode** tab under `self-hosting/`.
 Keep it aligned with `SELF_HOSTING.md`, `infra/selfhost/README.md`, the Compose
 files, and the deployment scripts in the public `qaml-ai/camelAI` repository.
 The product repository is the source of truth for exact variables and release
