@@ -158,44 +158,6 @@
         ]
       },
       {
-        "tab": "Stream (Legacy)",
-        "groups": [
-          {
-            "group": "Start Here",
-            "pages": [
-              "stream/overview",
-              "stream/install",
-              "stream/fleet",
-              "stream/data-usage",
-              "stream/quickstart"
-            ]
-          },
-          {
-            "group": "Coding Agents",
-            "pages": [
-              "stream/agents",
-              "stream/hermes",
-              "stream/openclaw",
-              "stream/claude-code",
-              "stream/codex",
-              "stream/opencode",
-              "stream/pi"
-            ]
-          },
-          {
-            "group": "API Reference",
-            "pages": [
-              "stream/authentication",
-              "stream/endpoints",
-              "stream/reasoning",
-              "stream/management-api",
-              "stream/sdks",
-              "stream/queues-and-errors"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API (Legacy)",
         "groups": [
           {
@@ -253,11 +215,6 @@
           "anchor": "camelRun",
           "href": "https://run.camelai.com/console",
           "icon": "robot"
-        },
-        {
-          "anchor": "Legacy Stream sign in",
-          "href": "https://stream.camelai.com/login",
-          "icon": "clock-rotate-left"
         },
         {
           "anchor": "Legacy App",
