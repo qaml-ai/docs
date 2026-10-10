@@ -1,0 +1,179 @@
+---
+title: "Publish, versions, and your bot's page"
+sidebarTitle: 'Publish and manage'
+description: "Publish a bot, add it to Discord, roll back to an earlier version, and manage it from its page or from Discord"
+---
+
+camel-builder writes, checks, and saves your bot's changes. It never publishes,
+rolls back, or deletes a bot on its own. Each of those waits for you to select
+a button.
+
+## Publish
+
+Each publish makes a new version from the bot's saved code and puts it live.
+Changes camel-builder hasn't saved yet aren't in it. You can publish in any of
+these ways:
+
+- **The publish card.** After camel-builder saves a change, the chat shows a
+  card such as **Publish @mochi as version 2?** with the files that changed.
+  Select **Publish v2**, or **Not now**.
+- **Ask camel-builder.** Say "publish it". camel-builder shows a card such as
+  **Publish mochi's changes?** that says what will happen. Nothing changes
+  until you select **Publish**.
+- **Publish changes on the bot page.** Once the bot is in Discord, the header
+  shows **Publish changes** with the number of unpublished changes. A message
+  then offers **Undo**, which goes back to the version that ran before.
+- **Add to Discord.** Adding a bot to Discord for the first time also
+  publishes it.
+
+## Add to Discord
+
+After the first publish, the chat asks **@mochi is published. Add it to
+Discord?**
+
+<Steps>
+  <Step title="Select Add to Discord">
+    Discord's own screen opens in a new tab.
+  </Step>
+  <Step title="Pick the server and the channel">
+    Pick them on Discord's screen and approve. You need the **Manage Server**
+    permission in that server.
+  </Step>
+  <Step title="Wait for the card to update">
+    The card shows **Waiting for Discord…** and goes away once the bot is in
+    the channel.
+  </Step>
+</Steps>
+
+The bot page's header has **Add to Discord** too, ready once camel-builder
+gives the bot a command. The test channel's **Add to Discord** and the
+**Channels** tab's **Add a channel** open a dialog in camelBot instead. Choose
+a **Server** and a **Channel**, then select **Add mochi to #dice-tower** (with
+your bot's and channel's names). If camel isn't in that server yet, select
+**Install in** followed by the server's name first. Discord asks you to
+approve, then brings you back.
+
+Bots work in text and announcement channels, and in the threads inside them.
+Forum and voice channels don't work with bots yet. A bot on your own Discord
+app adds to a server a little differently. See [Your own Discord
+app](/camelbot/own-app#add-to-discord-in-one-screen).
+
+## The bot page
+
+Select a bot in the list on the left, or **Dashboard** in its test channel, to
+open its page. Under its name you see its status and when it was last used.
+**Build** opens the chat with `@mochi` in the message box and the bot's test
+channel beside it.
+
+| Status | What it means |
+| --- | --- |
+| **Draft** | It isn't published yet |
+| **Live in #dice-tower** | It's published and answering there. `+2` means 2 more channels |
+| **Paused** | It ignores messages and commands until you resume it |
+| **Unpublished changes** | Its saved code has changes that aren't live |
+| **Needs a new token** | Its own Discord app needs a new bot token |
+| **Discord app turned off** | Its own Discord app is turned off |
+| **Not answering in #tavern** | Its own Discord app isn't in that channel's server yet |
+
+When something stops the bot from answering, a notice above the tabs says what
+happened, with a button that fixes it. A paused bot has **Resume**. A bot on
+your own app may have **Paste a new token**, **Switch app**, or **Add to
+server**.
+
+### Activity
+
+Activity lists what the bot did in Discord, newest first, as it happens, such
+as "kit used /mochi roll in #dice-tower". **Last 24 hours** above the tabs
+counts its uses.
+
+A failed event reads like "Failed on /mochi roll for kit in #dice-tower" and
+has two buttons:
+
+- **Ask camel-builder to fix** opens the chat with a request in the message
+  box, such as "@mochi the roll command is failing, can you fix it?". Add
+  detail if you like, and send it.
+- **Details** shows the error and what the bot logged while it ran.
+
+When there are failures, a chip such as **2 problems** above the list shows
+only those.
+
+### Versions and rollback
+
+The **Versions** tab appears once a bot has two versions. Each row shows the
+version's number, its commands, and its date. **Live** marks the version
+running in Discord, and **Not published** marks newer ones. Publishing and
+rolling back from this tab work once the bot is in Discord.
+
+- **Publish** on a newer version puts it live.
+- **Roll back** on an older version asks you to confirm, with the note
+  "Discord switches to version 2's code now, as a new version. Saved data
+  stays." Select **Roll back** again to confirm.
+
+A rollback adds a new version made from the older version's code, so the list
+keeps every version. The bot's saved data stays as it is, and only the code
+goes back. The older code also becomes the saved code that camel-builder works
+from, so unpublished changes are replaced.
+
+You can also ask camel-builder to go back, such as "put mochi back to version
+2". It shows a card such as **Go back to v2?**, and the bot changes only when
+you select **Go back to v2**.
+
+### Channels
+
+The **Channels** tab lists each channel the bot is in, with **Open in
+Discord**, and an **×** that removes the bot from that channel. **Add a
+channel** adds it to another one. **How people use it** shows the ways people
+can reach the bot, such as its commands and starting a message with its name.
+
+### Settings
+
+- **Discord app.** The app the bot replies as. **Change** switches it between
+  Camel's app and your own apps. See [Your own Discord
+  app](/camelbot/own-app#switch-a-bot-to-another-app).
+- **Name.** On Camel's app the name is also the command, so it's lowercase.
+  On your own app, a new name changes it in Discord too.
+- **Picture.** On Camel's app the picture shows in camelBot only. On your own
+  app, it changes in Discord too.
+- **Pause, download or delete** opens three more settings:
+  - **Pause.** "Stop answering in Discord for now. Nothing is lost." A paused
+    bot ignores messages and commands, and its schedules don't run. Turn the
+    switch off, or select **Resume** in the notice, to start it again.
+  - **Download its data.** "A copy of everything mochi has saved." Select
+    **Download**.
+  - **Delete bot.** Removes the bot from Discord and erases its versions and
+    data for good. The dialog offers **Download a copy first**, then asks you
+    to type the bot's name and select **Delete mochi**. This can't be undone.
+
+## Build from Discord
+
+You can build and change bots without leaving Discord. Run `/camel create` in
+a server where camel is, or anywhere once you add camel to your Discord apps.
+
+```text
+/camel create idea:Roll dice for our D&D group, with a button to roll again
+```
+
+The `idea` is optional. camel answers with a link to your DMs, where
+camel-builder starts on your idea or asks what the bot should do. It's the same
+conversation as the chat on the web, so you can switch between the two. Cards
+to publish, roll back, or delete a bot show in your DMs with their buttons.
+Some steps, such as pasting a bot token, open in your browser.
+
+If camel can't DM you, it says so. Allow direct messages from the server's
+members in Discord's Privacy Settings, or add camel to your apps, then run the
+command again.
+
+After `/camel create`, your DMs with camel go to camel-builder. Once you use
+one of your bots' commands, your DMs with camel go to that bot instead. Reply
+to one of camel-builder's messages, or run `/camel create` again, to talk to
+camel-builder.
+
+Two more commands put bots in channels from Discord:
+
+| Command | What it does |
+| --- | --- |
+| `/camel add bot:` | Adds one of your bots to the channel you're in. It publishes the bot first if it isn't published yet |
+| `/camel remove bot:` | Removes a bot made with camelBot from the channel you're in, whoever made it |
+
+Both need the **Manage Server** or **Manage Channels** permission in that
+server.

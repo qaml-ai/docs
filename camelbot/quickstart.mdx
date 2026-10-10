@@ -1,0 +1,114 @@
+---
+title: 'Quickstart'
+description: 'Build your first Discord bot with camelBot, try it, publish it, and add it to your server'
+---
+
+In a few minutes you will have a bot that camel-builder wrote for you, tried in
+a private test channel, and running in your Discord server.
+
+You need a Discord account, and the **Manage Server** permission in the server
+you want to add the bot to.
+
+<Steps>
+  <Step title="Sign in with Discord">
+    Open [bots.camelai.com](https://bots.camelai.com) and select **Sign in with
+    Discord**. Discord asks to share your username, your avatar, and the list
+    of servers you're in. Signing in creates your camelBot account.
+  </Step>
+  <Step title="Say what your bot should do">
+    The first screen asks **What should your bot do?** Describe it in your own
+    words, the way you would explain it to a friend. For example:
+
+    ```text
+    Post a trivia question when asked, with answer buttons, and keep score
+    ```
+
+    You can change anything later. Select **Continue**.
+  </Step>
+  <Step title="Choose how your bot appears in Discord">
+    Pick one of two options:
+
+    - **Camel's app** (Recommended). Replies as camel, with commands like
+      `/mochi roll`. Ready now, with nothing to set up.
+    - **Your own app**. Replies with its own name and picture, with commands
+      like `/roll`. It takes about 5 minutes on Discord's developer site.
+
+    **See every difference** compares the two side by side. What the bot can
+    do is the same either way, and you can switch later. For your first bot,
+    Camel's app is the quickest. If you pick your own app, the next step is
+    **Connect your Discord app**. See [Your own Discord
+    app](/camelbot/own-app#connect-your-own-app) for that step.
+  </Step>
+  <Step title="Name your bot">
+    camelBot suggests a name and a picture. Change them if you like.
+
+    On Camel's app the name is also the bot's command and how people talk to
+    it, so it uses lowercase letters, numbers, `-` or `_`, with 32 characters
+    or fewer. The names `camel`, `help` and `settings` are taken. The picture
+    shows in camelBot only. In Discord, the bot's replies come from camel.
+
+    Select **Create** followed by the name, such as **Create quizzy**.
+  </Step>
+  <Step title="Try it in #try-{name}">
+    The chat with camel-builder opens, with your bot's test channel beside it.
+    camel-builder starts from what you described. It writes the bot, checks
+    it, tries it, and tells you how to use it. **camel-builder is working…**
+    shows under the message box until it's done, with **Stop** to end it.
+
+    Then try the bot yourself in `#try-quizzy`:
+
+    - Type `/` to see its commands, then pick one.
+    - Start a message with its name, such as `quizzy, hi`.
+    - Press the buttons on its replies.
+
+    Only you see this channel, and nothing goes to Discord. To change
+    something, tell camel-builder in the chat, such as "make the questions
+    harder", then try again. See [The test channel](/camelbot/test-channel)
+    for everything you can try there.
+  </Step>
+  <Step title="Publish">
+    After camel-builder saves a change, the chat shows a card that asks
+    **Publish @quizzy as version 1?** Select **Publish v1**.
+
+    You can also ask camel-builder to publish it. It shows a card with what
+    will happen, and nothing is published until you select **Publish**.
+  </Step>
+  <Step title="Add to Discord">
+    Once the bot is published, the chat asks **@quizzy is published. Add it to
+    Discord?** Select **Add to Discord**.
+
+    Discord's own screen opens in a new tab. Pick the server and the channel
+    there, and approve. The card in the chat shows **Waiting for Discord…**
+    until the bot is in the channel.
+  </Step>
+</Steps>
+
+## Use it in Discord
+
+Open the channel you picked. On Camel's app, members can:
+
+- Run its commands, such as `/quizzy trivia`.
+- Start a message with its name, such as `quizzy, explain the rules`.
+- Reply to one of its messages.
+
+The bot's replies come from camel, with Discord's APP tag. In the channel you
+added it to, the bot sees every message, so it can also answer messages that
+don't use its name if you built it to. See [Which messages a bot
+sees](/camelbot/limits#which-messages-a-bot-sees).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="The test channel" icon="flask-conical" href="/camelbot/test-channel">
+    Talk as other members, send files and voice messages, and run schedules.
+  </Card>
+  <Card title="Publish, versions, and your bot's page" icon="history" href="/camelbot/publishing">
+    Publish changes, roll back, add channels, and pause or delete a bot.
+  </Card>
+  <Card title="Your own Discord app" icon="key-round" href="/camelbot/own-app">
+    Give your bot its own name, picture, and commands.
+  </Card>
+  <Card title="Permissions and limits" icon="shield-check" href="/camelbot/limits">
+    What a bot can see and do in your server.
+  </Card>
+</CardGroup>

@@ -1,0 +1,123 @@
+---
+title: 'The test channel'
+description: 'Try a bot as yourself or as other members, with commands, forms, buttons, files, voice messages, and schedules, before anyone in your server sees it'
+---
+
+Every bot has a private test channel, `#try-{name}`, beside the chat with
+camel-builder. It looks and works like a Discord channel, but only you see it
+and nothing goes to Discord. Use it to try each change before you publish.
+
+camel-builder sees what you try in the test channel, and what it tries shows
+there too. When something fails, you can say "fix that" in the chat and
+camel-builder knows what you mean.
+
+## What runs in the test channel
+
+- **Your messages run the saved code**, which is what publishing would put
+  live. They're tagged **saved code**.
+- **camel-builder's tries run its working draft**, which it hasn't saved yet.
+  They're tagged **DRAFT** and marked **sent by camel-builder**.
+
+On phones, select **Try** in the chat's header to open the test channel.
+
+## Talk to your bot
+
+The message box works like Discord's:
+
+- **Address it.** On Camel's app, start a message with the bot's name, such
+  as `mochi, hi`. On your own app, mention it, such as `@Pebble hi`. If a
+  message doesn't address the bot and gets no reply, the channel shows a note
+  saying so.
+- **Run a command.** Type `/` to see the bot's commands, pick one, and fill in
+  its options, such as `/roll sides:20`. On Camel's app you can type
+  `/mochi roll` or just `/roll`.
+- **Reply to a message.** Hover over one of the bot's messages and select
+  **Reply**. A reply reaches the bot without its name, as on Discord.
+
+## Talk as someone else, or in #general
+
+The first button in the message box, your initial, picks who is talking and
+where:
+
+- **Talk as** you, **Alex**, or **Sam**. Alex and Sam are pretend members of
+  the server, so you can try what a bot does with several people, such as
+  taking turns or keeping a scoreboard.
+- **In** the bot's own channel or **#general**, so you can try how the bot
+  behaves outside its channel.
+
+Messages from Alex or Sam, or in #general, say so in the channel.
+
+## Buttons, menus, and forms
+
+Buttons and dropdown menus on the bot's replies work. Select one and the bot
+answers as it would in Discord. Replies that only you would see in Discord
+show that way here too.
+
+A command with a form opens it the way Discord does. Fill in the fields and
+select **Submit**.
+
+## Files and voice messages
+
+- **Attach files** with the paperclip at the start of the message box, by
+  pasting, or by dropping them on the channel. A message takes up to 10 files,
+  each up to 10 MB, as on Discord. A message can be just its files.
+- **Record a voice message** with the microphone at the end of the message
+  box. Stop to send it, or cancel it. The bot gets it as a voice message, as
+  it would in Discord.
+
+The bot gets your files as attachments. Images and files the bot sends back
+show in the channel.
+
+## Schedules and alarms
+
+When a bot has schedules, or sets a reminder while you try it, an alarm clock
+with a count appears in the channel's header. Open it to see each schedule and
+alarm, when it would run next, and **Run now**.
+
+In the test channel, schedules run only when you select **Run now**. The
+exception is an alarm set to go off within 15 minutes, which goes off by
+itself. Nothing you run here affects the live bot.
+
+## Test data
+
+What the bot saves while you try it is test data, kept apart from the live
+bot's data. Open the **⋯** menu in the channel's header to:
+
+- **Look at test data.** See the bot's tables and how many rows each has.
+  Select a table to see its rows, or run your own query. Looking changes
+  nothing.
+- **Reset test data.** Clear what the bot saved, so it starts fresh. The
+  channel shows "Test data reset. The bot starts fresh." A reset also clears
+  the test channel's schedules and alarms.
+
+camel-builder can reset the test data too, and the channel says when it does.
+
+## AI in tests
+
+AI in the test channel is real. Chat replies, images, and voice transcription
+run as they would in Discord. Their cost comes out of your daily camel-builder
+allowance, which also covers camel-builder's own work. It never comes out of
+the live bot's allowance.
+
+**AI today**, in the channel's header, shows how much of today's allowance is
+used. It resets at midnight UTC. Once it's used up, AI in tests stops working
+and camel-builder takes no new messages until it resets. See [AI
+allowances](/camelbot/limits#ai-allowances).
+
+## When something fails
+
+A failed reply shows **Your bot hit an error on** followed by what you tried
+and the error. **Show details** shows what the bot logged. Tell camel-builder
+in the chat. It sees what you tried and can fix it.
+
+## The channel's header
+
+- **The bot's name.** With several bots, select it to switch bots. **Keep
+  testing mochi here** pins the test channel to that bot. Otherwise the
+  channel follows the bot the chat is about.
+- **The pencil.** Ask camel-builder to change this bot. The chat's message box
+  starts with `@mochi`.
+- **Dashboard.** Opens the bot's page. See [The bot
+  page](/camelbot/publishing#the-bot-page).
+- **Add to Discord.** Shows once the bot has answered a test, until it's in a
+  Discord channel.

@@ -146,6 +146,27 @@
         ]
       },
       {
+        "tab": "camelBot",
+        "groups": [
+          {
+            "group": "Start Here",
+            "pages": [
+              "camelbot/overview",
+              "camelbot/quickstart"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "camelbot/test-channel",
+              "camelbot/publishing",
+              "camelbot/own-app",
+              "camelbot/limits"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "Changelog",
         "groups": [
           {
@@ -253,6 +274,11 @@
           "anchor": "camelRun",
           "href": "https://run.camelai.com/console",
           "icon": "robot"
+        },
+        {
+          "anchor": "camelBot",
+          "href": "https://bots.camelai.com",
+          "icon": "messages-square"
         },
         {
           "anchor": "Legacy Stream sign in",
