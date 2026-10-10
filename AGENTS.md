@@ -59,6 +59,13 @@ Partners group in `docs.json` and link it from the relevant tab in
 `getting-started/connections.mdx`. Verify connection details (UI labels, the
 `CONNECTIONS.find()` signature, code examples) against the product repo before publishing.
 
+## Hidden: Changelog
+
+The Changelog tab is hidden from the navigation (October 2026) because it hasn't
+been kept up to date. Its pages (`changelog/platform`, `changelog/legacy`) stay in
+the repo. To bring it back, add a "Changelog" tab to `docs.json` with an
+"Updates" group listing those two pages.
+
 ## Redirects
 
 open-mdx-docs ignores a `redirects` list in `docs.json`, and the root `worker.ts` is an

@@ -146,18 +146,6 @@
         ]
       },
       {
-        "tab": "Changelog",
-        "groups": [
-          {
-            "group": "Updates",
-            "pages": [
-              "changelog/platform",
-              "changelog/legacy"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API (Legacy)",
         "groups": [
           {
