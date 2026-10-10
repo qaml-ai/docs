@@ -59,6 +59,26 @@ Partners group in `docs.json` and link it from the relevant tab in
 `getting-started/connections.mdx`. Verify connection details (UI labels, the
 `CONNECTIONS.find()` signature, code examples) against the product repo before publishing.
 
+## camelBot documentation
+
+The **camelBot** tab (`camelbot/`, after camelRun) documents camelBot, the Discord
+bot builder at bots.camelai.com. The product repository is
+`/Users/illiana/Projects/camel-discord-bots`. Take UI labels, quoted exactly, from
+`web/src/pages/discord/**`, `web/src/pages/bot/**`, `web/src/lib/*.ts` and
+`web/src/components/discord/token-field.tsx`, and limits from `docs/builder.md` and
+`docs/bot-authoring.md`. The sales site's fact sheet, with sources, is
+`app/components/bot/content.ts` in camelai-salessite.
+
+- Names: the app calls itself "Camel"; the shared Discord app is "Camel's app" (its bot
+  user is "camel"); the assistant is "camel-builder". camelRun's Camel Discord bot
+  (`camelrun/channels.mdx`) is a different thing.
+- camelBot is free while in beta, and AI draws on daily allowances (one per bot, one per
+  person for camel-builder and AI in tests). Never state dollar amounts.
+- A bot can only send, edit its own messages, and react. Never claim moderation actions,
+  role changes, member-join events, private ticket channels, or web dashboards.
+- People use camelBot through the web app and Discord, not an API. Don't document
+  internals (runtime, sandbox, storage engine, infrastructure, internal APIs).
+
 ## Hidden: Changelog
 
 The Changelog tab is hidden from the navigation (October 2026) because it hasn't

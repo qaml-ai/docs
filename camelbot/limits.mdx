@@ -1,0 +1,111 @@
+---
+title: 'Permissions and limits'
+description: 'The Discord permissions a bot asks for, which messages it sees, what it cannot do, and the limits and daily AI allowances it runs within'
+---
+
+## Permissions
+
+When you add a bot to a server, Discord asks you to approve these permissions:
+
+- View Channel
+- Send Messages
+- Send Messages in Threads
+- Embed Links
+- Read Message History
+- Add Reactions
+
+A bot never asks for Administrator, or for anything that manages the server,
+its members, its roles, or its channels. It asks for the same permissions on
+Camel's app and on your own app.
+
+To add a bot to a server, you need the **Manage Server** permission there.
+`/camel add` and `/camel remove` need **Manage Server** or **Manage Channels**.
+
+## Which messages a bot sees
+
+Every bot gets its own slash commands, button and menu presses, and form
+answers, wherever people use them. Messages from other bots and webhooks are
+ignored. Which ordinary messages it sees depends on its app.
+
+### On Camel's app
+
+- **In the channels you add it to**, and the threads in them, it sees every
+  message.
+- **Anywhere else in those servers**, it sees messages that start with its
+  name, such as `mochi, roll` or `mochi roll`, and replies to its messages.
+- **A message that @mentions camel** goes to the channel's only bot, or to
+  the server's only bot when no bot is in that channel.
+- **Direct messages to camel** go to the bot whose message you reply to, or
+  else to the bot you last used a command or button of.
+
+### On your own app
+
+- **Direct messages** to your app always reach your bot.
+- **Messages that @mention it or reply to it** reach it anywhere in its
+  servers.
+- **With Message Content on**, it also sees every message in its channels and
+  their threads, and messages that start with its name followed by a comma or
+  colon, such as `Pebble, roll`.
+- **With Message Content off**, other messages in its channels reach it
+  without their text. When your bot reads ordinary messages, its **Settings**
+  offer **Turn it on**.
+
+## What a bot can't do
+
+A bot can post in its channels, reply, edit its own messages, add reactions,
+and attach files. It can't:
+
+- Delete or pin messages, or edit other people's messages.
+- Time out, kick, or ban members, or change their roles or nicknames.
+- Create, change, or delete channels, threads, or roles.
+- See members join or leave the server.
+- Start a direct message with someone. It can answer direct messages.
+- Post outside its channels, except to answer where it was used.
+- Mention @everyone, @here, or a role.
+- Read a channel's earlier messages. It sees messages as they arrive.
+- Work in forum or voice channels.
+- Reach private networks. Its web requests go to public `https` addresses
+  only.
+- Have a website or dashboard of its own.
+
+To help with moderation, build a bot that flags messages and posts them for
+your moderators with buttons. Your moderators then take the action themselves.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Commands | Up to 25 per bot, each with up to 25 options. An option offers up to 25 choices |
+| Command and option names | 1 to 32 lowercase letters, numbers, `-` or `_`. Descriptions up to 100 characters |
+| Forms | Up to 5 text fields in a command's form |
+| Bot names on Camel's app | 1 to 32 lowercase letters, numbers, `-` or `_`. Not `camel`, `help` or `settings`. Each of your bots has its own name, and two bots on Camel's app in one server can't share a name |
+| Names on your own app | 2 to 32 characters. Discord allows about two name changes an hour |
+| Files a bot sends | 10 per message, 10 MB each and 24 MB in all, as png, jpg, gif, webp, txt, md, csv, json, pdf, mp3, ogg, wav or mp4 |
+| Files you send in the test channel | 10 per message, 10 MB each |
+| Saved data | 100 MB per bot |
+| Repeating schedules | 25 per bot, at most once a minute |
+| One-time reminders | 200 waiting at once, from 1 second to a year ahead |
+| Web requests | Public `https` addresses only, 10 seconds and 1 MB each |
+| Messages to camel-builder | 8,000 characters each, and up to 20 in 10 minutes |
+| Discord apps | 5 per account. One app runs one bot |
+
+Schedule times are in UTC. When you ask for a post at a set time, tell
+camel-builder your time zone.
+
+A schedule or reminder that was due while camelBot was unavailable runs as
+soon as it's back. A repeating schedule runs once for all the times it missed.
+Schedules don't run while a bot is paused.
+
+## AI allowances
+
+camelBot is free while in beta. AI draws on two daily allowances, and both
+reset at midnight UTC.
+
+- **Each bot's allowance** covers the AI a live bot uses in Discord, such as
+  chat replies, images, and voice transcription. Once it's used up, the bot's
+  AI stops working until it resets. Its commands and features that don't use
+  AI keep working.
+- **Your camel-builder allowance** covers camel-builder's own work and AI in
+  your test channels. **AI today** in the test channel's header shows how much
+  is used. Once it's used up, camel-builder takes no new messages and AI in
+  tests stops working until it resets.

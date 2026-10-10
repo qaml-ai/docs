@@ -1,0 +1,157 @@
+---
+title: 'Your own Discord app'
+description: "Give a bot its own name, picture, and slash commands by connecting a Discord application of your own"
+---
+
+Every bot runs on either Camel's app or a Discord app of your own. Camel's app
+needs no setup. Your own app gives the bot its own name, picture, profile, and
+top-level slash commands. What the bot can do is the same either way, and you
+can switch a bot between them at any time.
+
+## Camel's app or your own
+
+| | Camel's app | Your own app |
+| --- | --- | --- |
+| **Who replies** | Every reply comes from camel, Camel's shared bot | Replies come from your app, with its own name and picture |
+| **Slash commands** | Start with your bot's name, like `/mochi roll`, so several Camel bots can share a server | Just the command, like `/roll`, as with any other Discord bot |
+| **Talking to it** | People start a message with its name, or reply to one of its messages | People @mention it, or reply to one of its messages |
+| **Its profile** | camel's profile, the same for every Camel bot | Its own picture, About me, and status |
+| **Direct messages** | People message camel, which passes the message to the Camel bot they used last | People message your app, and only your bot answers |
+| **Adding it to a server** | camel joins a server once. After that, you pick a channel for each bot | Your app joins each server you add it to, with your approval |
+| **Sharing a server** | Camel bots in one server all reply as camel, so each needs a different name there | It's its own member, so its name and commands never clash with Camel bots |
+| **Setup and upkeep** | Nothing to set up or look after | About 5 minutes on Discord's developer site. If you reset its token there, you paste the new one in camelBot |
+
+## Connect your own app
+
+You connect an app in one of three places:
+
+- When you make a bot, choose **Your own app**. The next step is **Connect
+  your Discord app**.
+- For a bot you have, open its page, then **Settings**. Next to **Discord
+  app**, select **Change**, then **Connect another app**.
+- In the chat, ask camel-builder to use your own Discord app. It shows a card
+  with a token field.
+
+<Steps>
+  <Step title="Create an application">
+    In the [Discord Developer
+    Portal](https://discord.com/developers/applications), click **New
+    Application** and name it. The name is what your bot is called in Discord.
+  </Step>
+  <Step title="Copy its bot token">
+    Open **Bot** in the side menu, click **Reset Token**, then **Copy**.
+    Discord shows a token only once, so Reset Token makes a new one and the
+    old one stops working. It may ask for your password or 2FA code.
+  </Step>
+  <Step title="Paste it in camelBot">
+    Paste the token into the token field. It's checked with Discord as soon as
+    you paste it. Once Discord accepts it, camelBot shows **Found** and your
+    app's name, and sets up the rest of the app for you.
+  </Step>
+</Steps>
+
+When you're making a new bot, the last step, **Name your bot**, shows the
+app's name and picture as Discord has them. Changes there update the app in
+Discord too. Select **Create** followed by the name to finish.
+
+An app you connect stays connected even if you stop partway. Next time, pick it
+under **Or use one you connected before**.
+
+### What the check may ask you to change
+
+- **Requires OAuth2 Code Grant is on.** Adding the app to a server won't work
+  until you switch it off on the app's Bot page. Then select **paste its token
+  again**.
+- **Message Content is off.** If your bot reads ordinary messages, camelBot
+  offers **Turn it on**. Without it, your app only reads messages that mention
+  it, reply to it, or are DMs.
+- **The Interactions Endpoint URL points somewhere else.** Connecting points
+  it at camelBot instead, so the app's commands come to camelBot. Select
+  **Connect anyway**, then paste the token again.
+
+## Your token stays private
+
+Under the token field, camelBot says "Goes straight to Camel, not into the
+chat. camel-builder never sees it." When camel-builder needs a token, to
+connect an app or replace an old one, it shows a card with that same field.
+Once Discord accepts the token, the card says "Token saved privately.
+camel-builder never saw it."
+
+<Warning>
+  Don't paste a bot token into the chat's message box. It's sent like any
+  other message, and the chat keeps it. If you do, reset the token in the
+  Developer Portal and paste the new one into the token field.
+</Warning>
+
+## Up to 5 apps
+
+Each account can connect up to 5 Discord apps, and one app runs one bot. To
+free one up, open any bot's **Settings** and select **Change** next to its
+Discord app. Pick an app that no bot uses, select **Disconnect** followed by
+its name, then **Disconnect** again to confirm. Its commands are cleared, and
+you can connect it again later with its token.
+
+## Switch a bot to another app
+
+Open the bot's **Settings** and select **Change** next to **Discord app**. Pick
+Camel's app or one of your apps, or **Connect another app**, then select
+**Continue**. camelBot lists what will change before anything does:
+
+- On your own app, the bot takes the app's name and follows it from then on.
+  Back on Camel's app, it keeps its name.
+- Replies come from the new app.
+- Commands change, such as from `/mochi roll` to `/roll`.
+- The bot keeps its channels. If the new app isn't in one of those servers
+  yet, you add it next.
+- If it was on one of your apps, that app stays connected, free for another
+  bot.
+
+Select **Switch to** followed by the app's name. If the new app isn't in all of
+the bot's servers, select **Add to server** for each one.
+
+## Name, picture, and profile
+
+On your own app, **Name** and **Picture** in the bot's **Settings** change the
+app in Discord too. Discord allows about two name changes an hour. **More
+profile options** has **About me** and **Custom status**. Select **Save to
+Discord** to update them.
+
+People can @mention your bot or reply to its messages. With Message Content
+on, they can also start a message with its name followed by a comma or colon,
+such as `Pebble, roll`.
+
+## Add to Discord in one screen
+
+With your app's client secret, **Add to Discord** is one Discord screen that
+picks the server and the channel, as on Camel's app. It's optional. Without it,
+you pick the channel in camelBot.
+
+To turn it on, open the bot's **Settings** and find **Add to Discord in one
+screen**:
+
+1. Open your app's OAuth2 page from the link there. Under **Redirects**, add
+   the address camelBot shows, and save.
+2. Copy the app's **Client Secret**. **Reset Secret** shows a new one if you
+   need it. Paste it in camelBot and select **Turn on**.
+
+Without the client secret, **Add to Discord** opens a dialog. Choose a server.
+If your app isn't in it yet, select the button that adds it, such as **Add
+Pebble to Dice Goblins**. Discord opens in a new tab, and the dialog updates
+once you approve it there. Then choose a channel.
+
+## When Discord stops accepting the token
+
+If you reset the token in the Developer Portal, the bot stops answering and its
+status says **Needs a new token**. A notice on its page says it keeps its
+channels. Select **Paste a new token** and paste a new token from the app's Bot
+page.
+
+In **Settings**, the **⋯** next to your app also has **Paste a new token**,
+**Update from Discord** to read the app's name and picture again, and **Open
+Discord's developer site**.
+
+<Note>
+Discord requires bots in more than 100 servers to be verified, and approved
+for Message Content. On your own app, you go through that with Discord
+yourself. Camel's app takes care of it for you.
+</Note>
