@@ -1,11 +1,11 @@
 ---
-title: 'Customize the coding agent'
+title: 'Customize camelCode'
 description: 'Teach a self-hosted camelAI agent about internal APIs, application standards, and organization-specific workflows.'
 sidebarTitle: 'Agent customization'
 ---
 
 Self-hosted camelAI can load organization-specific instructions and skills
-without rebuilding its application image. Use this to teach the coding agent
+without rebuilding its application image. Use this to teach camelCode
 how to build web apps and sites that use your internal systems.
 
 <Info>
@@ -151,7 +151,7 @@ Custom skills do not change the deployed-app connection boundary. If you set:
 CONNECTIONS_BINDING_ENABLED=false
 ```
 
-the coding agent can still use workspace connections while it works, but
+camelCode can still use workspace connections while it works, but
 deployed apps cannot call `env.CONNECTIONS` or the connection catalogs behind
 their `ANALYSIS` and `WAREHOUSE` bindings. In that mode, teach the agent to use
 only an internal API or app-specific integration that you have separately

@@ -10,7 +10,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Coding Agent",
+        "tab": "camelCode",
         "groups": [
           {
             "group": "Start Here",
@@ -52,7 +52,7 @@
         ]
       },
       {
-        "tab": "Self-host Coding Agent",
+        "tab": "Self-host camelCode",
         "groups": [
           {
             "group": "Plan",
@@ -146,56 +146,6 @@
         ]
       },
       {
-        "tab": "Changelog",
-        "groups": [
-          {
-            "group": "Updates",
-            "pages": [
-              "changelog/platform",
-              "changelog/legacy"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Stream (Legacy)",
-        "groups": [
-          {
-            "group": "Start Here",
-            "pages": [
-              "stream/overview",
-              "stream/install",
-              "stream/fleet",
-              "stream/data-usage",
-              "stream/quickstart"
-            ]
-          },
-          {
-            "group": "Coding Agents",
-            "pages": [
-              "stream/agents",
-              "stream/hermes",
-              "stream/openclaw",
-              "stream/claude-code",
-              "stream/codex",
-              "stream/opencode",
-              "stream/pi"
-            ]
-          },
-          {
-            "group": "API Reference",
-            "pages": [
-              "stream/authentication",
-              "stream/endpoints",
-              "stream/reasoning",
-              "stream/management-api",
-              "stream/sdks",
-              "stream/queues-and-errors"
-            ]
-          }
-        ]
-      },
-      {
         "tab": "API (Legacy)",
         "groups": [
           {
@@ -245,7 +195,7 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Coding Agent",
+          "anchor": "camelCode",
           "href": "https://camelai.dev",
           "icon": "browser"
         },
@@ -253,11 +203,6 @@
           "anchor": "camelRun",
           "href": "https://run.camelai.com/console",
           "icon": "robot"
-        },
-        {
-          "anchor": "Legacy Stream sign in",
-          "href": "https://stream.camelai.com/login",
-          "icon": "clock-rotate-left"
         },
         {
           "anchor": "Legacy App",
@@ -285,7 +230,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Open Coding Agent",
+      "label": "Open camelCode",
       "href": "https://camelai.dev"
     }
   },
