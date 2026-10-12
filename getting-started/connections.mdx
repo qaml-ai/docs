@@ -48,6 +48,19 @@ You can add connections two ways:
 - **Any chat, any project** — once connected, the agent can use the integration from any
   conversation in your workspace
 
+## Network access
+
+camelAI connects to your databases from one fixed IP address:
+
+```
+20.46.233.68
+```
+
+If your database only accepts connections from approved addresses, for example
+because it sits behind a firewall or inside a VPC, add this address to its
+allowlist. camelAI shows it when you set up PostgreSQL, MySQL, Snowflake,
+ClickHouse, MongoDB, or Redis, and on the connection's details afterward.
+
 ## Available integrations
 
 <Tabs>
