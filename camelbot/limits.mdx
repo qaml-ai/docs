@@ -5,7 +5,7 @@ description: 'The Discord permissions a bot asks for, which messages it sees, wh
 
 ## Permissions
 
-When you add a bot to a server, Discord asks you to approve these permissions:
+When you add a bot to a server, Discord asks you to approve these basic permissions:
 
 - View Channel
 - Send Messages
@@ -14,9 +14,20 @@ When you add a bot to a server, Discord asks you to approve these permissions:
 - Read Message History
 - Add Reactions
 
-A bot never asks for Administrator, or for anything that manages the server,
-its members, its roles, or its channels. It asks for the same permissions on
-Camel's app and on your own app.
+On Camel's app, it also asks for **Change Nickname**, so it can use your bot's
+name in the server. A bot asks for more permissions only when it uses the
+matching features:
+
+| Feature | Additional permissions |
+| --- | --- |
+| Creating and managing channels and threads | Manage Channels, Manage Threads, Create Public Threads, Create Private Threads |
+| Moderation | Kick Members, Ban Members, Timeout Members |
+| Giving, taking, or creating roles, and changing access to channels the bot made | Manage Roles |
+
+A bot never asks for Administrator. For moderation and role changes, place
+the bot's highest role above the members and roles it manages in **Server
+Settings > Roles**. It can't act on the server owner, or give or take
+@everyone or a role managed by another app.
 
 To add a bot to a server, you need the **Manage Server** permission there.
 `/camel add` and `/camel remove` need **Manage Server** or **Manage Channels**.
@@ -50,26 +61,57 @@ ignored. Which ordinary messages it sees depends on its app.
   without their text. When your bot reads ordinary messages, its **Settings**
   offer **Turn it on**.
 
+## What a bot can do
+
+A bot can post in its channels, reply, edit and delete its own messages, add
+reactions, and attach files. Ask camel-builder for the features you need:
+
+- **Moderation.** Time out, kick, ban, and unban members, with reasons in the
+  server's audit log and the bot's logs. A ban can optionally delete up to
+  seven days of that user's recent messages. By default, it deletes none.
+- **Roles.** Give and take roles below the bot's highest role, and create
+  roles. It can edit or delete only roles it created.
+- **Tickets and channels.** Create text channels and threads, including
+  private tickets for a member and staff. It can rename, archive, reopen,
+  and lock threads in its channels, and delete channels or threads it made.
+  Changing access to a channel it made also needs role-management permissions.
+- **Message history.** Read earlier messages from its channels when built to
+  use history, for example to save a ticket transcript.
+- **Reactions.** Respond when people add or remove reactions in its channels
+  or on its messages, such as giving a verification role.
+- **Member arrivals and departures.** Run a welcome or departure workflow
+  when Discord's Server Members intent is enabled for the app.
+
+### Member events need Server Members
+
+On your own Discord app, camel-builder can offer to enable **Server Members
+Intent**. You approve it in a card because it lets the app see who is in its
+servers. Availability depends on Discord's intent approval. If Discord
+requires a review, complete it through the Developer Portal. See Discord's
+[current privileged intent review guide](https://github.com/discord/discord-api-docs/blob/main/developers/gateway/getting-started-with-privileged-intent-review.mdx).
+
+On Camel's app, join and leave events work only while Discord allows the
+shared app to use Server Members. You can't turn that setting on for the
+shared app yourself. If it isn't available, switch the bot to your own app
+and enable it there.
+
 ## What a bot can't do
 
-A bot can post in its channels, reply, edit its own messages, add reactions,
-and attach files. It can't:
-
-- Delete or pin messages, or edit other people's messages.
-- Time out, kick, or ban members, or change their roles or nicknames.
-- Create, change, or delete channels, threads, or roles.
-- See members join or leave the server.
+- Delete individual messages written by other people, pin messages, or edit
+  other people's messages. A ban's optional recent-message deletion is the
+  exception described above.
+- Change other members' nicknames, act on members at or above its role, or grant
+  Administrator, Manage Server, or Manage Webhooks.
+- Change or delete existing channels and roles it didn't create. It can
+  manage threads in its channels as described above.
 - Start a direct message with someone. It can answer direct messages.
-- Post outside its channels, except to answer where it was used.
+- Post outside the channels it was added to or made, and their threads,
+  except to answer where it was used.
 - Mention @everyone, @here, or a role.
-- Read a channel's earlier messages. It sees messages as they arrive.
 - Work in forum or voice channels.
 - Reach private networks. Its web requests go to public `https` addresses
   only.
 - Have a website or dashboard of its own.
-
-To help with moderation, build a bot that flags messages and posts them for
-your moderators with buttons. Your moderators then take the action themselves.
 
 ## Limits
 
@@ -77,11 +119,17 @@ your moderators with buttons. Your moderators then take the action themselves.
 | --- | --- |
 | Commands | Up to 25 per bot, each with up to 25 options. An option offers up to 25 choices |
 | Command and option names | 1 to 32 lowercase letters, numbers, `-` or `_`. Descriptions up to 100 characters |
-| Forms | Up to 5 text fields in a command's form |
+| Forms | Up to 5 fields per form, including text, menus, member and role pickers, checkboxes, and file uploads |
 | Bot names on Camel's app | 1 to 32 lowercase letters, numbers, `-` or `_`. Not `camel`, `help` or `settings`. Each of your bots has its own name, and two bots on Camel's app in one server can't share a name |
 | Names on your own app | 2 to 32 characters. Discord allows about two name changes an hour |
-| Files a bot sends | 10 per message, 10 MB each and 24 MB in all, as png, jpg, gif, webp, txt, md, csv, json, pdf, mp3, ogg, wav or mp4 |
-| Files you send in the test channel | 10 per message, 10 MB each |
+| Files a bot sends | 10 per message, 20 MiB each and 24 MiB in all, as png, jpg, jpeg, gif, webp, txt, md, csv, json, pdf, mp3, ogg, wav or mp4 |
+| Files you send in the test channel | 10 per message, 20 MiB each |
+| Moderation and role actions | 30 per minute per bot |
+| Timeouts | Up to 28 days; the bot can also lift a timeout |
+| Messages deleted with a ban | Up to the previous 7 days for the banned user; none by default |
+| Channels the bot creates | Up to 200 undeleted channels per server |
+| Roles the bot creates | Up to 50 undeleted roles per server |
+| Channel history | Up to 100 messages per request |
 | Saved data | 100 MB per bot |
 | Repeating schedules | 25 per bot, at most once a minute |
 | One-time reminders | 200 waiting at once, from 1 second to a year ahead |

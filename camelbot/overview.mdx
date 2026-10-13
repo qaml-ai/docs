@@ -4,7 +4,8 @@ sidebarTitle: 'Overview'
 description: 'Describe a Discord bot, try it in a private test channel, and publish it to your server. camelBot writes the code and runs the bot for you.'
 ---
 
-camelBot is camelAI's Discord bot builder. You say what a bot should do, and
+camelBot is camelAI's [Discord bot builder](https://camelai.com/discord).
+You say what a bot should do, and
 camel-builder, camelBot's assistant, writes the bot and checks it. You try the
 bot in a private test channel, then publish it and add it to your server.
 camelBot runs the bot for you, so there is no code to write and no server to
@@ -27,8 +28,9 @@ keep online.
 | **Price** | Free while in beta |
 
 <Note>
-In the app, camelBot is called **Camel**. Bots on the shared app reply in
-Discord as **camel**, and the assistant that builds them is **camel-builder**.
+In the app, camelBot is called **Camel**. The shared Discord app is **camel**;
+it can use a bot's name and picture in a server. The assistant that builds
+bots is **camel-builder**.
 camelRun's [Camel Discord bot](/camelrun/channels#add-the-camel-discord-bot),
 which connects a camelRun agent to a server, is part of camelRun and separate
 from camelBot.
@@ -61,11 +63,20 @@ from camelBot.
     The bot can call public websites and APIs to check a game server, a
     price, or the weather.
   </Card>
+  <Card title="Moderation and roles" icon="shield-check">
+    Time out, kick, and ban members, give and take roles, and keep a case
+    log, with the Discord permissions those actions need.
+  </Card>
+  <Card title="Welcomes and tickets" icon="ticket">
+    Welcome members when they join, set up reaction roles, and create
+    private ticket channels or threads for members and staff.
+  </Card>
 </CardGroup>
 
-A bot can send messages, edit its own messages, and add reactions. It can't
-delete messages, time out or remove members, or change roles. See
-[Permissions and limits](/camelbot/limits) for the full list.
+Features that manage members, roles, or channels need the matching Discord
+permissions. Member welcomes also need Discord's Server Members intent.
+See [Permissions and limits](/camelbot/limits) for what each feature needs
+and which actions a bot can take.
 
 ## How it works
 
@@ -89,14 +100,15 @@ back to, and the bot's saved data stays.
 
 Every bot starts in one of two ways:
 
-- **Camel's app.** Nothing to set up. The bot replies as camel, and its
-  commands start with its name, like `/mochi roll`.
+- **Camel's app.** Nothing to set up. It can use your bot's name and picture
+  in a server, where all bots on the shared app use the first-added profiled
+  bot's look. Commands start with your bot's name, like `/mochi roll`.
 - **Your own app.** The bot replies with its own name and picture, and its
   commands are its own, like `/roll`. Setup takes about 5 minutes on Discord's
   developer site.
 
-What the bot can do is the same either way, and you can switch later. See
-[Your own Discord app](/camelbot/own-app).
+Both support the same bot features, subject to Discord permissions and
+intents, and you can switch later. See [Your own Discord app](/camelbot/own-app).
 
 ## Cost
 
