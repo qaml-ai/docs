@@ -59,8 +59,18 @@ bot builder at bots.camelai.com. The product repository is
   (`camelrun/channels.mdx`) is a different thing.
 - camelBot is free while in beta, and AI draws on daily allowances (one per bot, one per
   person for camel-builder and AI in tests). Never state dollar amounts.
-- A bot can only send, edit its own messages, and react. Never claim moderation actions,
-  role changes, member-join events, private ticket channels, or web dashboards.
+- Check capabilities and their boundaries against `src/runtime/bot-sdk.d.ts`,
+  `src/discord/install.ts`, `src/discord/manage.ts` and `src/discord/host.ts` in the
+  product repo. Bots can edit and delete their own messages. Permission-gated
+  capabilities include moderation, roles, channels and threads, message history,
+  reactions, and member join/leave events. Bans can optionally delete up to seven
+  days of that user's messages; this is separate from deleting individual messages.
+  Member events need Discord's Server Members intent. Never claim a bot has a web
+  dashboard of its own.
+- Camel's shared app supports a per-server profile (`src/discord/server-profiles.ts`):
+  every bot there shares the first-added profiled bot's look. The app name in the
+  command picker and the APP tag do not change. Your own app has its own identity
+  everywhere.
 - People use camelBot through the web app and Discord, not an API. Don't document
   internals (runtime, sandbox, storage engine, infrastructure, internal APIs).
 

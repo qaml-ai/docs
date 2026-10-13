@@ -32,6 +32,13 @@ npm run ci:preview
 `ci:preview` uploads a Worker version and creates a preview URL without
 promoting that version to production traffic.
 
+Verified in Cloudflare on October 13, 2026: Workers Builds is connected to
+`qaml-ai/docs`, with `main` as the production branch and non-production builds
+enabled. It runs `npm run build`, then `npm run ci:deploy` for `main` or
+`npm run ci:preview` for other branches. Merging into `main` deploys production
+automatically; a second manual deploy is not needed. Branch previews only
+upload a version and do not change production traffic.
+
 ## How it works
 
 | Piece | Location |

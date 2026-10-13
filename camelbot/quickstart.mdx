@@ -28,13 +28,15 @@ you want to add the bot to.
   <Step title="Choose how your bot appears in Discord">
     Pick one of two options:
 
-    - **Camel's app** (Recommended). Replies as camel, with commands like
-      `/mochi roll`. Ready now, with nothing to set up.
+    - **Camel's app** (Recommended). Uses Camel's shared Discord app, with
+      commands like `/mochi roll`. It can show your bot's name and picture
+      in a server. Ready now, with nothing to set up.
     - **Your own app**. Replies with its own name and picture, with commands
       like `/roll`. It takes about 5 minutes on Discord's developer site.
 
-    **See every difference** compares the two side by side. What the bot can
-    do is the same either way, and you can switch later. For your first bot,
+    **See every difference** compares the two side by side. Both support the
+    same bot features, subject to Discord permissions and intents, and you
+    can switch later. For your first bot,
     Camel's app is the quickest. If you pick your own app, the next step is
     **Connect your Discord app**. See [Your own Discord
     app](/camelbot/own-app#connect-your-own-app) for that step.
@@ -44,8 +46,13 @@ you want to add the bot to.
 
     On Camel's app the name is also the bot's command and how people talk to
     it, so it uses lowercase letters, numbers, `-` or `_`, with 32 characters
-    or fewer. The names `camel`, `help` and `settings` are taken. The picture
-    shows in camelBot only. In Discord, the bot's replies come from camel.
+    or fewer. The names `camel`, `help` and `settings` are taken.
+
+    **Use this name and picture in Discord** is on by default. Camel's app
+    has one look per server: the first bot added there that has a profile.
+    If another bot already supplies that look, yours shares it. Your own
+    app gives your bot a separate identity everywhere. See [Name, picture,
+    and profile](/camelbot/own-app#name-picture-and-profile).
 
     Select **Create** followed by the name, such as **Create quizzy**.
   </Step>
@@ -91,8 +98,9 @@ Open the channel you picked. On Camel's app, members can:
 - Start a message with its name, such as `quizzy, explain the rules`.
 - Reply to one of its messages.
 
-The bot's replies come from camel, with Discord's APP tag. In the channel you
-added it to, the bot sees every message, so it can also answer messages that
+The replies use Camel's shared app and its look in that server. Discord's
+APP tag and the app's name in the command picker stay unchanged. In the
+channel you added it to, the bot sees every message, so it can also answer messages that
 don't use its name if you built it to. See [Which messages a bot
 sees](/camelbot/limits#which-messages-a-bot-sees).
 

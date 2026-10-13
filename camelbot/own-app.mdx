@@ -5,20 +5,20 @@ description: "Give a bot its own name, picture, and slash commands by connecting
 
 Every bot runs on either Camel's app or a Discord app of your own. Camel's app
 needs no setup. Your own app gives the bot its own name, picture, profile, and
-top-level slash commands. What the bot can do is the same either way, and you
-can switch a bot between them at any time.
+top-level slash commands everywhere. Both support the same bot features,
+subject to Discord permissions and intents, and you can switch between them.
 
 ## Camel's app or your own
 
 | | Camel's app | Your own app |
 | --- | --- | --- |
-| **Who replies** | Every reply comes from camel, Camel's shared bot | Replies come from your app, with its own name and picture |
+| **Who replies** | Camel's shared bot, which can use a bot's name and picture in a server | Your app, with its own name and picture everywhere |
 | **Slash commands** | Start with your bot's name, like `/mochi roll`, so several Camel bots can share a server | Just the command, like `/roll`, as with any other Discord bot |
 | **Talking to it** | People start a message with its name, or reply to one of its messages | People @mention it, or reply to one of its messages |
-| **Its profile** | camel's profile, the same for every Camel bot | Its own picture, About me, and status |
+| **Its profile** | One shared look per server, taken from the first bot added there that has a profile; otherwise camel's look | Its own picture, About me, and status |
 | **Direct messages** | People message camel, which passes the message to the Camel bot they used last | People message your app, and only your bot answers |
 | **Adding it to a server** | camel joins a server once. After that, you pick a channel for each bot | Your app joins each server you add it to, with your approval |
-| **Sharing a server** | Camel bots in one server all reply as camel, so each needs a different name there | It's its own member, so its name and commands never clash with Camel bots |
+| **Sharing a server** | Camel bots share one Discord member and its look, so each needs a different command name there | It's its own member, so its name and commands never clash with Camel bots |
 | **Setup and upkeep** | Nothing to set up or look after | About 5 minutes on Discord's developer site. If you reset its token there, you paste the new one in camelBot |
 
 ## Connect your own app
@@ -111,6 +111,18 @@ the bot's servers, select **Add to server** for each one.
 
 ## Name, picture, and profile
 
+On Camel's app, **Look in Discord** in the bot's **Settings** sets its display
+name, picture, banner, and About me. The create flow's **Use this name and
+picture in Discord** option is on by default. **Use camel's look** clears the
+bot's server profile.
+
+Every bot on Camel's app in a server shares one Discord member. The first
+bot added there that has a profile supplies its look for all of them. To use
+a later bot's look, clear the earlier bot's profile or remove that bot from
+the server. The profile changes how replies look in that server; it doesn't
+change the app's name in the command picker, Discord's APP tag, or its look
+in DMs. Changing the display name needs **Change Nickname** permission.
+
 On your own app, **Name** and **Picture** in the bot's **Settings** change the
 app in Discord too. Discord allows about two name changes an hour. **More
 profile options** has **About me** and **Custom status**. Select **Save to
@@ -119,6 +131,14 @@ Discord** to update them.
 People can @mention your bot or reply to its messages. With Message Content
 on, they can also start a message with its name followed by a comma or colon,
 such as `Pebble, roll`.
+
+## Member joins and leaves
+
+Welcome and departure workflows need **Server Members Intent**. Ask
+camel-builder to enable it for your own app and approve the card. Availability
+depends on Discord's intent approval; complete a review in the Developer
+Portal if required. See [Member events need Server
+Members](/camelbot/limits#member-events-need-server-members).
 
 ## Add to Discord in one screen
 
@@ -151,7 +171,9 @@ In **Settings**, the **⋯** next to your app also has **Paste a new token**,
 Discord's developer site**.
 
 <Note>
-Discord requires bots in more than 100 servers to be verified, and approved
-for Message Content. On your own app, you go through that with Discord
-yourself. Camel's app takes care of it for you.
+When Discord requires verification or approval for privileged intents such
+as Message Content and Server Members, you handle that for your own app
+through Discord's Developer Portal. On Camel's app, member
+events are available only while Discord allows the shared app's Server
+Members intent.
 </Note>
