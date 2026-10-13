@@ -16,13 +16,16 @@ When you add a bot to a server, Discord asks you to approve these basic permissi
 
 On Camel's app, it also asks for **Change Nickname**, so it can use your bot's
 name in the server. A bot asks for more permissions only when it uses the
-matching features:
+matching features. The publish card says what each one lets the bot do, and
+publishing approves it:
 
 | Feature | Additional permissions |
 | --- | --- |
 | Creating and managing channels and threads | Manage Channels, Manage Threads, Create Public Threads, Create Private Threads |
-| Moderation | Kick Members, Ban Members, Timeout Members |
+| Moderation, including nicknames | Kick Members, Ban Members, Timeout Members, Manage Nicknames |
 | Giving, taking, or creating roles, and changing access to channels the bot made | Manage Roles |
+| Deleting anyone's messages and sending direct messages | Manage Messages |
+| Managing any channel in its servers | Manage Channels, Manage Roles |
 
 A bot never asks for Administrator. For moderation and role changes, place
 the bot's highest role above the members and roles it manages in **Server
@@ -66,15 +69,32 @@ ignored. Which ordinary messages it sees depends on its app.
 A bot can post in its channels, reply, edit and delete its own messages, add
 reactions, and attach files. Ask camel-builder for the features you need:
 
-- **Moderation.** Time out, kick, ban, and unban members, with reasons in the
-  server's audit log and the bot's logs. A ban can optionally delete up to
-  seven days of that user's recent messages. By default, it deletes none.
+- **Moderation.** Time out, kick, ban, and unban members, and change their
+  nicknames, with reasons in the server's audit log and the bot's logs. A ban
+  can optionally delete up to seven days of that user's recent messages. By
+  default, it deletes none.
 - **Roles.** Give and take roles below the bot's highest role, and create
   roles. It can edit or delete only roles it created.
 - **Tickets and channels.** Create text channels and threads, including
   private tickets for a member and staff. It can rename, archive, reopen,
   and lock threads in its channels, and delete channels or threads it made.
   Changing access to a channel it made also needs role-management permissions.
+- **Managing any channel.** Edit, lock, hide, copy, and delete any channel in
+  its servers, and change member and role permissions there, including
+  @everyone's. It can't change its app's own permissions or those of managed
+  bot or integration roles. Attempting to delete a sixth channel it didn't
+  make in 10 minutes is refused. Further deletions of channels it didn't make
+  or other people's messages, bans, and kicks stop for 30 minutes.
+- **Deleting messages.** Delete anyone's message in its channels, or up to 100
+  at once. Each delete is in the server's audit log with its reason. It can't
+  delete messages from other camelBot bots.
+- **Direct messages.** Send a direct message to a member of one of its
+  servers. Discord refuses if the member turned off direct messages from
+  server members or blocked the app, and the bot is told why. Their replies
+  reach the bot.
+- **Edits and deletions.** Respond when messages in its channels are edited or
+  deleted. Discord doesn't say what a deleted message said, so a bot that logs
+  deletions has to save messages itself.
 - **Message history.** Read earlier messages from its channels when built to
   use history, for example to save a ticket transcript.
 - **Reactions.** Respond when people add or remove reactions in its channels
@@ -97,14 +117,21 @@ and enable it there.
 
 ## What a bot can't do
 
-- Delete individual messages written by other people, pin messages, or edit
-  other people's messages. A ban's optional recent-message deletion is the
-  exception described above.
-- Change other members' nicknames, act on members at or above its role, or grant
-  Administrator, Manage Server, or Manage Webhooks.
-- Change or delete existing channels and roles it didn't create. It can
-  manage threads in its channels as described above.
-- Start a direct message with someone. It can answer direct messages.
+Some of these are defaults that the features above lift. You approve each
+feature on the publish card when you publish the bot.
+
+- Delete messages written by other people, unless it's built to delete
+  messages. A ban's optional recent-message deletion is separate.
+- Pin messages, or edit other people's messages.
+- Act on members at or above its role or on the server owner, such as
+  changing their nicknames, or grant Administrator, Manage Server, or Manage
+  Webhooks.
+- Change or delete existing channels it didn't create, unless it's built to
+  manage any channel. It can manage threads in its channels as described
+  above.
+- Edit or delete roles it didn't create.
+- Start a direct message with someone, unless it's built to send direct
+  messages. It can always answer direct messages.
 - Post outside the channels it was added to or made, and their threads,
   except to answer where it was used.
 - Mention @everyone, @here, or a role.
@@ -125,6 +152,8 @@ and enable it there.
 | Files a bot sends | 10 per message, 20 MiB each and 24 MiB in all, as png, jpg, jpeg, gif, webp, txt, md, csv, json, pdf, mp3, ogg, wav or mp4 |
 | Files you send in the test channel | 10 per message, 20 MiB each |
 | Moderation and role actions | 30 per minute per bot |
+| Message deletes | 60 deletion requests per minute per bot. A bulk request deletes up to 100 messages, each under 14 days old; older messages can be deleted individually. A request that would exceed 500 messages deleted in 10 minutes is refused and triggers the same 30-minute stop described under channel management above |
+| Direct messages a bot starts | 10 per minute per bot |
 | Timeouts | Up to 28 days; the bot can also lift a timeout |
 | Messages deleted with a ban | Up to the previous 7 days for the banned user; none by default |
 | Channels the bot creates | Up to 200 undeleted channels per server |
