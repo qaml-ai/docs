@@ -80,9 +80,11 @@ reactions, and attach files. Ask camel-builder for the features you need:
   and lock threads in its channels, and delete channels or threads it made.
   Changing access to a channel it made also needs role-management permissions.
 - **Managing any channel.** Edit, lock, hide, copy, and delete any channel in
-  its servers, and set anyone's permissions there, including @everyone's. If
-  it deletes more than 5 channels it didn't make in 10 minutes, its deletes,
-  bans, and kicks stop for 30 minutes.
+  its servers, and change member and role permissions there, including
+  @everyone's. It can't change its app's own permissions or those of managed
+  bot or integration roles. Attempting to delete a sixth channel it didn't
+  make in 10 minutes is refused. Further deletions of channels it didn't make
+  or other people's messages, bans, and kicks stop for 30 minutes.
 - **Deleting messages.** Delete anyone's message in its channels, or up to 100
   at once. Each delete is in the server's audit log with its reason. It can't
   delete messages from other camelBot bots.
@@ -150,7 +152,7 @@ feature on the publish card when you publish the bot.
 | Files a bot sends | 10 per message, 20 MiB each and 24 MiB in all, as png, jpg, jpeg, gif, webp, txt, md, csv, json, pdf, mp3, ogg, wav or mp4 |
 | Files you send in the test channel | 10 per message, 20 MiB each |
 | Moderation and role actions | 30 per minute per bot |
-| Message deletes | 60 per minute per bot, and up to 100 messages at once, each under 14 days old. After 500 messages are deleted in 10 minutes, the bot's deletes, bans, and kicks stop for 30 minutes |
+| Message deletes | 60 deletion requests per minute per bot. A bulk request deletes up to 100 messages, each under 14 days old; older messages can be deleted individually. A request that would exceed 500 messages deleted in 10 minutes is refused and triggers the same 30-minute stop described under channel management above |
 | Direct messages a bot starts | 10 per minute per bot |
 | Timeouts | Up to 28 days; the bot can also lift a timeout |
 | Messages deleted with a ban | Up to the previous 7 days for the banned user; none by default |
