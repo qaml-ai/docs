@@ -10,7 +10,8 @@ A run can stop and wait for a person: the model asks a question, a tool needs
 approval before it runs, or a tool asks for a form or a setup step. The run
 **suspends**. It ends with `status: "input_required"` and the `inputs` it waits
 on, and the agent sleeps (nothing is billed while it waits). Once the last input
-is answered, minutes or days later and from any process, the turn resumes.
+is answered, minutes or days later and from any process, the turn resumes. For
+a short tour, see [human-in-the-loop AI agents on camelRun](https://camelai.com/run).
 
 <CodeGroup>
 ```ts TypeScript

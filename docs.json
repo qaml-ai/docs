@@ -223,8 +223,13 @@
         },
         {
           "anchor": "camelRun",
-          "href": "https://run.camelai.com/console",
+          "href": "https://camelai.com/run",
           "icon": "robot"
+        },
+        {
+          "anchor": "camelRun console",
+          "href": "https://run.camelai.com/console",
+          "icon": "terminal"
         },
         {
           "anchor": "camelBot",
