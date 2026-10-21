@@ -120,8 +120,8 @@ see [Tools](/camelrun/tools).
 | `FileSearchTool` (vector stores) | No equivalent. Agents have files and file tools, not vector search |
 | `MCPServerStreamableHttp` | `mcpServers` in a [definition](/camelrun/definitions): the runtime calls the server itself. A local MCP server object can be attached with `fromMcpServer` (TypeScript) |
 | Tracing (`trace()`, the traces dashboard) | OpenTelemetry trace export to your own backend (LangSmith, Langfuse, Honeycomb, Datadog, Tempo, any OTLP endpoint): a span per run, model call, tool call and wait, continuing your `traceparent`. See [Observability](/camelrun/observability). Also the event stream (`on_event`, `stream()`), `run.completed` and `usage.recorded` [webhooks](/camelrun/webhooks), and `GET /v1/agents/:id/history` |
-| `max_turns` | No turn cap. `spend_limit={"usd": …}` on a run, or on the agent, bounds what it spends |
-| `ModelSettings` (temperature, top_p) | Not settable. `thinking_level` is |
+| `max_turns` | `run_limits={"maxResponses": n}` on the agent (at most 1,000 model responses and 2 hours a run by default); a run that reaches it stops with `stopped: "turn_limit"`. `spend_limit={"usd": …}` on a run, or on the agent, bounds what it spends |
+| `ModelSettings` (temperature, top_p) | `temperature=` (0 to 2) on the agent, or with `configure`, for a model that takes one; `top_p` isn't settable. `thinking_level` is |
 
 ## LangGraph
 
@@ -138,7 +138,7 @@ see [Tools](/camelrun/tools).
 | A custom `StateGraph` | Where the model decides, `delegate`; where your code decides, a sequence of runs, branching on `run.output`. There is no graph DSL; see below |
 | `Send` (map-reduce) | Parallel `delegate` calls in one response, or `asyncio.gather` over runs of several agents |
 | Long-term memory (`Store`) | Files. Mount a shared [volume](/camelrun/files#volumes) in several agents |
-| Time travel (`get_state_history`, replay from a checkpoint) | Not supported. A conversation cannot be forked or rewound |
+| Time travel (`get_state_history`, replay from a checkpoint) | [Fork](/camelrun/concepts#forking) the agent at an earlier message (`agent.fork(at_message=…)`): a new agent goes on from there. An agent can't be rewound in place |
 | LangSmith | Export traces to LangSmith's OTLP endpoint (`PUT /v1/telemetry`, [preset](/camelrun/observability#presets)); include content to see messages |
 
 ## Handoffs and multi-agent
@@ -193,6 +193,6 @@ conversations](/camelrun/multi-user#bring-in-existing-conversations).
 - **Tools anywhere.** Tools run in your process (attached) or behind an HTTPS
   endpoint (served, for serverless and many workers), and the model can call
   many of them from code in `js_exec`. See [Tools](/camelrun/tools).
-- **Channels and schedules.** Slack, Telegram, Discord, GitHub and email can
-  reach an agent directly, and agents can wake themselves. See
+- **Channels and schedules.** Slack, Telegram, Discord, GitHub and webhooks
+  can reach an agent directly, and agents can wake themselves. See
   [Channels](/camelrun/channels).

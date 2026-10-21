@@ -139,8 +139,10 @@ Connect the hosted MCP server and sign in. There is no key to create or copy.
 
     `.mts` makes the TypeScript an ES module, which top-level `await` needs; in
     a project with `"type": "module"`, `.ts` works too. The Python SDK is
-    async-only: call it from `async` code, and from synchronous code (a script,
-    a Django view, a Celery task) with `asyncio.run(...)`.
+    async; synchronous code (a script, a Django view, a Celery task) uses
+    `camelai_run.sync`, which has the same names without `await`. It doesn't
+    serve tools from your process, as this example does; see
+    [SDKs](/camelrun/sdks#the-synchronous-python-client).
   </Step>
 </Steps>
 

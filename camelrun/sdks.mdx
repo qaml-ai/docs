@@ -44,9 +44,10 @@ async with Agents(api_key, url=url) as agents:
 ```
 </CodeGroup>
 
-The Python SDK is async-only: every call is awaited inside `async def`. From
-synchronous code (a script, a Django view, a Celery task), run it with
-`asyncio.run(...)`. Its names are the TypeScript ones in snake_case
+The Python SDK is async: every call is awaited inside `async def`. Synchronous
+code (a script, a Django or Flask view, a Celery task) uses
+[`camelai_run.sync`](#the-synchronous-python-client), which has the same names
+without `await`. Its names are the TypeScript ones in snake_case
 (`throw_on_error`, `run.tool_errors`, `part.is_error`), as the tables below show.
 
 - `apiKey` defaults to `CAMELAI_API_KEY`, and `url` to `CAMELAI_BASE_URL`, else
@@ -67,12 +68,12 @@ differs. Returns a connected `Agent`.
 | `instructions` | `instructions=` | The system prompt |
 | `instructionsAppend` | `instructions_append=` | Text after the prompt, such as per-conversation context |
 | `tools` | `tools=` | Tools served from this process: `{ name: tool({...}) }`, or a list of `@tool` functions |
-| `builtins` | `builtins=` | `web_search`, `web_fetch`, `schedule`, `ask_user` |
+| `builtins` | `builtins=` | `web_search`, `web_fetch`, `schedule`, `ask_user`, `delegate`, `generate_image`, `agents` |
 | `definition` | `definition=` | Make it from a definition |
 | `thinkingLevel` | `thinking_level=` | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
 | `subject`, `context` | `subject=`, `context=` | Whom it acts for, and claims for its tools. Fixed at creation |
 | `keyScope`, `spendLimit`, `modelHeaders` | `key_scope=`, `spend_limit=`, `model_headers=` | See [Models and keys](/camelrun/models-and-keys) |
-| `mounts`, `fileTools` | `mounts=`, `file_tools=` | Its volumes (fixed at creation), and whether it has file tools |
+| `mounts`, `fileTools` | `mounts=`, `file_tools=` | Its volumes (changed later only with `remount: true`), and whether it has file tools |
 | `name` | `name=` | A label shown in the console |
 | `attach` | `attach=` | `false`: declare `tools` without serving them |
 | `takeover` | `takeover=` | Replace the process serving the tools now |
@@ -206,6 +207,30 @@ def my_tool(arg: str, context: ToolContext): ...
 
 With several processes (web workers, task queues, serverless), serve tools over
 HTTP: see [Several processes, workers and deploys](/camelrun/tools#several-processes-workers-and-deploys).
+
+## The synchronous Python client
+
+`camelai_run.sync` has the SDK's names for code that isn't async: a script, a
+Django or Flask view, a Celery task. Calls return their answer; nothing is
+awaited.
+
+```python
+from camelai_run.sync import Agents
+
+with Agents() as agents:  # reads CAMELAI_API_KEY
+    agent = agents.upsert("support-triage", instructions="Be brief.")
+    run = agent.run("Summarize ticket 123", user="alice")
+    for part in agent.stream("And the next one?"):
+        if part.type == "text":
+            print(part.text, end="")
+```
+
+- It never serves tools, since that needs the agent's connection held. Serve
+  them over HTTP with `camelai_run.sync.serve_tools` (a WSGI app) and a
+  definition; see [Served tools](/camelrun/tools#served-tools).
+- `timeout=` (seconds) stops the wait, not the run.
+- Not here: `on_event`, `on_input` and volumes. One `Agents` is for one thread
+  at a time; give each thread (or Celery worker) its own.
 
 ## Errors
 

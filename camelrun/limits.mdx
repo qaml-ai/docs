@@ -31,8 +31,8 @@ account up as soon as it lands. See [Pricing](/camelrun/pricing).
 
 | Tier | Paid in total | Agents busy at once |
 | --- | --- | --- |
-| Free | nothing yet | 8 |
-| Tier 1 | $5 | 25 |
+| Free | nothing yet | 20 |
+| Tier 1 | $5 | 50 |
 | Tier 2 | $50 | 100 |
 | Tier 3 | $250 | 250 |
 | Tier 4 | $1,000 | 1,000 |
@@ -49,7 +49,8 @@ and the next one; the console's Billing page shows the same.
 | Prompt body | 6 MiB, with inline files |
 | `metadata` | 16 keys of 1 to 64 characters, string values of at most 512 characters |
 | Provider retries within a turn | 3 attempts for overloads, rate limits, 5xx and dropped streams |
-| How long a run may take | No limit. The SDKs have no default timeout |
+| Model responses in one run | 1,000, compaction summaries included; `runLimits.maxResponses` lowers it for an agent or a definition. At it, the turn stops before its next model request (`stopped: "turn_limit"`) |
+| How long a run may take | 2 hours from when it began; `runLimits.maxSeconds` lowers it. `stopped: "turn_limit"` too; send another message to continue. A turn waiting on people isn't running, and may wait for days. The SDKs have no default timeout |
 | `Idempotency-Key` header | 1 to 255 characters; its answer is kept for 24 hours |
 
 ## Files
@@ -81,9 +82,9 @@ and the next one; the console's Billing page shows the same.
 
 | Limit | Value |
 | --- | --- |
-| Wall time | 30 seconds by default, at most 120 |
+| Wall time | 30 seconds by default, at most 60 on self-serve accounts (`timeoutMs`; a longer one is cut to it) |
 | CPU time | 2 seconds of executing code (time waiting on tools doesn't count) |
-| Memory | 32 MiB WebAssembly memory, 16 MiB QuickJS heap |
+| Memory | A 128 MiB heap; reaching it ends the execution |
 | Output | 32,000 characters by default, at most 128,000 |
 | Tool calls | 256 per script, at most 32 in flight |
 | One `fs.readFile` or `fs.writeFile` | 700 KiB |
@@ -153,5 +154,6 @@ spend limits like any other.
 | Limit | Value |
 | --- | --- |
 | An agent's spend limit | New prompts are refused, and a running turn stops after the response that crossed it |
+| Run limits | 1,000 model responses and 2 hours a run (see [Runs and requests](#runs-and-requests)): `stopped: "turn_limit"` |
 | An account's monthly cap | 402 for new runs once reached |
 | Prepaid credit | 402 at a zero balance. Free credit allows $1 of usage per hour |

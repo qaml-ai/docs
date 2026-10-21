@@ -316,7 +316,7 @@ a non-2xx answer becomes a tool error.
 ## Built-ins
 
 Tools camelRun answers itself. Give them as `builtins` on `upsert`, or in a
-definition: `"builtins": ["web_fetch", "web_search", "schedule", "ask_user"]`.
+definition: `"builtins": ["web_fetch", "web_search", "schedule", "ask_user", "delegate", "generate_image", "agents"]`.
 
 | Built-in | |
 | --- | --- |
@@ -324,15 +324,18 @@ definition: `"builtins": ["web_fetch", "web_search", "schedule", "ask_user"]`.
 | `web_search` | Returns `{query, provider, results}`, trying Exa, Brave and Parallel in order. Your own provider key is used first; otherwise the platform's, charged per search |
 | `schedule` | Lets the agent manage its own wake-ups with `schedule`, `list_schedules` and `cancel_schedule` |
 | `ask_user` | Lets the model ask 1 to 4 multiple-choice questions; the run waits for the answer |
+| `delegate` | With `delegate: { agents }`, hands a task to a sub-agent and returns its answer. See [Multi-agent](/camelrun/multi-agent) |
+| `generate_image` | Makes an image, or edits images from the agent's files, and saves it to the workspace. It uses your OpenAI key, else the platform's, charged per token on prepaid credit |
+| `agents` | With the same settings as `delegate`, starts sub-agents in the background (`spawn_agent`, `wait_agent`, `list_agents`); each one's answer arrives as a notification |
 
 ## Tools from code
 
 Every agent has `js_exec`: the model writes JavaScript that calls any of its
-tools, in a QuickJS sandbox (in WebAssembly) that can reach nothing else. It can
+tools, in a sandbox that can reach nothing else. It can
 `await tools.shop__getOrder({ id })`, run calls in parallel with `Promise.all`,
 use `fs` over its files, and find tools in a large catalog with
-`tools.search(query)`. Code runs for at most 120 seconds and 256 tool calls. See
-[Limits](/camelrun/limits).
+`tools.search(query)`. Code runs for at most 60 seconds, 2 seconds of CPU and
+256 tool calls. See [Limits](/camelrun/limits).
 
 `agent.client.execute(code)` runs code yourself, outside the model's history,
 which is handy for testing tools.

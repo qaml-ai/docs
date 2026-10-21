@@ -14,9 +14,10 @@ nothing to install, or run `camelrun mcp` on your machine.
 ## Connect your coding agent
 
 The hosted MCP server needs no API key. Add it by URL and sign in when your
-client asks: the sign-in page (GitHub, Google, or an API token) asks you to
-allow the client, which then acts for your account until you revoke it. Signing
-in for the first time creates your account. The server speaks Streamable HTTP.
+client asks: the sign-in page (GitHub, Google, or your email and password) asks
+you to allow the client, which then acts for your account until you revoke it.
+Signing in for the first time creates your account. The server speaks
+Streamable HTTP.
 
 <Tabs>
   <Tab title="Claude Code">
@@ -63,7 +64,9 @@ refused: write the values in, or deploy from your machine with the CLI.
 
 Connected apps appear in the console under **API tokens**, where you revoke
 them. To connect a client to one agent instead, see
-[Agents as MCP servers](/camelrun/mcp-server). Their access tokens last an hour and can't create API tokens.
+[Agents as MCP servers](/camelrun/mcp-server). Their access tokens last an hour
+and reach only what [Authentication](/camelrun/authentication#oauth-for-coding-agents)
+lists: no new tokens, webhooks, channels or keys.
 
 ## Install the CLI
 

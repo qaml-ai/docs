@@ -30,7 +30,7 @@ The runtime doesn't need to be public. Your application can reach it on a
 private network, and browsers through your application (see
 [Networking](#networking)).
 
-The image is `ghcr.io/qaml-ai/run:<version>` (for example `0.1.0`,
+The image is `ghcr.io/qaml-ai/run:<version>` (for example `0.11.3`,
 or `latest`), built for `linux/amd64` and `linux/arm64`. The container needs
 no extra privileges: no `--privileged`, no added capabilities, no Docker socket. It runs each sandbox process for model-written
 code as its own user under a seccomp filter. A seccomp or AppArmor profile
@@ -105,7 +105,7 @@ in the repository has a Compose file and an example environment:
 
 ## Upgrade
 
-The Compose file runs a pinned release, `ghcr.io/qaml-ai/run:0.2.0`. Each
+The Compose file runs a pinned release, `ghcr.io/qaml-ai/run:0.11.3`. Each
 release is a version in the [release
 notes](https://run.camelai.com/docs/operations/release-notes.md); read the notes
 of every version between yours and the new one, then set it in `.env` and
