@@ -26,6 +26,8 @@ publishing approves it:
 | Giving, taking, or creating roles, and changing access to channels the bot made | Manage Roles |
 | Deleting anyone's messages and sending direct messages | Manage Messages |
 | Managing any channel in its servers | Manage Channels, Manage Roles |
+| Listening in voice calls | Connect |
+| Talking in voice calls | Speak |
 
 A bot never asks for Administrator. For moderation and role changes, place
 the bot's highest role above the members and roles it manages in **Server
@@ -104,6 +106,8 @@ reactions, and attach files. Ask camel-builder for the features you need:
   role](https://camelai.com/discord/verification-bot).
 - **Member arrivals and departures.** Run a welcome or departure workflow
   when Discord's Server Members intent is enabled for the app.
+- **Voice calls.** Join [voice channels](https://camelai.com/discord/voice-bot),
+  listen, and talk back. See [Voice calls](#voice-calls).
 
 ### Member events need Server Members
 
@@ -117,6 +121,30 @@ On Camel's app, join and leave events work only while Discord allows the
 shared app to use Server Members. You can't turn that setting on for the
 shared app yourself. If it isn't available, switch the bot to your own app
 and enable it there.
+
+### Voice calls
+
+A bot can join a voice channel in its servers when someone uses a command
+such as `/join`, or by itself when someone enters a voice channel. Ask
+camel-builder for either.
+
+- **Listening.** It turns what people say into text, for notes, a recap, a
+  game's score, or moderation. A bot that only listens joins muted.
+- **Talking.** It talks back out loud as a character. In a group call, it
+  answers what's said to it and stays quiet while people talk to each other.
+  Pick its voice in the bot's **Settings**, under **Voice**, or ask
+  camel-builder for a character voice.
+- **The notice.** Each time a bot joins, a message in the voice channel's chat
+  says it's listening. Bots can't turn this off. Audio isn't stored.
+
+Each bot is in one voice channel per server. On Camel's app, one camel bot can
+be in voice in a server at a time. A bot leaves a call by itself when nobody
+else has been there for a minute, after 30 minutes without speech, after 4
+hours, or when its daily AI allowance runs out. The voice channel's chat says
+why.
+
+You can try a voice bot before you publish it. See [Voice
+calls](/camelbot/test-channel#voice-calls) in the test channel.
 
 ## What a bot can't do
 
@@ -138,7 +166,11 @@ feature on the publish card when you publish the bot.
 - Post outside the channels it was added to or made, and their threads,
   except to answer where it was used.
 - Mention @everyone, @here, or a role.
-- Work in forum or voice channels.
+- Work in forum channels, or join stage channels.
+- Play music or other audio in a voice call.
+- Say exact words you write, such as an announcement or a timer read aloud.
+  In a call, it talks in its own words.
+- Move, mute, or disconnect members in voice.
 - Reach private networks. Its web requests go to public `https` addresses
   only.
 - Have a website or dashboard of its own.
@@ -166,6 +198,7 @@ feature on the publish card when you publish the bot.
 | Repeating schedules | 25 per bot, at most once a minute |
 | One-time reminders | 200 waiting at once, from 1 second to a year ahead |
 | Web requests | Public `https` addresses only, 10 seconds and 1 MB each |
+| Voice calls | One voice channel per server for each bot, up to 4 hours a call. On Camel's app, one camel bot in voice per server |
 | Messages to camel-builder | 8,000 characters each, and up to 20 in 10 minutes |
 | Discord apps | 5 per account. One app runs one bot |
 
@@ -182,9 +215,9 @@ camelBot is free while in beta. AI draws on two daily allowances, and both
 reset at midnight UTC.
 
 - **Each bot's allowance** covers the AI a live bot uses in Discord, such as
-  chat replies, images, and voice transcription. Once it's used up, the bot's
-  AI stops working until it resets. Its commands and features that don't use
-  AI keep working.
+  chat replies, images, voice transcription, and voice calls. Once it's used
+  up, the bot's AI stops working until it resets, and it leaves any voice
+  call. Its commands and features that don't use AI keep working.
 - **Your camel-builder allowance** covers camel-builder's own work and AI in
   your test channels. **AI today** in the test channel's header shows how much
   is used. Once it's used up, camel-builder takes no new messages and AI in
