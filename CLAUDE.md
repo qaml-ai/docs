@@ -92,3 +92,24 @@ every path under it go permanently (301) to `https://camelai.com/stream`, the sa
 page for the retired Stream product, so old links still land somewhere useful. Don't add
 pages under `stream/`; the redirect would hide them. If an open-mdx-docs update changes the
 Worker entry, the script stops with an error instead of skipping the redirect.
+
+## Canonical URLs
+
+open-mdx-docs emits no canonical tag of its own, so `scripts/prepare-open-mdx-docs.mjs`
+patches it in (October 2026). Every page's HTML carries
+`<link rel="canonical" href="https://camelai.com/docs/<slug>">`: the origin is
+`url` in `docs.json`, the path has no trailing slash, and it is the same URL the
+sitemap lists. A page's Markdown twin (`<slug>.md`, `<slug>.mdx`, or the page's URL
+with `Accept: text/markdown`) sends the same URL in a `Link: <...>; rel="canonical"`
+header. Keep `url` in `docs.json` at `https://camelai.com`, also on previews, so a
+preview never names itself canonical.
+
+## Page titles
+
+A page's `title` is its H1, its `<title>` (with ` | camelAI Documentation` after
+it), and its name in search and `llms.txt`, so write it for search: name the
+product and the words a developer would search for, in about 60 characters. Its
+`sidebarTitle`, when set, is its short label in the sidebar and the Previous/Next
+links, as in Mintlify; `prepare-open-mdx-docs.mjs` patches that in too, since
+open-mdx-docs ignored it until October 2026. `description` is the meta
+description and the line under the H1: answer first, under about 155 characters.

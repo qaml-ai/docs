@@ -1,6 +1,7 @@
 ---
-title: 'Errors'
-description: 'HTTP errors, failed runs, and tool calls that did not complete'
+title: 'camelRun errors: HTTP codes, failed runs and tools'
+sidebarTitle: 'Errors'
+description: 'camelRun''s HTTP errors, failed runs, and tool calls that didn''t complete: what each means and what to do about it.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/errors.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -49,7 +50,8 @@ Common `CONFLICT` cases:
 
 - **An existing agent's subject, context, definition or mounts can't change.**
   An upsert of an existing key changed a field that's set only at creation.
-  Delete the agent or use another key.
+  Delete the agent or use another key. For mounts, send `remount: true` with the
+  upsert instead (see [Volumes](/camelrun/files#volumes)).
 - **This input is already answered.** Someone answered first. The body's
   `input` says how it settled. Answering again the same way is a 200.
 - **The definition is at revision N, not M.** A definition update with a stale

@@ -1,6 +1,7 @@
 ---
-title: 'Production checklist'
-description: 'What to check before you ship an application on camelRun'
+title: 'camelRun production checklist for AI agent apps'
+sidebarTitle: 'Production checklist'
+description: 'What to check before you ship an AI agent app on camelRun: keys and access, agents, tools, runs and operations.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/production.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -30,7 +31,8 @@ Before you ship an application on camelRun, check each of these.
   for example when the user or thread is deleted.
 - Configuration lives in one place: the `upsert` call, or a definition with
   `apply: "all"` to roll changes out. Fields fixed at creation (`subject`,
-  `context`, `definition`, `mounts`) are a 409 if they change.
+  `context`, `definition`, `mounts`) are a 409 if they change; mounts change
+  with `remount: true`.
 - You pick a model your account has a key for, and set `spendLimit` on agents
   that act for untrusted users.
 

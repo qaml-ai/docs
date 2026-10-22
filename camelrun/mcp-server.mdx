@@ -1,6 +1,7 @@
 ---
-title: 'Agents as MCP servers'
-description: 'Connect Claude, Cursor or any MCP client to one of your agents and talk to it as a tool'
+title: 'Use a camelRun agent as an MCP server'
+sidebarTitle: 'Agents as MCP servers'
+description: 'Every camelRun agent is an MCP server: connect Claude, Cursor or any MCP client to one of your agents and talk to it as a tool.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/mcp-server.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -9,7 +10,8 @@ Every agent is also an MCP server, at
 `https://run.camelai.com/v1/agents/<agent id>/mcp` (Streamable HTTP).
 Connect Claude, Cursor or any MCP client to it, and the model there can talk to
 your agent. The server has one tool, `message`, which sends the agent a message
-and returns its reply. The agent's own tools stay its own.
+and returns its reply. The agent's own tools stay its own. For how this fits the
+rest of the runtime, see [hosted AI agents with MCP on camelRun](https://camelai.com/run).
 
 <Tabs>
   <Tab title="Claude Code">

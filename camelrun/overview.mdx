@@ -1,7 +1,7 @@
 ---
-title: 'camelRun'
+title: 'camelRun: the hosted, open-source AI agent runtime'
 sidebarTitle: 'Overview'
-description: 'A hosted runtime for durable agents. Your tools stay in your code; camelRun runs the model loop, keeps history and files, and wakes agents when there is work.'
+description: 'camelRun hosts durable AI agents: your tools stay in your code, and it runs the model loop, keeps history and files, and wakes agents when work arrives.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/overview.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -26,7 +26,9 @@ camelRun is camelAI's hosted agent runtime. You define an agent's tools in your
 own code with the TypeScript or Python SDK, or serve them over HTTP. camelRun
 runs the model loop, keeps each agent's history and files, compacts long
 conversations, runs model-written code in a sandbox, and wakes agents when there
-is work. Most agents are asleep at any moment and cost nothing while they are.
+is work. Most agents are asleep at any moment and cost only storage while they
+are. For what camelRun is for and what it costs, see
+[AI agent hosting with camelRun](https://camelai.com/run).
 
 <CodeGroup>
 ```ts TypeScript
@@ -124,12 +126,12 @@ verifies a card on the [Billing](https://run.camelai.com/console/billing) page
     it stopped.
   </Card>
   <Card title="Chat UI in minutes" icon="messages-square">
-    React, Vue, Svelte and Solid components stream an agent into your app
-    without exposing your API key.
+    React components, and bindings for Vue, Svelte and Solid, stream an agent
+    into your app without exposing your API key.
   </Card>
   <Card title="Channels" icon="plug">
-    Slack, Telegram, Discord, GitHub and any service that sends
-    webhooks can start and talk to agents.
+    Slack, Telegram, Discord, GitHub and signed webhooks from other services
+    can start and talk to agents.
   </Card>
   <Card title="Agents as MCP servers" icon="plug-zap" href="/camelrun/mcp-server">
     Every agent is an MCP server, so Claude, Cursor or any MCP client can

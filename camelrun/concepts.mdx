@@ -1,6 +1,7 @@
 ---
-title: 'Concepts'
-description: 'Durable keyed agents, runs, events, where tools run, and people in the loop'
+title: 'camelRun concepts: durable agents, runs and tools'
+sidebarTitle: 'Concepts'
+description: 'How camelRun works: durable keyed agents, runs and events, forking, where tools run, and people in the loop.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/concepts.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -9,8 +10,9 @@ description: 'Durable keyed agents, runs, events, where tools run, and people in
 
 An agent is a conversation that lasts. Its history, files, configuration
 (model, instructions, tools) and pending work live in camelRun, not in your
-process. Most agents are asleep at any moment and cost nothing. A message wakes
-one on whichever node has room, and it picks up where it left off.
+process. Most agents are asleep at any moment and cost only storage. A message wakes
+one on whichever node has room, and it picks up where it left off. The product
+page has a short tour of [durable AI agents on camelRun](https://camelai.com/run).
 
 You name an agent with a **key**, your own id for it, such as `support-triage`,
 `user-123` or `thread-9f2c`. Keys are 1 to 80 letters, digits, `_` and `-`.

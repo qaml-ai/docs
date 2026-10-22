@@ -1,14 +1,18 @@
 ---
-title: 'Self-host camelRun'
+title: 'Self-host camelRun, the open-source AI agent runtime'
 sidebarTitle: 'Self-hosting'
-description: 'Run the camelRun runtime on your own host with Docker Compose and Postgres'
+description: 'Self-host camelRun, the open-source AI agent runtime (AGPL-3.0), on your own server with Docker Compose and Postgres: one container, and nothing needs AWS.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/self-hosting.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
 
-camelRun runs on any host with Docker: one container, and Postgres. Nothing in
-it needs AWS. Your application talks to it the same way it talks to
-run.camelai.com: point the SDKs and the CLI at it with `CAMELAI_BASE_URL` (or `url`).
+camelRun is open source, so you can self-host the AI agent runtime on any
+server with Docker: one container and Postgres, and nothing in it needs AWS.
+Self-hosting is free under the AGPL-3.0; you bring your own model provider keys.
+Your application talks to a self-hosted runtime the same way it talks to
+run.camelai.com: point the SDKs and the CLI at it with `CAMELAI_BASE_URL` (or
+`url`). To have it run for you instead, see
+[managed AI agent hosting with camelRun](https://camelai.com/run).
 
 ## Licensing
 
@@ -30,7 +34,7 @@ The runtime doesn't need to be public. Your application can reach it on a
 private network, and browsers through your application (see
 [Networking](#networking)).
 
-The image is `ghcr.io/qaml-ai/run:<version>` (for example `0.1.0`,
+The image is `ghcr.io/qaml-ai/run:<version>` (for example `0.11.3`,
 or `latest`), built for `linux/amd64` and `linux/arm64`. The container needs
 no extra privileges: no `--privileged`, no added capabilities, no Docker socket. It runs each sandbox process for model-written
 code as its own user under a seccomp filter. A seccomp or AppArmor profile
@@ -105,7 +109,7 @@ in the repository has a Compose file and an example environment:
 
 ## Upgrade
 
-The Compose file runs a pinned release, `ghcr.io/qaml-ai/run:0.2.0`. Each
+The Compose file runs a pinned release, `ghcr.io/qaml-ai/run:0.11.3`. Each
 release is a version in the [release
 notes](https://run.camelai.com/docs/operations/release-notes.md); read the notes
 of every version between yours and the new one, then set it in `.env` and

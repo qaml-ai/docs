@@ -1,16 +1,19 @@
 ---
-title: 'Channels'
-description: 'Let people talk to agents from Slack, Telegram and Discord, and have agents answer GitHub and any webhook'
+title: 'Put AI agents in Slack, Discord and Telegram with camelRun'
+sidebarTitle: 'Channels'
+description: 'Let people talk to camelRun AI agents in Slack, Telegram and Discord, and have agents answer GitHub pull requests, issues and signed webhooks.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/channels.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
 
 A channel lets people talk to agents from a messaging service (Telegram, Slack
 or Discord), or has agents answer activity on GitHub. A `webhook` channel
-lets any service that sends webhooks (Sentry, Linear, Stripe, your own) start
+lets a service that signs its webhooks (Sentry, Linear, Shopify, your own) start
 agents. For Discord you can also skip making a bot: [add the Camel Discord
-bot](#add-the-camel-discord-bot) to your server from the console. Manage
-channels with `/v1/channels` or the console's Channels page:
+bot](#add-the-camel-discord-bot) to your server from the console. For a short
+tour, see [Slack, Discord and Telegram AI agents on camelRun](https://camelai.com/run).
+
+Manage channels with `/v1/channels` or the console's Channels page:
 
 ```bash
 curl https://run.camelai.com/v1/channels \
@@ -124,8 +127,9 @@ with your own bot token below.
     Messages, Send Messages in Threads, Attach Files and Read Message History.
     The bot needs no privileged intents: it answers DMs and messages that
     mention the bot user. A mention of a role with the bot's name doesn't
-    count: in autocomplete, pick the entry with the App badge. Replies never
-    ping anyone. Once the token is saved, the console shows an invite link and
+    count: in autocomplete, pick the entry with the App badge. Each DM, channel
+    or thread is one conversation with one agent, shared by everyone in it, and
+    in a server every message needs a mention. Replies never ping anyone. Once the token is saved, the console shows an invite link and
     a test mention.
   </Accordion>
   <Accordion title="GitHub">
@@ -186,7 +190,7 @@ with your own bot token below.
 
 ## Generic webhooks
 
-A `webhook` channel turns each delivery from any service into a prompt. Give it
+A `webhook` channel turns each delivery from a service into a prompt. Give it
 the secret the service signs with, then point the service at the channel's
 `webhookUrl`:
 
@@ -202,7 +206,7 @@ curl https://run.camelai.com/v1/channels \
 
 | Setting | |
 | --- | --- |
-| `signature` | How a delivery proves itself: `{"type": "standard"}` (Standard Webhooks, the default), `{"type": "hmac-sha256", "header", "prefix"?, "encoding"?}` (GitHub, Sentry, Linear, Shopify and most others), or `{"type": "token", "header"}`. Unsigned or wrongly signed deliveries get a 401 |
+| `signature` | How a delivery proves itself: `{"type": "standard"}` (Standard Webhooks, the default), `{"type": "hmac-sha256", "header", "prefix"?, "encoding"?}` (GitHub, Sentry, Linear, Shopify), or `{"type": "token", "header"}` (GitLab). Unsigned or wrongly signed deliveries get a 401. A signature over a timestamp and the body, such as Stripe's, isn't one of these, so it can't be verified |
 | `key` | Picks the conversation, and so the agent. Deliveries that render to the same key go to the same agent. Without a key, the channel has one agent |
 | `prompt` | What the agent is told. By default, the payload itself. Either way the whole payload is attached as `payload.json` |
 | `sender` | Who a delivery is from, for `from` and rate limits, such as `{{actor.email}}` |
