@@ -32,8 +32,8 @@ curl -sf https://run.camelai.com/v1/account/export -H "Authorization: Bearer $CA
 | `billing/attempts.jsonl` | model attempts and their settlement state |
 | `end-users/settings.json`, `end-users/end-users.jsonl`, `end-users/ledger.jsonl` | how you meter your own users' [credit](/camelrun/end-user-credits), each user's balance and overrides, and their credit ledger |
 
-**An export is whole, or it fails.** Each agent's history is read from the node
-serving it, so it includes the turn that just ended. If anything cannot be read,
+**An export is whole, or it fails.** Each agent's history is read where the agent
+runs, so it includes the turn that just ended. If anything cannot be read,
 the download stops before the zip's end, so no zip reader opens it as complete
 (`curl -f` fails, and `unzip` reports a missing central directory): export
 again. A zip that opens holds every agent.

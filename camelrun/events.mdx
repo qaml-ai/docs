@@ -105,7 +105,6 @@ See [Multi-agent](/camelrun/multi-agent). These events reach only streams that a
 | `steer_taken` | A prompt sent with `whileRunning: "steer"` was read by the running turn `steeredInto` |
 | `run_cancelled` | A run queued behind the running one was cancelled by a stop before it began |
 | `compaction_start`, `compaction_end` | The conversation is being summarized to fit the model's context. `background: true` means it runs outside any run, and nothing waits for it |
-| `context_trimmed` | Older messages were left out of a model request to fit it |
 | `turn_resumed` | The turn continues elsewhere, with unresolved tool calls marked unknown. With `handoff`, nothing was lost: it moved at a step boundary during a deploy |
 | `turn_recovered` | camelRun restarted during a turn; unresolved tool calls were marked unknown |
 

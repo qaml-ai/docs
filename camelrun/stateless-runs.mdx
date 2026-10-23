@@ -74,7 +74,7 @@ A run takes the fields an agent takes, plus the input:
   configuration is not sent each time. Fields given alongside override it, as
   for an agent.
 - `model`, `systemPrompt`, `systemPromptAppend`, `thinkingLevel`,
-  `maxOutputTokens`, `temperature` (see [Models and keys](/camelrun/models-and-keys)),
+  `maxOutputTokens`, `temperature` (see [Output length and temperature](/camelrun/models-and-keys#output-length-and-temperature)),
   `delegate`, `keyScope`, `modelHeaders`, `runLimits`, `subject`, `context`.
 - `builtins`: `web_fetch`, `web_search`, `x_search`, `delegate` and
   `generate_image`. `x_search` searches X posts through Grok, whatever the
@@ -82,7 +82,7 @@ A run takes the fields an agent takes, plus the input:
   [Images](/camelrun/images)). See [Built-ins](/camelrun/tools#built-ins).
 - `mcpServers`: MCP servers of its own, as an agent's, with no credentials:
   only `"auth": {"type": "runtime"}` (identity tokens) or none. See
-  [Tools](/camelrun/tools).
+  [An agent's own MCP servers](/camelrun/tools#an-agents-own-mcp-servers).
 - `output`: a schema for a structured answer. See
   [Structured output](/camelrun/structured-output).
 - `spendLimit`: the run's budget in USD.

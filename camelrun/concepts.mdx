@@ -11,7 +11,7 @@ description: 'How camelRun works: durable keyed agents, runs and events, forking
 An agent is a conversation that lasts. Its history, files, configuration
 (model, instructions, tools) and pending work live in camelRun, not in your
 process. Most agents are asleep at any moment and cost only storage. A message wakes
-one on whichever node has room, and it picks up where it left off. The product
+one wherever camelRun has room, and it picks up where it left off. The product
 page has a short tour of [durable AI agents on camelRun](https://camelai.com/run).
 
 You name an agent with a **key**, your own id for it, such as `support-triage`,
@@ -186,7 +186,7 @@ agent working, not to decide what happened.
   `GET /v1/agents/{id}/requests/{requestId}`) is recorded durably and always
   arrives, even if your process restarts or the connection drops.
 - The stream replays from memory on reconnect, as far back as it can. Where it
-  can't (a restarted node, a long disconnection), the SDK gets a snapshot of the
+  can't (camelRun restarted, a long disconnection), the SDK gets a snapshot of the
   running turn instead.
 
 Reply to your user from the run, and render the stream as progress. See

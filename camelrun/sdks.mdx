@@ -274,7 +274,7 @@ def my_tool(arg: str, context: ToolContext): ...
 
 `exposure` is how the model may call the tool: `"direct"` (as a tool of its
 own), `"codemode"` (only from code in `js_exec`) or `"both"`. Left out, it's
-`both` for an agent with up to 10 tools and `codemode` past that.
+`both` when the agent's served tools number 10 or fewer, and `codemode` past that.
 
 | `context` (TypeScript) | Python | |
 | --- | --- | --- |

@@ -52,6 +52,7 @@ curl -X POST https://run.camelai.com/v1/images -H "Authorization: Bearer $CAMELA
 | `keyScope` | A key scope whose OpenAI key goes first |
 | `volumeId`, `path` | Save the images in a volume of yours instead (see [Save to a volume](#save-to-a-volume)) |
 | `subject`, `context`, `actor` | Who it is for and who asked, carried to its `usage.recorded` event, as an agent's identity is |
+| `bucket` | With [end-user credits](/camelrun/end-user-credits) on: which of the subject's buckets pays |
 
 The answer comes when the images are ready: about 10 seconds for one at `low`
 or `medium`, longer at `high` (OpenAI allows up to two minutes for a complex
@@ -206,7 +207,7 @@ Either way it is recorded:
   `actor` you sent. The older usage webhook (`/v1/usage-webhook`) carries model
   responses only.
 
-Images count toward a tenant's monthly cap and prepaid credit, as a model
+Images count toward your monthly cap and prepaid credit, as a model
 response does. See [Pricing](/camelrun/pricing).
 
 ## Privacy

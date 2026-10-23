@@ -164,10 +164,9 @@ unless content is included, when it is the error's own message.
   `invoke_agent` span in the same trace, under the run that asked, beside an
   `await_human_input` span for the wait (which can be days long).
 - **A compaction between runs** belongs to no run: it is a trace of its own.
-- **A run that moves to another node** (a deploy, a lost node) keeps its trace:
-  each node exports the spans it made, the first node's cut-off calls marked
-  `error.type: interrupted`, and the run's span, with the same id, comes from the
-  node that finished it.
+- **A run that camelRun moves mid-turn** (a deploy, a restart) keeps its trace:
+  calls cut off by the move are marked `error.type: interrupted`, and the run's
+  span keeps the same id and ends when the run does.
 - **Subagents.** A tool call's span is the parent of whatever the call starts: a
   delegate's run continues the trace under the tool call that made it.
 
@@ -201,13 +200,13 @@ on for development, or where your backend is allowed to keep your users' data.
 
 ## Delivery
 
-Export never slows a run. Each node queues the spans it makes in memory and sends
+Export never slows a run. camelRun queues spans in memory and sends
 them in batches (up to 512 spans, about every 2 seconds), retrying `429`, `502`,
 `503`, `504` and connection failures with backoff (honoring `Retry-After`) up to 5
-attempts. Other answers drop the batch. A node keeps at most 5,000 waiting spans
-per tenant and 20,000 in all; spans beyond those, and batches that run out of
+attempts. Other answers drop the batch. At least 5,000 spans per account can
+wait at a time; spans beyond those, and batches that run out of
 attempts, are dropped and counted. Export is best effort: spans are kept in memory,
-not durably, and a node that stops sends what it can within a few seconds. A batch
+not durably, and a restart sends what it can within a few seconds. A batch
 your endpoint accepted after its 10-second timeout is sent again, so a span can
 arrive twice; backends keep one per span id.
 

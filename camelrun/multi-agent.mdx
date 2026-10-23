@@ -10,8 +10,8 @@ The `delegate` built-in lets an agent hand a task to a **sub-agent** and get its
 answer back as the call's result, while it keeps the conversation. This is the
 OpenAI Agents SDK's `agent.as_tool()` and LangGraph's supervisor. The runtime
 runs it, and it is durable: a sub-agent is an agent of its own, and a parent
-whose node is lost while it waits collects the sub-agent's answer on another
-node.
+interrupted while it waits (camelRun restarted under it) still collects the
+sub-agent's answer when its run resumes.
 
 The `agents` built-in starts sub-agents in the **background** instead: the
 model goes on at once, and each one's answer arrives as a message of its own
@@ -144,17 +144,17 @@ the parent's spend limit. Deleting the parent does the same, and also deletes
 the sub-agents the runtime made for it. A named agent is aborted only while it
 runs the parent's task, never another.
 
-### When a node is lost
+### When a run is interrupted
 
 A sub-agent is keyed by the parent's tool call, and its run by the call too. If
-the parent's node is lost while it waits, the parent's run resumes on another
-node and makes the call again. That call finds the same sub-agent and run, and
-waits for its answer; the task never runs twice. The sub-agent, if its own node
-was lost, resumes like any agent.
+the parent is interrupted while it waits (camelRun restarted under it), the
+parent's run resumes and makes the call again. That call finds the same sub-agent and run, and
+waits for its answer; the task never runs twice. The sub-agent, if it was
+interrupted too, resumes like any agent.
 
 The runtime records each sub-agent before it sends the sub-agent its task, so
-an abort or delete of the parent reaches it from any node, even before the
-parent's run resumes. Should the parent's run end without its answer, the
+an abort or delete of the parent reaches it even before the parent's run
+resumes. Should the parent's run end without its answer, the
 sub-agent is aborted, and what it spent still counts against the parent's spend
 limit.
 
@@ -184,9 +184,9 @@ them into `state.subagents`, by delegate call, and a chat made with
 under its call in `<AgentChat>` (`part.subagent` for a tool renderer of your own).
 A browser token that lists its `events` needs these types listed too.
 
-A sub-agent's events are relayed while it runs on the same node as its parent,
-which it does unless a node was lost; its own stream and history always have
-everything.
+A sub-agent's events are relayed through its parent's stream, except after
+camelRun moves one of them mid-run (a restart); its own stream and history always
+have everything.
 
 ## Background sub-agents
 
@@ -285,10 +285,10 @@ against the loop guard below, so two agents messaging each other stop.
 ### Exactly once
 
 camelRun records each sub-agent before it sends the task, keyed by the
-`spawn_agent` call, so a turn resumed on another node finds the same sub-agent
-and never starts a second. Its ending is delivered as its run ends, or, if a
-node was lost on the way, by a sweep a few seconds later. The parent takes each
-ending once, so a lost node delays a notification and never repeats it.
+`spawn_agent` call, so a resumed turn finds the same sub-agent and never
+starts a second. Its ending is delivered as its run ends, or, if that delivery
+is interrupted, a few seconds later. The parent takes each ending once, so an
+interruption delays a notification and never repeats it.
 
 ### Cost and loop guards
 
@@ -311,7 +311,7 @@ ending once, so a lost node delays a notification and never repeats it.
 With `?subagents=1` (`subagents: true` in the SDKs), the parent's stream has:
 
 - `subagent_start` (with `background: true`) when a sub-agent starts;
-- `subagent_event` with its events while it runs on the parent's node;
+- `subagent_event` with its events while they are relayed through the parent (see above);
 - `subagent_end` (with `background: true`, `name` and `status`) when its
   notification lands or a `wait_agent` answers it;
 - `subagent_message` when it messages its parent.

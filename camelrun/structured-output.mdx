@@ -117,7 +117,7 @@ calls never fit the schema still ends its turn.
   switching between structured and plain runs, changes the tool set once.
 - **History.** The `final_output` call and its result are ordinary messages in
   the agent's history. Later turns can refer back to the answer.
-- **Durable.** A structured run that is resumed on another node still ends with
+- **Durable.** A structured run that is resumed after a restart still ends with
   `output`.
 - **An agent with its own tool named `final_output`** cannot take an output
   schema.

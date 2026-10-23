@@ -99,7 +99,7 @@ do.
 | Model responses in one run | 1,000, compaction summaries included; `runLimits.maxResponses` lowers it for an agent or a definition. At it, the turn stops before its next model request (`stopped: "turn_limit"`) |
 | How long a run may take | 2 hours from when it began; `runLimits.maxSeconds` lowers it. `stopped: "turn_limit"` too; send another message to continue. A turn waiting on people isn't running, and may wait for days. The SDKs have no default timeout |
 | A quiet model stream | Nothing before the first token for 120 seconds (300 for a reasoning model at `thinkingLevel` high and up), or nothing for 45 seconds once it streams, ends the request as stalled, and it's retried. `runLimits.firstTokenSeconds` and `runLimits.idleSeconds` set an agent's own (1 to 3,600). Past every retry the run fails with `model_stream_stalled` |
-| Node-loss resumes of one run | 2; another loss fails it with `resume_limit` |
+| Resumes of one interrupted run | 2; another interruption fails it with `resume_limit` |
 | `Idempotency-Key` header | 1 to 255 characters; its answer is kept for 24 hours |
 | Stateless run body (`POST /v1/runs`) | 7 MiB, with inline files (4 MiB of files in all) |
 | A stateless run's `wait` | At most 60 seconds on create, 25 on `GET /v1/runs/{id}` |
@@ -232,7 +232,7 @@ See [Computers](/camelrun/computers).
 | --- | --- |
 | Endpoints | 1 per account (`PUT /v1/telemetry`), OTLP/HTTP only (protobuf or JSON) |
 | Headers | 16, each value at most 4,096 characters |
-| Spans waiting to be sent | 5,000 per account per node; more are dropped |
+| Spans waiting to be sent | At least 5,000 per account at a time; past that, new spans can be dropped |
 | An export request | At most 512 spans; 10 seconds to answer; 5 attempts |
 | A content attribute (with `include.content`) | 16,384 characters, then cut |
 

@@ -58,7 +58,7 @@ the SDKs honor it and retry.
 | 429 | `VOICE_SESSION_LIMIT` | As many live voice sessions as the account may have (`limit`) | End one first |
 | 429 | `RATE_LIMITED` | A rate limit (`limit` names it: `{name, scope, max, windowSeconds}`), or too many agents, requests or subscribers at once | Retry after `Retry-After` |
 | 502 | `TRANSCRIPTION_FAILED`, `IMAGE_FAILED` | The provider failed or refused the key; nothing was charged | Retry, or check the key |
-| 503 | `UNAVAILABLE` | A node is draining or starting, or an agent is moving | Retry after `Retry-After`; nothing happened |
+| 503 | `UNAVAILABLE` | camelRun is restarting or deploying, or an agent is moving | Retry after `Retry-After`; nothing happened |
 | 503 | `DATABASE_RETRY` | The database refused the request for now | Retry after `Retry-After` |
 | 507 | `STORAGE_LIMIT` | The account's storage limit would be passed; the body has `limit` and `used`, in bytes | Delete files or volumes, or buy credit (free credit stores 1 GB) |
 | 500 | `INTERNAL` | A bug | Retry, and report it with the request id |
@@ -88,7 +88,7 @@ Common `CONFLICT` cases:
 | `turn_limit` | The run made as many model responses (1,000 by default) or ran as long (2 hours) as its run limits allow. Send another message to continue, or raise the agent's `runLimits` |
 | `end_user_credit` | The run's [end user](/camelrun/end-user-credits) may not spend more (`limit: "end_user"`, with `reason`, `bucket` and `endUser`). Not retried. Grant them credit and send the next message. See [When a person runs out](/camelrun/end-user-credits#when-a-person-runs-out) |
 | `aborted`, `cancelled` | The agent was stopped while the run went, or a stop cancelled the run before it began |
-| `resume_limit` | The run's node was lost again after two resumes. The agent takes new messages |
+| `resume_limit` | The run was interrupted again after two resumes. The agent takes new messages |
 | `runtime_error` | camelRun couldn't carry out the run: for example, the agent was deleted |
 
 Over REST, an ended request record (`GET /v1/agents/{id}/requests/{requestId}`)
@@ -100,9 +100,9 @@ A run with `uncertain: true` was cut short by a restart where it couldn't
 resume. Its tool calls may or may not have taken effect, so check before
 retrying.
 
-A run whose node was lost mid-turn resumes on another (`turn_resumed`), with
+A run interrupted mid-turn (camelRun restarted under it) resumes (`turn_resumed`), with
 any tool call whose answer was lost marked "outcome unknown" for the model.
-Tool calls are never sent twice. After two such resumes, another loss fails the
+Tool calls are never sent twice. After two such resumes, another interruption fails the
 run with `resume_limit`. A deploy loses nothing: the turn moves at a step
 boundary.
 
