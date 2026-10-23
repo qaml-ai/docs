@@ -1,0 +1,175 @@
+---
+title: 'Agent computers: Linux sandboxes and remote browsers on camelRun'
+sidebarTitle: 'Computers'
+description: 'Give a camelRun agent a remote Linux computer or browser from Modal, Daytona, Boat, E2B, Browserbase, Browser Use or your own machine.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/computers.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+Connect an agent to a remote Linux computer or browser from **Computers** in
+the console. The agent calls its computer tools directly, or from `js_exec`, as
+it calls web search. You don't host an MCP server: camelRun supplies the tools
+and manages the session.
+
+A computer is attached to one agent. Its files and processes survive between
+turns in the same session. Stopping the session or reaching its expiry
+discards that environment, and a new session starts empty. These files are
+separate from the agent's camelRun [workspace files](/camelrun/files).
+
+<Note>
+  Computers run on your own provider account. You bring the provider's
+  credentials, and the provider bills you for compute directly. camelRun has
+  no computers of its own to lend.
+</Note>
+
+## Connect a provider
+
+In the console, open **Computers**, choose an existing agent and a provider,
+enter the provider's credentials, and set the maximum session time and the
+daily time budget. The tools appear on the agent's next turn, including for an
+agent that is already running. An agent has at most one computer connection.
+**Disconnect** removes the tools and stops the session before deleting the
+credentials.
+
+| Provider | API name | Credentials | Tools |
+| --- | --- | --- | --- |
+| Modal | `modal` | Token ID and token secret | Linux shell and files |
+| Daytona | `daytona` | Sandbox API key | Linux shell and files |
+| Boat | `boat` | API token | Linux shell and files |
+| E2B | `e2b` | API key | Linux shell and files |
+| Browserbase | `browserbase` | API key and optional project ID | Browser navigation, reading, clicking, filling and JavaScript |
+| Browser Use Cloud | `browser-use` | API key | Browser navigation, reading, clicking, filling and JavaScript |
+| Your computer, through Cloudflare Tunnel | `tunnel` | Runner HTTPS origin and connection token | Linux shell and files in your runner's Docker container |
+
+Use a Browserbase plan that supports keep-alive sessions. E2B and Browserbase
+require an active provider account. Connecting credentials does not show that
+your account can create a machine: the first `computer_start` does that.
+
+Credentials are encrypted in storage and never placed in the model's context.
+A managed machine gets no camelRun credentials. Boat machines are created with
+`noEnv`, snapshots off and monitoring off.
+
+The API equivalent is `POST /v1/computers`:
+
+```json
+{
+  "agent": "YOUR_AGENT_ID",
+  "provider": "daytona",
+  "credentials": {"apiKey": "YOUR_PROVIDER_KEY"},
+  "leaseSeconds": 900,
+  "dailySeconds": 3600
+}
+```
+
+`leaseSeconds` is the maximum session time, 60 to 900 (900 by default).
+`dailySeconds` is the daily budget, from `leaseSeconds` up to 86,400 (3,600 by
+default). Credentials are `apiKey` for most providers, `tokenId` and
+`tokenSecret` for Modal, `apiKey` and an optional `projectId` for Browserbase,
+and `url` and `apiKey` (the connection token) for a tunnel.
+
+<Warning>
+  Keep provider keys in your secret manager. Don't put them in the agent's
+  prompt.
+</Warning>
+
+## Give the agent a task
+
+For a shell computer, a useful instruction is:
+
+> Use computer_start, then computer_exec to install the packages you need and
+> run the task. Inspect exitCode. Keep files in the computer between turns.
+> Stop the computer with computer_stop when done. Copy any results you need to
+> retain into the final answer before stopping.
+
+| Computer | Tools |
+| --- | --- |
+| Every computer | `computer_start`, `computer_status`, `computer_stop` |
+| Shell (Modal, Daytona, Boat, E2B, tunnel) | `computer_exec`, `computer_read_file`, `computer_write_file` |
+| Browser (Browserbase, Browser Use Cloud) | `browser_navigate`, `browser_read`, `browser_click`, `browser_fill`, `browser_evaluate` |
+
+Browser Use Cloud is used through its direct browser API, so the model loop
+stays in camelRun. Browser sessions disable recording and the optional proxy by
+default.
+
+- Sessions last 60 to 900 seconds, as the connection sets.
+- Commands time out after at most 120 seconds, further limited by the session's
+  remaining time. Output is bounded. Background processes should redirect their
+  output so a command can return.
+- `computer_read_file` reads up to 24,000 characters of a UTF-8 file;
+  `computer_write_file` writes up to 16,000.
+
+Retrying the same tool call does not create another computer or run the same
+command again. A command whose result was lost is reported as uncertain:
+inspect the computer before issuing a new command that could repeat a side
+effect.
+
+## Bring your own computer through Cloudflare Tunnel
+
+The runner needs Python 3, Docker and `cloudflared`. From a checkout of
+[github.com/qaml-ai/run](https://github.com/qaml-ai/run):
+
+```sh
+python3 examples/computer/tunnel_server.py \
+  --tunnel --lifetime 900 --connection-file /private/path/computer.json
+```
+
+Enter the file's `url` and `token` in the console's Cloudflare Tunnel
+connection, and keep the runner online. The file is created with owner-only
+permissions and removed when the runner exits. Don't share it: its token grants
+command access.
+
+The runner creates a disposable Docker container with no host filesystem
+mounts, no Docker socket and no host environment credentials. It limits CPU,
+memory and process count. It does not give the agent your desktop or an
+unrestricted host shell. Container networking uses Docker's default network,
+which is not limited to the public internet.
+
+The temporary tunnel and container end with the runner: run a new one and
+reconnect for another session. An existing named tunnel can use `--url`
+instead of `--tunnel`, with `--port` for a stable local port.
+
+## Usage and cleanup
+
+Compute is billed directly to your provider account. The console reports
+session time by provider and by the agent's [workspace](/camelrun/workspaces)
+when the session started, capped at the configured expiry. These seconds are
+separate from model spend and are not a provider invoice. Cleanup delays can
+add provider charges beyond them. Changing workspaces does not move earlier
+sessions.
+
+Daily budgets reserve the whole allowed session duration before starting a
+computer. Closing early frees the unused time. The budget resets at midnight
+UTC.
+
+camelRun stops expired sessions and retries failed cleanup. Provider timeout
+settings add a fallback where the provider supports one; Daytona's fallback is
+an idle timeout. Check the provider console if cleanup is failing. Deleting
+your camelRun account waits for computer cleanup before removing credentials.
+
+### When a session is uncertain
+
+If a provider accepts a create request but its reply is lost before the
+machine's id is recorded, the session stays `uncertain`. Another machine is not
+created automatically.
+
+1. Check your provider account and remove any machine from that attempt.
+2. Only after verifying cleanup, use **Confirm provider cleanup** in the
+   console, or call `POST /v1/agents/{id}/computer/confirm-cleanup` with
+   `{"providerCleanupConfirmed":true}`.
+
+Confirming is an account action, not an agent tool. Sessions with a recorded
+id are cleaned up by camelRun. You can also confirm manual cleanup when
+automatic cleanup fails, for example after revoking a provider key: remove the
+machine at the provider first.
+
+## From the REST API
+
+| | |
+| --- | --- |
+| `POST /v1/computers` | Connect an agent to a provider |
+| `GET /v1/computers` | Connections and their session state; credentials are never returned |
+| `GET /v1/computers/usage` | Session time by provider and workspace |
+| `GET /v1/agents/{id}/computer` | An agent's connection and session |
+| `POST /v1/agents/{id}/computer/stop` | Stop the agent's session |
+| `POST /v1/agents/{id}/computer/confirm-cleanup` | Confirm you removed a machine at the provider |
+| `DELETE /v1/computers/{id}` | Stop the session and disconnect |

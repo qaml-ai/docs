@@ -37,13 +37,16 @@ A `PUT` changes only the fields it carries: the others keep their current values
 (their defaults the first time). So `{"include": {"content": true}}` turns content
 on and leaves the endpoint, headers, protocol and sample rate as they were.
 
-- `GET /v1/telemetry` shows the settings, header names, and `status`: when a node
+- `GET /v1/telemetry` shows the settings, header names, `setBy` (who last set
+  it: `token:<API token id>`, `console` or `operator`), and `status`: when it
   last exported, and why the last export failed (`HTTP 401`, `Could not connect
   (ECONNREFUSED)`), since the last success.
 - `POST /v1/telemetry/test` sends one span (`camelrun test span`) now and answers
   with what your endpoint said and the span's `traceId`, to find it in your
   backend.
 - `DELETE /v1/telemetry` stops export.
+- Revoking the API token that set it lists the export, which keeps going until
+  you change it. OAuth apps can't set it.
 
 The SDKs, CLI and console do the same:
 
@@ -62,7 +65,7 @@ camelrun telemetry set https://api.honeycomb.io/v1/traces --header x-honeycomb-t
 camelrun telemetry test
 ```
 
-In the console: **Telemetry** in the sidebar, with presets and a **Send test span** button.
+In the console: **Settings → Telemetry** in the sidebar, with presets and a **Send test span** button.
 
 See [SDKs](/camelrun/sdks#telemetry) and [CLI](/camelrun/cli#telemetry).
 
@@ -207,6 +210,28 @@ attempts, are dropped and counted. Export is best effort: spans are kept in memo
 not durably, and a node that stops sends what it can within a few seconds. A batch
 your endpoint accepted after its 10-second timeout is sent again, so a span can
 arrive twice; backends keep one per span id.
+
+## Usage, spend and agent health
+
+Traces are one view. camelRun also answers what your agents spent and which
+ones need a look, without a backend of your own:
+
+- `GET /v1/usage?days=30` (1 to 365) returns `totals`, a row per UTC day, model
+  and `kind` (`turn`, `compaction`, `transcription`, `image`, `speech`), and
+  spend by workspace (`workspaces`, `workspaceDays`). Costs cover model calls
+  and recorded tools such as X search, web search and images.
+  `workspaceId=ws_…` (or `unassigned`) narrows it to one
+  [workspace](/camelrun/workspaces). The console's **Usage** page shows the same.
+- The `usage.recorded` [webhook](/camelrun/webhooks) reports each model
+  response's cost as it happens, with the agent's `subject`, `context`, `actor`
+  and `keyScope`.
+- `GET /v1/agents` lists your agents, each with `lastActiveAt` (when its latest
+  run ended), `lastError` (its latest failed run: when, and how it failed as a
+  class such as `spend_limit` or `model_error`), `parentAgentId` and
+  `workspaceId`. Filter with `status=running|failed|expiring` (`failed`: a run
+  failed in the last 24 hours), `subAgents=only|exclude`, `workspaceId` and
+  `q` (part of a name, key or id). With `limit` (1 to 200) it pages by id, and
+  the `X-Next-Cursor` header holds the next page's `cursor`.
 
 ## Endpoints the runtime refuses
 

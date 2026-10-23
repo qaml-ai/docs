@@ -63,8 +63,8 @@ The hosted server's `deploy` takes a manifest's YAML as text. It reads no files
 or environment variables, so `systemPromptFile`, `specFile` and `${NAME}` are
 refused: write the values in, or deploy from your machine with the CLI.
 
-Connected apps appear in the console under **API tokens**, where you revoke
-them. To connect a client to one agent instead, see
+Connected apps appear on the console's **API keys** page under **Connected
+apps**, where you revoke them. To connect a client to one agent instead, see
 [Agents as MCP servers](/camelrun/mcp-server). Their access tokens last an hour
 and reach only what [Authentication](/camelrun/authentication#oauth-for-coding-agents)
 lists: no new tokens, webhooks, channels or keys.
@@ -73,7 +73,7 @@ lists: no new tokens, webhooks, channels or keys.
 
 ```bash
 npm install -g @camelai/camelrun   # Node 22+; or npx @camelai/camelrun <command>
-camelrun login                     # paste an API key from the console's API tokens page
+camelrun login                     # paste an API key from the console's API keys page
 ```
 
 `login` checks the key and saves it to `~/.config/camelrun/credentials.json`.
@@ -141,16 +141,20 @@ key or id (`def_...`).
 | `agents delete <agent> --yes` | Stop an agent and delete its history and files |
 | `run <agent> <message...>` | Send a message and print the reply |
 | `runs get <agent> <requestId> [--wait s]` | A run's result |
+| `run --stateless <message...> [--definition d] [--model m] [--prompt text] [--thinking level] [--request-id key]` | A [stateless run](/camelrun/stateless-runs): the answer, with nothing carried over and no agent kept |
+| `runs get <runId> [--wait s]` | A stateless run's result |
 | `history <agent> [--limit n]` | Its latest messages, tool calls included |
-| `abort <agent>` | Stop its running turn |
+| `abort <agent>` | Stop it: its running turn, and the runs queued behind it |
 | `inputs [agent]`, `answer <agent> <inputId> <value>` | Questions and approvals waiting on someone, and answering them |
-| `schedules list\|add\|delete <agent>` | Wake-ups: `add --text t --in 3600 [--every 86400]` |
+| `schedules list\|add\|delete <agent>` | Wake-ups: `add --text t --in 3600 [--every 86400] [--history none]` |
 | `definitions list\|get\|agents\|delete` | Definitions, and the revision each agent has |
 | `telemetry get\|set\|test\|clear` | [Trace export](/camelrun/observability): where traces go, header names, the last export |
 
 `run` waits for the run to end. `--wait 30` waits at most 30 seconds, and
 `--no-wait` prints the request id to follow with `runs get`. `--from user-1`
-says who is sending, and `--steer` gives the message to a running turn.
+says who is sending, and `--steer` gives the message to a running turn. An
+agent whose tools are served by a process that isn't connected refuses the run
+(`APPLICATION_NOT_CONNECTED`) unless you pass `--allow-disconnected`.
 
 `telemetry set` changes only what it is given: an endpoint, `--header`,
 `--protocol http/protobuf|http/json`, `--sample-rate 0..1`, `--content` or `--no-content`. Take header values from the environment or stdin,
@@ -231,7 +235,8 @@ Both servers offer `deploy`, `list_agents`, `get_agent`, `create_agent`,
 `abort_agent`, `list_inputs`, `answer_input`, the schedule and definition tools,
 `list_models`, `whoami`, and `read_docs`, which reads the camelRun docs.
 
-`run_agent` and `get_run` wait at most `wait` seconds (default 50) so a call
+`add_schedule` also takes `calendar` and `email`, for
+[scheduled reports](/camelrun/schedules). `run_agent` and `get_run` wait at most `wait` seconds (default 50) so a call
 stays inside clients' tool timeouts. A run still going comes back as `running`
 with its `requestId`. A run that asks a person something comes back as
 `input_required`, and the coding agent should ask you and answer with what you
@@ -243,7 +248,8 @@ The tools that overwrite, delete, stop or irreversibly answer something
 you first. `create_agent` is because, for a key that already has an agent, it
 brings that agent to the configuration given (keeping its history).
 `fork_agent` only adds an agent, so it isn't. `run_agent`, `answer_input` and `add_schedule` are open-world: the runs they
-start can search and fetch the web and call the agent's tool servers.
+start can search and fetch the web and call the agent's tool servers. A result
+longer than 100,000 characters is cut, saying so.
 
 `list_agents` gives each agent's key, id, name and model, with `loaded`
 (whether it is in a runtime's memory now, idle or not; not whether a run is

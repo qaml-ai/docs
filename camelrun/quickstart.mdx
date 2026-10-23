@@ -25,10 +25,10 @@ history and its files. Your tools stay in your code, with your credentials.
 
 Signing in to the [console](https://run.camelai.com/console) with GitHub or
 Google creates your account. GitHub accounts older than 30 days start with free
-credit. Everyone else verifies a card on the
-[Billing](https://run.camelai.com/console/billing) page to unlock starting
-credit: the card is saved, not charged. Runs use credit even when you bring
-your own provider key.
+credit. When the [Billing](https://run.camelai.com/console/billing) page offers
+it, everyone else (Google sign-ins, newer GitHub accounts) unlocks the same
+starting credit by verifying a card: the card is saved, not charged. Runs use
+credit even when you bring your own provider key.
 
 ## Try it from your coding agent (no key)
 
@@ -65,7 +65,8 @@ Connect the hosted MCP server and sign in. There is no key to create or copy.
 <Steps>
   <Step title="Get an API key">
     Sign in to the [console](https://run.camelai.com/console). Under
-    **API tokens**, create a token and export it:
+    [**API keys**](https://run.camelai.com/console/tokens), create a key and
+    export it:
 
     ```bash
     export CAMELAI_API_KEY=art_...
@@ -77,7 +78,7 @@ Connect the hosted MCP server and sign in. There is no key to create or copy.
   <Step title="Install the SDK">
     <CodeGroup>
     ```bash TypeScript
-    # Node 22 or later, or Bun
+    # Node 22 or later (on Node 26: 26.5.1 or later), or Bun
     npm install @camelai/run
     ```
 
@@ -147,8 +148,8 @@ Connect the hosted MCP server and sign in. There is no key to create or copy.
   </Step>
 </Steps>
 
-The examples name no model, so the agent gets your account's default: a model
-your account can use.
+The examples name no model, so the agent gets your account's default: the first
+of the platform's default models your account can use.
 
 ### Choose a model (optional)
 
@@ -261,6 +262,10 @@ resolves with it.
   list tool errors, e.g. `connection_lost` when the process serving its tools
   went away mid-call: check them.
 - `agents.close()` let the process exit. The agent stays in camelRun.
+
+One answer per input, with nothing to remember (classify, extract, vote)? Skip
+the agent: `await agents.run({ instructions, input, output })` is one call, and
+keeps nothing between runs. See [Stateless runs](/camelrun/stateless-runs).
 
 ## Next steps
 

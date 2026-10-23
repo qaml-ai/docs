@@ -1,0 +1,132 @@
+---
+title: 'Scheduled AI agents and email reports on camelRun'
+sidebarTitle: 'Schedules'
+description: 'Wake camelRun agents on a calendar, an interval or once, and email the final reply as a formatted report. Set from the console, the API or the agent itself.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/schedules.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+A schedule wakes an agent later with a message: once, every few minutes, or at a
+local time on chosen days. A calendar schedule can also email the run's final
+reply, so "research this every weekday at 8 and send me the report" takes one
+request. The agent needs no application process to stay connected when it uses
+built-in tools. Its instructions and saved files are there at every wake-up, and
+each run is recorded in its history.
+
+In the console, open an agent and select **Schedules**. Enter what the agent
+should do, choose **Daily** or **Weekdays**, set the local time and time zone,
+and optionally an email recipient, subject and format.
+
+The same from the API, `POST /v1/agents/{id}/schedules`:
+
+```json
+{
+  "text": "Research today's developments, save the report, and return the complete report with source links.",
+  "history": "none",
+  "calendar": {
+    "time": "08:00",
+    "timeZone": "America/Chicago",
+    "daysOfWeek": [1, 2, 3, 4, 5]
+  },
+  "email": { "to": "reader@example.com", "subject": "Daily research", "format": "markdown" }
+}
+```
+
+In the SDKs, `agent.schedule(...)` takes the same fields (Python: `in_seconds=`,
+`every_seconds=`, and `calendar` and `email` as dictionaries). `schedules()`
+lists them and `unschedule(id)` removes one.
+
+## When it runs
+
+Give one way to time it:
+
+| Field | Runs |
+| --- | --- |
+| `inSeconds` or `at` (an ISO time, or epoch milliseconds) | Once |
+| `everySeconds` (at least 60) | Repeatedly, that far apart; the first after one interval, or at `inSeconds` or `at` |
+| `calendar: { time, timeZone, daysOfWeek? }` | At a local `HH:MM` in an IANA time zone, on the days given |
+
+A schedule delivers `text` as a message, or runs `code` in the sandbox with the
+agent's tools: give one of them. `history: "none"` wakes the agent with only its
+instructions and the text, not its history, so a daily agent doesn't read an
+ever longer conversation. Its runs are still recorded.
+
+Calendar schedules:
+
+- Omit `daysOfWeek` to run every day. Sunday is 0 and Saturday is 6.
+- They keep their local time through daylight saving changes. A local time that
+  doesn't exist that day is skipped; a local time that happens twice runs once.
+- Each wake-up tells the agent its scheduled UTC time and its local edition
+  date, so a report's date doesn't depend on what the model infers from search
+  results.
+- A calendar can't be combined with `at`, `inSeconds` or `everySeconds`.
+
+If a wake-up can't be delivered, it is retried 1, 5 and 15 minutes later, then
+given up, and the schedule moves on to its next occurrence (at once for a
+refusal a retry can't change, such as a spend limit). The schedule shows
+`failures` and `lastError` until a delivery succeeds. Occurrences missed while
+the service recovers are skipped, not run late. An agent has at most 100
+schedules, at most a year ahead (see [limits](/camelrun/limits)).
+
+## Let the agent schedule itself
+
+The `schedule` built-in gives the agent `schedule`, `list_schedules` and
+`cancel_schedule`, so it can set its own wake-ups ("check the deploy again in an
+hour", "remind me every Monday"). It takes `text`, `history`, `inSeconds`, `at`,
+`everySeconds` and `calendar`.
+
+```json
+{ "builtins": ["schedule"] }
+```
+
+The agent's tool can't set an email. Only you set a recipient, from the console
+or the API. A definition with the `schedule` built-in can't serve a Camel
+Discord server (see [channels](/camelrun/channels)).
+
+## Email reports
+
+A schedule with `email` sends the successful run's complete final reply to the
+recipient, with your subject. Have the agent put its report in that reply, not
+just a saved file's path. Failed or empty runs are not emailed.
+
+Pick `email.format` to match what the agent returns:
+
+- `markdown` (default): basic HTML for headings, lists, tables and source
+  links, with the original Markdown as the plain-text part. Raw HTML is escaped,
+  and images stay links.
+- `html`: the agent's HTML sent unchanged, with its own styling or template,
+  and a plain-text part generated from it. camelRun adds no layout or branding.
+- `text`: plain text only, with no conversion.
+
+camelRun requires no particular layout. Put your template in the agent's
+instructions or its saved files.
+
+Who you can send to:
+
+- Your sign-in email, or a recipient you verified under **Billing**, in email
+  alerts. Any other address is refused with a 403.
+- Suppressed addresses (ones that bounced or complained) are refused.
+  Eligibility is checked again before each send.
+
+Delivery waits for the run to finish and retries transient mail errors. It is
+at least once: rarely, a lost acknowledgement from the mail provider can send a
+report twice. See each delivery's state in the agent's **Schedules** tab, under
+**Email deliveries**, or at `GET /v1/agents/{id}/schedule-deliveries`.
+
+<Note>
+  On a runtime you host yourself, scheduled email needs account mail through
+  SES; without it, schedules with email are refused. See
+  [self-hosting](/camelrun/self-hosting).
+</Note>
+
+## API
+
+| Call | SDK (TypeScript / Python) |
+| --- | --- |
+| `POST /v1/agents/{id}/schedules` | `agent.schedule({...})` / `agent.schedule(...)` |
+| `GET /v1/agents/{id}/schedules` | `agent.schedules()` |
+| `DELETE /v1/agents/{id}/schedules/{scheduleId}` | `agent.unschedule(id)` |
+| `GET /v1/agents/{id}/schedule-deliveries` | |
+
+Over [MCP](/camelrun/mcp-server), `add_schedule` takes `calendar` and `email`
+too. Schedules are part of an [account export](/camelrun/export).

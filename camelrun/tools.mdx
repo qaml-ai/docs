@@ -9,6 +9,7 @@ description: 'Give camelRun agents tools: functions in your own process or serve
 An agent's tools are how it acts. This page covers where tools run, how to
 write them so a retry never does harm, and how camelRun tells a tool who a call
 is for. For the short version, see [Where tools run](/camelrun/concepts#where-tools-run).
+For native Linux computers and remote browsers, see [Computers](/camelrun/computers).
 
 ## Write a tool
 
@@ -42,25 +43,51 @@ async def refund(order_id: str, context: ToolContext) -> dict:
   schema (`schema` is TypeBox's `Type`) and infers the argument types from it.
   Python derives the schema from the annotations and the description from the
   docstring. Arguments are checked before your function runs.
-- **Result.** Return any JSON value. Throw (or raise) to tell the model the call
-  failed; it sees your message. A result is at most 1 MiB of JSON. The model
-  reads at most 32,000 characters; a longer result is saved whole to
+- **Result.** Return any JSON value; `undefined`/`None` is sent as `null`.
+  Throw (or raise) to tell the model the call failed; it sees your message. A
+  result is at most 1 MiB of JSON. The model reads at most 32,000 characters; a
+  longer result is saved whole (up to 700 KB) to
   `/workspace/tool-results/<toolCallId>.txt` so it can read the rest.
+- **Python functions** may be `async` or plain. A plain one runs in a thread, so
+  it never blocks the connection.
 - **`context.idempotencyKey`** is the same for every attempt of one call: a
   retry after a lost connection, or the call run again after a person answered.
-  Pass it to anything with side effects.
+  Pass it to anything with side effects. `context.callId` is new on each attempt.
 - **Deadline.** A call may go 15 seconds without answering by default
   (`timeoutMs`, or `@tool(timeout=)`, from 1 second to 20 minutes). Each
-  `context.progress(...)` restarts the wait, up to 20 minutes in all. A call cut
-  off is reported to the model as "outcome unknown".
-- **`context.signal`** aborts when camelRun cancels the call. Cancellation is not
-  rollback.
+  `context.progress(...)` restarts the wait, up to 20 minutes in all, and people
+  watching the agent see the progress. A call cut off is reported to the model as
+  "outcome unknown" (it may still finish in your process), so make the side
+  effect idempotent and the model can check and retry safely.
+- **`context.signal`** aborts when camelRun cancels the call (the run was
+  aborted, or the deadline passed). Cancellation is not rollback.
+- **`context.identity`** says who the call is for. See [Identity](#identity).
 - **`needsApproval: true`** (`needs_approval=True`) makes a person approve each
-  call first. See [Human input](/camelrun/human-input).
-- **`exposure`** is `"direct"` (the model calls it as a tool), `"codemode"`
-  (only from code in `js_exec`), or `"both"`. By default a source of up to 10
-  tools is `both` and a larger one is `codemode`, so big catalogs don't crowd the
-  model's context.
+  call first, and `context.confirm`, `context.ask` and `context.requireUrl` ask
+  from inside the tool. See [Human input](/camelrun/human-input).
+- **`exposure`** (`@tool(exposure=...)` in Python) is `"direct"` (the model calls
+  it as a tool), `"codemode"` (only from code in `js_exec`, as
+  `tools.<name>(args)`), or `"both"`. By default a source of up to 10 tools is
+  `both` and a larger one is `codemode`, so big catalogs don't crowd the model's
+  context. **So by default the model can call your tools from `js_exec`**, and it
+  may well batch them in code.
+
+### Keep a tool out of js_exec
+
+A tool called from code runs inside `js_exec`'s call: its arguments don't stream
+as `toolcall_delta` events, and a page that renders a tool's arguments as they
+are written sees nothing until the code has run. To keep a tool out of
+`js_exec`, make it `direct`:
+
+| Where the tool comes from | Set |
+| --- | --- |
+| Your process (`tools` in `upsert`) | `exposure: "direct"` on the tool; Python `@tool(exposure="direct")` |
+| A served or MCP server named in a definition | `"exposure": "direct"` on the server entry (every tool), or `_meta["agent-runtime/exposure"]` on a tool in its `tools/list` (that tool; it beats the server's) |
+| An OpenAPI source | `"exposure": "direct"` on the source |
+
+A tool with `needsApproval` is always direct. The console's agent page shows each
+tool's exposure (**Tools the model gets**). `js_exec` itself stays, with `fs`,
+`fetch` and the tools left in it.
 
 ## Attached tools
 
@@ -79,7 +106,10 @@ credentials, and nothing is exposed on the network.
   replace the first, or `attach: false` to run the agent without serving them.
 - A run while no process serves the tools is refused with
   `APPLICATION_NOT_CONNECTED`, unless you pass `allowDisconnected: true`
-  (`allow_disconnected=True`).
+  (`allow_disconnected=True`): then calls to them fail, listed in the run's
+  `toolErrors` with code `not_connected`. Runs a schedule or a channel starts are
+  never refused and may find nobody connected, so use served tools for those
+  agents.
 - If the connection drops mid-call, the model is told the outcome is unknown,
   and the call is never sent again.
 
@@ -92,11 +122,7 @@ An existing MCP SDK server can be attached as is:
 Every process that upserts an agent with `tools` tries to serve them, and only
 one can. Under uvicorn or gunicorn with several workers, Celery, or any fleet of
 instances, the first to connect serves the tools and the others fail with
-`APPLICATION_CONNECTED` (or take them from each other, with `takeover`). And
-while the serving process restarts (a deploy, a crash), runs are refused with
-`APPLICATION_NOT_CONNECTED`, and a call that was running when it went down is
-lost: the model is told its outcome is unknown, and the run lists it in
-`toolErrors` (Python `tool_errors`) with code `connection_lost`.
+`APPLICATION_CONNECTED` (or take them from each other, with `takeover`).
 
 Pick one of these:
 
@@ -109,15 +135,51 @@ Pick one of these:
 - **One tool process.** Run one long-lived process that upserts the agent with
   its `tools` and stays up. Everywhere else, upsert it with the same `tools` and
   `attach: false` (`attach=False`), which runs the agent without serving them.
-  Calls running when that process restarts are still lost, so keep it out of
-  frequent deploys.
+
+#### Deploy a tool process
+
+Close the agents when the process is told to stop, and a deploy loses no call:
+
+<CodeGroup>
+```ts TypeScript
+process.once("SIGTERM", () => void agents.close().then(() => process.exit(0)));
+```
+
+```python Python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app):
+    yield
+    await agents.close()  # uvicorn runs this on SIGTERM
+
+app = FastAPI(lifespan=lifespan)
+```
+</CodeGroup>
+
+`close()` tells camelRun this process takes no new calls, finishes the calls it
+is running (for up to 25 seconds: `close({ drainMs })`, `close(drain=)` in
+seconds), then disconnects. Meanwhile new calls go to the next process. In a
+rolling deploy, start it with `takeover: true` (`takeover=True`), which takes
+the tools at once while the old process finishes its calls. In a
+stop-then-start deploy, it connects without a takeover, and calls wait a few
+seconds for it. A takeover alone (without `close()`) also lets the replaced
+process answer the calls it has, for up to 30 seconds.
+
+A deploy can still lose a call that outlives the drain, and every call running
+when a process crashes or is killed without `close()`. The model is then told
+the tool's server disconnected during the call and it may or may not have taken
+effect, and the run lists it in `toolErrors` (Python `tool_errors`) with code
+`connection_lost`. Key side effects by `context.idempotencyKey` so that checking
+and retrying is safe.
 
 #### When the tool process dies mid-run
 
 The run lives in camelRun, not in your process, so it goes on without it:
 
-- **The call that was running** fails as `connection_lost`. The model is told
-  its outcome is unknown, and usually checks or tries again.
+- **The call that was running** fails as `connection_lost`, as above. The model
+  is told, and usually checks or tries again.
 - **A call while no process serves the tools** waits 3 seconds for one to
   connect, then fails as `not_connected` (it didn't run).
 - **The restarted process serves the run's next calls.** Once it upserts the
@@ -198,31 +260,88 @@ const agent = await agents.upsert(`user-${user.id}`, {
 
 Every request without a valid token gets a 401. `serveTools` checks the
 signature against camelRun's published Ed25519 keys, plus the issuer, your
-tenant, the audience (your server's URL) and the expiry.
+tenant, the audience (your server's URL) and the expiry. Nothing per user is
+stored anywhere.
 
 <Warning>
   `tenant` is required, and it matters. Any camelRun account can make agents
   with any `subject` and point them at your URL, and camelRun signs their tokens
-  too. Only the tenant check tells your agents from theirs.
+  too. Only the tenant check tells your agents from theirs. Pass your tenant's
+  id, or a list if several of your tenants share the server.
 </Warning>
+
+To offer each agent its own tools (an admin's, a plan's), pass a function of the
+caller's identity instead of the tools. A tool it isn't given is refused if
+called.
+
+<CodeGroup>
+```ts TypeScript
+serveTools(identity => identity.context.role === "admin" ? { refund, ban } : { refund }, options);
+```
+
+```python Python
+serve_tools(lambda identity: [refund, ban] if identity.context.get("role") == "admin" else [refund], runtime=..., tenant=...)
+```
+</CodeGroup>
 
 - **On Node,** wrap the handler:
   `createServer(nodeListener(handler, { origin: "https://tools.example.com" }))`,
   with `nodeListener` from `@camelai/run/node`. Set `origin` to your
   public URL behind a proxy that ends TLS. `trustProxy: true` reads
   `X-Forwarded-*` instead; only use it where the proxy overwrites those headers.
-- **In Python,** behind a proxy, run uvicorn with `--proxy-headers`, or pass
+- **In Python,** behind a proxy, run uvicorn with `--proxy-headers` (and
+  `--forwarded-allow-ips` naming the proxy), or pass
   `audience="https://tools.example.com/mcp"`.
+- **Django, Flask or any WSGI server:** `camelai_run.sync.serve_tools` takes the
+  same arguments and is a WSGI app. Plain functions run in the request's thread,
+  with its database connection. Mount it at the path the definition names, and
+  behind a proxy pass `audience`. `camelai_run.sync.verify_runtime_token` checks
+  a token in a view of your own.
+
+  ```python
+  # Flask
+  from werkzeug.middleware.dispatcher import DispatcherMiddleware
+  from camelai_run.sync import serve_tools
+
+  app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {"/mcp": serve_tools([refund], runtime="https://run.camelai.com", tenant="acme")})
+  ```
+
 - **Built with the MCP SDK** or Cloudflare's `createMcpHandler`? Verify with
-  `runtimeAuth(request, { runtime, tenant })` and read `runtimeIdentity(extra)`
-  in a handler.
+  `runtimeAuth(request, { runtime, tenant })`, pass the result as the request's
+  `auth`, and read `runtimeIdentity(extra)` in a handler.
+  `verifyRuntimeToken(token, { runtime, tenant, audience })` checks a token on
+  its own.
 - **In tests,** `testRuntime()` (`@camelai/run/testing`, Python
-  `TestRuntime()`) signs tokens with its own key:
+  `TestRuntime()`, `camelai_run.sync.TestRuntime()` for a WSGI app) signs tokens
+  with its own key, for tenant `test`, which `rt.options` passes:
 
   ```ts
   const rt = await testRuntime();
   const result = await rt.callTool(serveTools(tools, rt.options), "https://app.test/mcp", "refund", { orderId: "o1" }, { subject: "alice" });
   ```
+
+### A server that moves
+
+By default a token's audience is the server's URL, so a server that moves to a
+new domain or path refuses the tokens of agents still calling the old URL. Two
+ways to move without that:
+
+- Give the server a name that doesn't change: `audience:
+  "urn:camelrun:<tenant>:<name>"` in the definition's server entry (your tenant's
+  id, as `GET /v1/me` shows it, then a name of letters, digits and `._~:-`), and
+  the same `audience` to `serveTools`. Only your tenant's sources can name an
+  audience in your tenant's namespace.
+- Accept both addresses while agents move: `audience` takes a list, such as
+  `["https://old.example.com/mcp", "https://new.example.com/mcp"]`.
+
+Agents keep the definition revision they were made from, so after changing the
+server's `url`, apply the new revision to them (see
+[Definitions](/camelrun/definitions#roll-out-a-change)).
+
+```ts
+// Definition: { name: "shop", url: "https://tools.example.com/mcp", auth: { type: "runtime" }, audience: "urn:camelrun:acme:shop" }
+export default { fetch: serveTools({ refund }, { runtime: "https://run.camelai.com", tenant: "acme", audience: "urn:camelrun:acme:shop" }) };
+```
 
 ## Identity
 
@@ -233,17 +352,18 @@ either way:
 | Field | |
 | --- | --- |
 | `user` | Whom to authorize as: the turn's actor, else the agent's subject |
-| `subject` | Whom the agent acts for, set when it was made |
-| `actor` | Who is acting in this turn: the run's `user` |
+| `subject` | Whom the agent acts for, set when it was made (its id if none) |
+| `actor` | Who is acting in this turn: the run's `user`, or an `actor` given with the message |
 | `context` | Claims given when the agent was made, such as `{ org, workspace }` |
-| `tenant`, `agent`, `definition` | Whose agent it is, and which one |
+| `tenant`, `agent`, `definition` | Whose agent it is, and which one (`definition` only for an agent made from one) |
 | `origin` | Where the turn came from: a channel, its conversation and sender |
 | `approval` | The person's approval, for a call that needed one |
 
 `subject` and `context` are set with your API key when the agent is made. The
 agent's own token can't change them, and the model can't touch any of it. Once
 the token is checked to be from your own tenant, a tool can trust `identity`,
-and should never take a user id from the model's arguments.
+and should never take a user id from the model's arguments. See
+[Many users](/camelrun/multi-user).
 
 <Accordion title="Verify the token yourself">
   For servers that verify by hand, for example with `jose`:
@@ -251,8 +371,8 @@ and should never take a user id from the model's arguments.
   ```json
   { "iss": "https://agents.camelai.dev", "aud": "https://tools.example.com/mcp",
     "sub": "u_123", "tenant": "acme", "agent": "client_...", "definition": "def_...",
-    "ctx": { "org": "acme" }, "act": "u_456", "origin": { },
-    "iat": 1790000000, "exp": 1790000120, "jti": "..." }
+    "ctx": { "org": "acme" }, "act": "u_456", "origin": { }, "req": "run_...", "tcid": "toolu_...",
+    "par": "client_...", "root": "client_...", "iat": 1790000000, "exp": 1790000120, "jti": "..." }
   ```
 
   ```ts
@@ -262,13 +382,24 @@ and should never take a user id from the model's arguments.
     audience: "https://tools.example.com/mcp",
     algorithms: ["EdDSA"],
   });
+  // Any tenant's agent can get a token for your server's URL: accept only your own tenant's.
+  if (payload.tenant !== "acme") throw new Error("Not our tenant's agent");
   ```
 
   `iss` is `https://agents.camelai.dev`, the hosted runtime's first address, at
   either of its URLs; the SDKs expect it for both. Tokens live two minutes and
   each request gets its own `jti`. `aud` is the
-  server's URL, so a token can't be replayed against another server. Check
-  `tenant` yourself.
+  server's URL, or the source's `audience`, so a token can't be replayed against
+  another server. Check `tenant` yourself.
+
+  - `act` and `origin` are absent outside a turn (listing a server's tools as an
+    agent starts), and so are `req`, the run's request id, and `tcid`, the
+    model's tool call (`identity.requestId` and `toolCallId` in the SDKs).
+  - `par` and `root` are set only in a [sub-agent](/camelrun/multi-agent)'s run:
+    the agent that started it and the first agent of its chain
+    (`identity.parentAgentId` and `rootAgentId` in the SDKs). Authorize a
+    sub-agent's call by `root` when only the first agent's user is yours.
+  - The keys are at `/.well-known/jwks.json` (cache them for minutes).
 </Accordion>
 
 ## MCP servers
@@ -284,19 +415,84 @@ itself:
 }]}
 ```
 
-- Streamable HTTP, falling back to the older SSE transport.
-- `auth` is `{"type": "bearer", "token"}` or `{"type": "runtime"}` (signed
-  identity tokens). `headers` and `auth` are stored sealed; the API returns only
-  their names and type.
+- Streamable HTTP, falling back to the older SSE transport when a server answers
+  its POST with 400, 404 or 405.
+- `auth` is `{"type": "bearer", "token"}`, `{"type": "runtime"}` (signed
+  identity tokens) or `{"type": "exchange", "url"}` (a short-lived credential
+  fetched from an endpoint of yours; see [Fetched
+  credentials](#fetched-credentials)). `headers` and a bearer token are stored
+  sealed; the API returns only `headerNames` and `auth` without a token.
+  Updating a server without them keeps its stored credentials, unless its URL
+  moved to another origin.
+- `fileArguments` (`"on"` or `"off"`) says whether its tools are sent the
+  agent's files: on by default with `auth: {"type": "runtime"}` only. See
+  [Files in tool calls](#files-in-tool-calls).
 - Tools reach the model as `<server>__<tool>`, filtered by `allowTools` and
-  `denyTools`.
+  `denyTools`. A server can set a tool's deadline in `tools/list` with
+  `_meta["agent-runtime/timeoutMs"]`.
 - Each call's deadline is `timeoutMs` (default 60 seconds, at most 20 minutes),
-  restarted by each progress notification.
+  restarted by each progress notification. A call from `js_exec` also ends with
+  its execution (60 seconds at most), so expose long tools directly.
+- Text reaches the model as it is. Images, audio, blobs and text resources over
+  64 KiB are saved to the agent's workspace and reach it as files. `isError`
+  becomes a tool error; `structuredContent` is what code gets.
 - Saving the definition lists each server. A server that refuses its
   credentials is a 400, and the answer's `toolSources` shows what each server
-  offers.
+  offers. A server that can't be reached when an agent starts contributes no
+  tools; the run's `sourceErrors` lists it.
+- Tool lists are cached for five minutes and dropped on
+  `notifications/tools/list_changed`. Progress a server reports
+  (`notifications/progress`) reaches the agent's events as
+  `tool_execution_update`.
 - Each call carries `_meta` with `agent-runtime/idempotencyKey`, stable across
-  attempts, plus the call ids, actor and origin.
+  attempts, plus the call ids, actor and origin, and `camelrun/files` when files
+  are sent.
+
+### Fetched credentials
+
+A bearer token in a definition lives as long as the definition does. The
+credentials worth using don't: a GitHub App installation token lasts an hour,
+and so do cloud STS tokens and most OAuth access tokens. With
+`auth: {"type": "exchange"}`, camelRun fetches the server's credential from an
+endpoint of yours when it needs one, and fetches another before that one
+expires.
+
+```json
+{"name": "Triage", "mcpServers": [{
+  "name": "github", "url": "https://mcp.example.com/github",
+  "auth": {"type": "exchange", "url": "https://app.example.com/camelrun/github-token"}
+}]}
+```
+
+camelRun posts to your endpoint with an identity token in `Authorization` and
+`{"server": {"name", "url"}, "tenant", "definition", "agent"}` as the body. Your
+endpoint answers `{"token": "ghs_...", "expiresAt": "2026-10-13T19:00:00Z"}` (or
+`"expiresIn": 3600`, in seconds), and camelRun calls the server with
+`Authorization: Bearer <token>`, plus the entry's static `headers`.
+
+The token is the one a served tool gets, except that `aud` is your endpoint's
+URL (or `auth.audience`), it carries `exchange: { server, url }` naming the tool
+server, and it has no `act`, `origin`, `req` or `tcid`: a credential serves
+everyone who talks to the agent, not one turn. Your endpoint must check the
+signature, issuer and expiry, that `aud` is its own, that **`tenant` is yours**,
+and that `exchange` names a server you issue for. To refuse, answer a 4xx with
+`{"error": "why"}`: the first 200 characters reach the tool error.
+`verifyRuntimeToken` from `@camelai/run/server` does the token checks.
+
+- A credential is kept per agent, in memory only. It is never stored, logged,
+  returned by an API or shown to the model.
+- It is fetched again five minutes before it expires, and kept a day at most.
+- When the server answers 401 or 403, camelRun fetches another and tries once
+  more.
+- Your endpoint has 5 seconds to answer. Network errors, timeouts, 5xx, 408 and
+  429 are retried up to three times within 8 seconds; then the call fails with
+  `source_unavailable`.
+- Saving the definition asks for a credential as the definition (its token's
+  `agent` and `sub` are the definition's id). An endpoint that refuses fails the
+  save with a 400; one that is down doesn't.
+
+It is for a definition's MCP servers. OpenAPI sources and an agent's own MCP
+servers don't take it yet.
 
 ## OpenAPI specs
 
@@ -308,49 +504,201 @@ itself:
 ```
 
 Every operation of an OpenAPI 3 spec (JSON or YAML) becomes a tool named
-`<name>__<operationId>`. Its input is the operation's parameters by name, plus
-`body`. The spec is fetched and checked when the definition is saved, so an
-agent's tools never change under it; save the definition again to pick up spec
-changes. Requests get each call's stable key as an `Idempotency-Key` header, and
-a non-2xx answer becomes a tool error.
+`<name>__<operationId>` (or `<name>__<method>_<path>`). Its input is the
+operation's path, query and header parameters by name, plus `body` (JSON, or
+form-encoded). The spec is fetched and checked when the definition is saved, and
+its operations (at most 1024) are stored with it, so an agent's tools never
+change under it; save the definition again to pick up spec changes. `spec` may
+also be the document itself. Requests go to `baseUrl` (default the spec's first
+server), with no redirects, `timeoutMs` (default 30 seconds, at most 20 minutes)
+and each call's stable key as an `Idempotency-Key` header. A non-2xx answer
+becomes a tool error.
+
+## An agent's own MCP servers
+
+An agent made without a definition, and a [stateless
+run](/camelrun/stateless-runs), can list MCP servers itself:
+
+```ts
+const agent = await agents.upsert("support", {
+  instructions: "…",
+  mcpServers: [{ name: "kb", url: "https://mcp.example.com/mcp", auth: { type: "runtime" } }],
+});
+```
+
+- They take no credentials: `auth` is `{"type": "runtime"}` or left out, and
+  there are no `headers`. A server with a token, headers or a credential exchange
+  is a 400 saying to use a definition, which seals credentials once for every
+  agent made from it.
+- Everything else is as in a definition: `allowTools`, `denyTools`, `exposure`,
+  `timeoutMs`, `audience`, `approval`, and the same outbound checks. They are
+  not listed when saved; a server that can't be listed when the agent starts
+  shows in the run's `sourceErrors`.
+- `PATCH /v1/agents/{id}/configuration` with `mcpServers` replaces the list, and
+  `null` or `[]` removes it. An upsert sets the whole list, so an upsert without
+  `mcpServers` leaves none.
+- Only your API key changes them, never the agent's own token. An agent made
+  from a definition has its definition's servers and refuses its own (400).
+- Only MCP servers: OpenAPI specs stay in definitions.
 
 ## Built-ins
 
-Tools camelRun answers itself. Give them as `builtins` on `upsert`, or in a
-definition: `"builtins": ["web_fetch", "web_search", "schedule", "ask_user", "delegate", "generate_image", "agents"]`.
+Tools camelRun answers itself. Give them as `builtins` on `upsert` (or
+`PATCH /v1/agents/{id}/configuration`), or in a definition:
+`"builtins": ["web_fetch", "web_search", "x_search", "schedule", "ask_user", "delegate", "generate_image", "agents"]`.
 
 | Built-in | |
 | --- | --- |
-| `web_fetch` | Reads a public page as text (20,000 characters by default, at most 100,000), or saves a PDF or image to the workspace |
-| `web_search` | Returns `{query, provider, results}`, trying Exa, Brave and Parallel in order. Your own provider key is used first; otherwise the platform's, charged per search |
-| `schedule` | Lets the agent manage its own wake-ups with `schedule`, `list_schedules` and `cancel_schedule` |
+| `web_fetch` | Reads a public page as text (20,000 characters by default, at most 100,000), or saves a PDF or image to the workspace. Pages that are only a JavaScript shell are rendered when a Firecrawl key is available |
+| `web_search` | Returns `{query, provider, results}`, trying Exa, Brave and Parallel in order (a definition can pin its own with `"webSearch": {"providers": ["brave"]}`). Your own provider key is used first; otherwise the platform's, charged per search |
+| `x_search` | Searches X through Grok and returns a summary with citations. See [X search](#x-search) |
+| `schedule` | Lets the agent manage its own wake-ups with `schedule`, `list_schedules` and `cancel_schedule` (100 per agent, at most a year ahead, repeats at least a minute apart). `schedule` takes `inSeconds`, `at` or `everySeconds`, or a `calendar` (local `time`, IANA `timeZone`, optional `daysOfWeek`). See [Schedules](/camelrun/schedules) |
 | `ask_user` | Lets the model ask 1 to 4 multiple-choice questions; the run waits for the answer |
 | `delegate` | With `delegate: { agents }`, hands a task to a sub-agent and returns its answer. See [Multi-agent](/camelrun/multi-agent) |
-| `generate_image` | Makes an image, or edits images from the agent's files, and saves it to the workspace. It uses your OpenAI key, else the platform's, charged per token on prepaid credit |
+| `generate_image` | Makes an image, or edits images from the agent's files, and saves it to the workspace. It uses your OpenAI key, else the platform's, charged per token on prepaid credit. See [Images](/camelrun/images) |
 | `agents` | With the same settings as `delegate`, starts sub-agents in the background (`spawn_agent`, `wait_agent`, `list_agents`); each one's answer arrives as a notification |
+
+Saving a definition or an agent with `web_search`, `x_search` or
+`generate_image` when no key can serve it answers with `warnings` saying which
+key would set it up, and the console shows them.
+
+### X search
+
+`x_search` (`{query, allowedHandles?, excludedHandles?, fromDate?, toDate?}`)
+searches X through Grok and returns a summary, source citations and usage. It
+works with any main model. Set an xAI key under **Models & keys**
+(`PUT /v1/providers/xai/key`). Where the platform offers its own xAI key and
+your account may use it, `x_search` can run on that instead.
+
+- `allowedHandles` and `excludedHandles` each take up to 20 handles, with or
+  without `@`. Use one filter or the other.
+- Dates are `YYYY-MM-DD` in UTC: `fromDate` is inclusive and `toDate` exclusive.
+- Each call uses `grok-4.7`, with at most two model turns and 1,800 output
+  tokens. From `js_exec`, set the execution's `timeoutMs` to `150000` to allow
+  for the search deadline.
+- The result has `text`, `citations: [{url, title?}]`, `incomplete` and
+  `usage: {inputTokens, cachedInputTokens, outputTokens, searchCalls, postsFetched, profilesFetched, costUsd}`.
+  An incomplete answer is marked; a failed or empty answer is a tool error.
+  camelRun doesn't retry a failed request.
+- Cost is what xAI reports: Grok tokens plus the posts and profiles fetched, not
+  a flat price per search. Usage counts even when the answer is incomplete or
+  empty, and appears under `xai/x_search`. On the platform's key it is charged
+  to prepaid credit at that cost, with no added search fee.
+
+Treat posts as claims to corroborate, not verified facts.
+
+### What tools cost
+
+Usage records model calls and the tools that cost money (X search, web search,
+images) per agent, and per [workspace](/camelrun/workspaces) when the agent is in
+one. Where you meter end users, their credits pay for these tools too (see
+[End-user credits](/camelrun/end-user-credits)). See
+[Observability](/camelrun/observability) for reading usage.
 
 ## Tools from code
 
 Every agent has `js_exec`: the model writes JavaScript that calls any of its
 tools, in a sandbox that can reach nothing else. It can
 `await tools.shop__getOrder({ id })`, run calls in parallel with `Promise.all`,
-use `fs` over its files, and find tools in a large catalog with
-`tools.search(query)`. Code runs for at most 60 seconds, 2 seconds of CPU and
-256 tool calls. See [Limits](/camelrun/limits).
+use `fs` over its files, find tools in a large catalog with
+`tools.search(query)`, and read a schema with `tools.describe(name)`. Code runs
+for 30 seconds by default and 60 at most, with 2 seconds of CPU, 128 MiB of
+memory and 256 tool calls. See [Limits](/camelrun/limits).
 
 `agent.client.execute(code)` runs code yourself, outside the model's history,
 which is handy for testing tools.
 
+### Tool search
+
+`tools.search(query)` (or `tools.search(query, { namespace, limit })`) returns
+the best matches as `{name, description, input}`, most relevant first (20 by
+default, at most 128). `tools.namespaces()` lists the sources with their tool
+counts. Only tool names enter the sandbox, so a catalog of thousands of tools
+costs a script nothing until it asks. Ranking is by keywords and, on hosted
+camelRun, also by meaning; searches ranked by meaning are billed at cost.
+
+### Without code: `codeMode: false`
+
+An agent made with `codeMode: false` (Python `code_mode=False`, in a definition
+too) has no `js_exec`. The model calls every tool directly, whatever its
+`exposure`, and camelRun's part of the system prompt covers only the tools it
+has. With `fileTools: false` as well and no tools of any source, it has no tools
+at all (not even `present_file`), and the system prompt is your instructions
+plus a short note on who sent each message. For a classifier, a judge or an
+agent that answers in a line, a request goes from about 2,000 input tokens to a
+few hundred.
+
+```ts
+const voice = await agents.upsert("voice-12", { instructions, codeMode: false, fileTools: false });
+```
+
+Set it when the agent is made. Changed later by an upsert, the agent's tools
+change at once, while a conversation already under way keeps the text it began
+with.
+
 ## See an agent's tools
 
 `GET /v1/agents/{id}` returns `toolSources` (SDK:
-`agents.runtime.toolSources(agentId)`): every source, its status and tools, and
-why the model doesn't get a tool when it doesn't. `?refresh=true` lists every
-MCP server now. The console shows the same on an agent's Configuration tab.
+`agents.runtime.toolSources(agentId)`, Python `tool_sources`): every source in
+order of precedence (the channel's, the attached application's, file tools, then
+the definition's), its status and tools, and why the model doesn't get a tool
+when it doesn't. `?schemas=true` adds input schemas; `?refresh=true` lists every
+MCP server now, which is how to check one before the agent runs. The console
+shows the same on an agent's Configuration tab.
+
+## Files in tool calls
+
+Tools of a definition's sources take and return files without their bytes
+passing through the model. The model names a file by its path, as
+`{"$file": "/workspace/report.pdf"}`, and camelRun sends it the way the tool's
+schema asks.
+
+A string parameter takes a file when it is marked as MCP's file inputs proposal
+(SEP-2631, a draft) marks one:
+
+```json
+{"type": "object", "properties": {
+  "attachment": {"type": "string", "format": "uri",
+    "x-mcp-file": {"accept": ["application/pdf", "image/*"], "maxSize": 10485760, "transferModes": ["url", "inline"]}},
+  "site": {"type": "string", "format": "uri", "x-mcp-file": {}, "x-camelrun-directory": true}
+}}
+```
+
+- `accept` and `maxSize` limit what it takes; anything else is a tool error.
+  `transferModes` is `url` (the default), `inline`, or both.
+  `x-camelrun-directory: true` makes it take a directory.
+- Unmarked parameters take files too: a base64 field gets the content (up to
+  4 MiB), and a `format: uri` field, or one named like a URL, gets a URL. An
+  OpenAPI multipart or binary body streams the file.
+
+The tool receives a URL, `https://<runtime>/v1/files/<token>/<name>`, that
+answers `GET` (with `Range`) with the file; a `data:` URI for `inline` files of
+at most 4 MiB; or, for a directory, the URL of a manifest listing each file's
+URL, size and sha-256, plus a tar.gz `archive` of them all (at most 1,000 files
+and 256 MiB). An MCP call also carries `_meta["camelrun/files"]`, each file by
+its argument's JSON pointer.
+
+- A URL lasts 5 minutes and is bound to one call. It serves the version the call
+  named and answers 410 once the file changes. A directory is a snapshot made
+  for the call. An expired or altered URL answers 403.
+- `verifyFileUrl(url, { runtime, tenant, agent })` from `@camelai/run/server`
+  (Python `verify_file_url`) checks that a URL came from camelRun, for the agent
+  you expect.
+- `fileArguments` is on by default for sources with `auth: {"type": "runtime"}`
+  (your own servers, which check who is calling) and off for every other source,
+  so a model talked into it can't send the agent's files to another party's
+  server. Set `"fileArguments": "on"` on a third-party server you trust with
+  them.
+- Files a tool returns (images, audio, blobs, long text resources, binary
+  OpenAPI responses, `web_fetch` downloads) are saved to
+  `/workspace/tool-outputs/<tool>/<call>/<name>`, and the model gets a reference
+  to each. One call may save 64 MiB, and one run 256 MiB.
 
 ## Outbound calls
 
-Every request to a URL you or the model chose (MCP servers, OpenAPI APIs,
-`web_fetch`) must be `https://`, carry no credentials in the URL, and resolve to
-a public address. The check runs on every connection, so DNS rebinding can't
-slip past it.
+Every request to a URL you or the model chose (MCP servers, OpenAPI specs and
+APIs, credential endpoints, `web_fetch`) must be `https://`, carry no
+credentials in the URL, and resolve to a public address. The check runs on every
+connection, so DNS rebinding can't slip past it. MCP servers and API calls get
+no redirects. Where redirects are followed (`web_fetch`, spec downloads) each
+hop is checked, and credentials never go to another origin.

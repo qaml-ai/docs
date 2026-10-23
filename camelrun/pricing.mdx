@@ -19,12 +19,20 @@ rates below as your account is charged them.
 | Storage | $0.10 per GB-month of what your agents and volumes keep (history, files, snapshots), charged daily |
 | `web_search` on the platform's keys | Per search, by the provider that answered: Exa $0.007, Brave $0.005, Parallel $0.001 |
 | `web_fetch` page rendering on the platform's key | $0.00083 per page Firecrawl renders |
+| `x_search` on the platform's xAI key | What xAI reports for the call (Grok tokens and the posts and profiles it fetched), with no added search fee |
+| [Transcription](/camelrun/voice) on the platform's OpenAI key | $0.0045 per minute of audio (`gpt-transcribe`), billed per second |
+| [Voice calls](/camelrun/voice-calls) on the platform's key | The realtime model's tokens at its list price (about $0.02 to $0.05 a conversational minute); what people say transcribed at the transcription price |
+| [Speech](/camelrun/voice) (`POST /v1/speech`) on the platform's OpenAI key | $0.015 per minute of speech made (`gpt-4o-mini-tts`), billed per second |
+| Speech through other providers, on the platform's key for each | Their list prices, per 1,000 characters spoken: ElevenLabs Flash/Turbo v2.5 $0.05, Cartesia `sonic-3` $0.05, Deepgram `aura-2` $0.03 |
+| [Images](/camelrun/images) on the platform's OpenAI key | Per token as OpenAI bills `gpt-image-2.5-flare`: $5 per million text tokens in, $8 per million image tokens in, $30 per million image tokens out. A 1024x1024 image is $0.0059 at `low`, $0.0132 at `medium`, $0.0527 at `high` |
+| [Computers](/camelrun/computers) | Nothing from camelRun: the provider (Modal, Daytona, E2B, Browserbase and the rest) bills your account with it |
 
 ## Credit
 
 - **Starting credit: $5**, once. GitHub accounts older than 30 days get it at
-  sign-up. Everyone else unlocks it by verifying a card on the **Billing** page;
-  the card is not charged.
+  sign-up. When the **Billing** page offers it, everyone else can unlock
+  starting credit by verifying a card; the card is not charged. A card unlocks
+  credit once, across all accounts, and prepaid cards unlock none.
 - **Buying credit:** $5 to $1,000 at a time, with a 5.5% fee on the purchase.
   Auto top-up can buy more when your balance runs low.
 - **Before your first purchase:** at most $1 of model tokens and agent time an
@@ -43,6 +51,20 @@ rates below as your account is charged them.
 - Bound an agent or a run with a [spend limit](/camelrun/models-and-keys#spend-limits),
   and see where credit goes with `GET /v1/usage` or the `usage.recorded`
   [webhook](/camelrun/webhooks).
+- Charging your own users? [End-user credits](/camelrun/end-user-credits) give
+  each person a balance and daily allowances, and can mark up what their agents
+  spend.
+
+## Usage by workspace
+
+Group agents into [workspaces](/camelrun/workspaces) to see spend by project.
+The console's **Usage** page follows the workspace switcher, and
+`GET /v1/usage?workspaceId=ws_...` returns one workspace's usage
+(`workspaceId=unassigned` for the rest; omit it for account totals and a
+`workspaces` summary). A workspace's costs include model calls and recorded
+tools such as `x_search`, `web_search` and images. Agent time and storage are
+charged to the account and not split by workspace. Each cost stays with the
+workspace its call was made in, even after the agent moves.
 
 A self-hosted runtime charges nothing unless its operator sets up billing; see
 [Self-hosting](/camelrun/self-hosting).

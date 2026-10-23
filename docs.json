@@ -108,21 +108,41 @@
             "pages": [
               "camelrun/tools",
               "camelrun/human-input",
-          "camelrun/structured-output",
+              "camelrun/structured-output",
+              "camelrun/stateless-runs",
+              "camelrun/multi-agent",
+              "camelrun/schedules",
               "camelrun/browser",
+              "camelrun/computers",
               "camelrun/files",
-              "camelrun/multi-user",
-              "camelrun/webhooks",
-              "camelrun/observability",
+              "camelrun/projects",
+              "camelrun/images",
               "camelrun/models-and-keys",
               "camelrun/custom-models",
               "camelrun/definitions",
-              "camelrun/multi-agent",
-              "camelrun/channels",
-              "camelrun/mcp-server",
-          "camelrun/migrating",
+              "camelrun/migrating",
               "camelrun/export",
               "camelrun/production"
+            ]
+          },
+          {
+            "group": "Channels and voice",
+            "pages": [
+              "camelrun/channels",
+              "camelrun/voice",
+              "camelrun/voice-calls",
+              "camelrun/webhooks",
+              "camelrun/mcp-server"
+            ]
+          },
+          {
+            "group": "Users and spend",
+            "pages": [
+              "camelrun/multi-user",
+              "camelrun/end-user-credits",
+              "camelrun/end-user-auto-top-up",
+              "camelrun/workspaces",
+              "camelrun/observability"
             ]
           },
           {

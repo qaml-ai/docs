@@ -1,7 +1,7 @@
 ---
 title: 'Multi-agent systems and sub-agents on camelRun'
 sidebarTitle: 'Multi-agent'
-description: 'Build multi-agent systems on camelRun: the delegate built-in hands tasks to sub-agents, in parallel, with limits, cancelling and crash safety.'
+description: 'Build multi-agent systems on camelRun: delegate tasks to sub-agents or start them in the background, in parallel, with limits and cancelling.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/multi-agent.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -12,6 +12,10 @@ OpenAI Agents SDK's `agent.as_tool()` and LangGraph's supervisor. The runtime
 runs it, and it is durable: a sub-agent is an agent of its own, and a parent
 whose node is lost while it waits collects the sub-agent's answer on another
 node.
+
+The `agents` built-in starts sub-agents in the **background** instead: the
+model goes on at once, and each one's answer arrives as a message of its own
+when it ends. See [Background sub-agents](#background-sub-agents).
 
 camelRun has no handoffs: an agent cannot pass its conversation to another
 agent. See [Coming from the OpenAI Agents SDK](#coming-from-the-openai-agents-sdk).
@@ -83,7 +87,10 @@ A sub-agent the runtime makes is a real agent:
 - It is **linked to its parent**: `parentAgentId` and `parentRunId` in
   `GET /v1/agents/{id}` and the agent list, and in the metadata of its run.
 - It **acts for whom the parent acts** (`subject`, `context`) and uses the
-  parent's key scope. It is billed to the same account.
+  parent's key scope. It is billed to the same account. Its tool servers'
+  [identity tokens](/camelrun/tools) also name its parent and its chain's first
+  agent (`par` and `root`; `identity.parentAgentId` and `rootAgentId` in the
+  SDKs).
 - It has its **own workspace**. Pass it what it needs in the task, or mount a
   shared [volume](/camelrun/files#volumes) in both definitions.
 - It **lives a day**, as a scratch agent does. Read its history in the meantime
@@ -112,14 +119,16 @@ parent's limits cover them:
 
 | Limit | |
 | --- | --- |
-| Depth | A sub-agent's sub-agents count. Delegation stops at `maxDepth` (default 2: a parent, its children and theirs; at most 5). Past it, the call fails and the model does the work itself |
+| Depth | A sub-agent's sub-agents count. Delegation stops at `maxDepth` (default 2: a parent, its children and theirs; at most 5). Past it, the call fails and the model does the work itself. Only the runtime places a run in a chain: its child runs' `delegation*` metadata is signed (`delegationSignature`), and a prompt of yours that sends those keys starts a chain of its own |
 | Fan-out | `maxParallel` calls in flight per run (default 4, at most 16) |
 | Busy agents | A running sub-agent takes one of your account's busy slots. At the limit, the call fails with `BUSY_AGENT_LIMIT` |
-| Spend | Your account's spend limits apply to sub-agents too. A parent's own spend limits (the agent's, and the run's `spendLimit`) bound its sub-agents: each gets what the parent has left as its run's spend limit, and what it spent counts against the parent's. `run.usage.subagentCostUsd` says how much that was |
+| Spend | Your account's spend limits apply to sub-agents too. A parent's own spend limits (the agent's, and the run's `spendLimit`) bound its sub-agents: each gets what the parent has left as its run's spend limit (shared evenly among sub-agents running at once), and what it spent counts against the parent's. `run.usage.subagentCostUsd` says how much that was |
 | Run rate and run limits | A sub-agent's run counts against your account's run rate. Its definition's `runLimits` apply to it |
 
-Parallel sub-agents each start with what the parent has left, so together they
-can pass the parent's limit by at most one sub-agent's spend each.
+Parallel sub-agents split what the parent has left: each holds its share until
+it ends, and a later call gets an even share of what no running sub-agent
+holds. So together they stay within the parent's limit, though in that one
+response each may finish past its own share.
 
 An agent cannot delegate to an agent already working on its chain (it would
 wait on itself), and an agent's own key cannot change any of these settings.
@@ -128,8 +137,12 @@ The model calls `delegate` directly, never from `js_exec`.
 ### Cancelling
 
 Aborting the parent's run (`agent.abort()`, `POST /v1/agents/{id}/abort`)
-aborts the sub-agents it is waiting on. So does deleting the parent. A named
-agent is aborted only while it runs the parent's task, never another.
+aborts the sub-agents it is waiting on, and cancels the parent's queued runs.
+The abort answers once the sub-agents have ended (at most 10 seconds): what they
+spent by then counts in the aborted run's `usage.subagentCostUsd` and against
+the parent's spend limit. Deleting the parent does the same, and also deletes
+the sub-agents the runtime made for it. A named agent is aborted only while it
+runs the parent's task, never another.
 
 ### When a node is lost
 
@@ -138,6 +151,12 @@ the parent's node is lost while it waits, the parent's run resumes on another
 node and makes the call again. That call finds the same sub-agent and run, and
 waits for its answer; the task never runs twice. The sub-agent, if its own node
 was lost, resumes like any agent.
+
+The runtime records each sub-agent before it sends the sub-agent its task, so
+an abort or delete of the parent reaches it from any node, even before the
+parent's run resumes. Should the parent's run end without its answer, the
+sub-agent is aborted, and what it spent still counts against the parent's spend
+limit.
 
 ### Watching sub-agents
 
@@ -169,12 +188,213 @@ A sub-agent's events are relayed while it runs on the same node as its parent,
 which it does unless a node was lost; its own stream and history always have
 everything.
 
+## Background sub-agents
+
+The `agents` builtin gives the model five tools. It takes the same `delegate`
+settings (whom it may start, `maxDepth`, `maxParallel`) and needs them, as
+`delegate` does. An agent may have both builtins.
+
+```ts
+const lead = await agents.upsert("research-lead", {
+  instructions: "Start a researcher for each question, and write the report as their answers come in.",
+  builtins: ["agents"], delegate: { agents: ["researcher"], maxParallel: 8 },
+});
+```
+
+| Tool | |
+| --- | --- |
+| `spawn_agent({ agent \| instructions, task, output?, name? })` | Starts a sub-agent, as `delegate` would, and returns `{ agentId, name }` at once. `name` is the model's handle for it, unique among its running sub-agents (default: the agent's name and a number, `researcher-1`) |
+| `wait_agent({ agents?, timeoutMs? })` | Waits until one of the given sub-agents (names or ids; default: any running one) ends, or `timeoutMs` passes (default 5 minutes, at most 10). Returns each one's `status`, with the answer (`text`, `output?`, `error?`) of those that ended |
+| `list_agents()` | The agent's sub-agents: `{ agentId, name, status, startedAt, endedAt? }`, where `status` is `running`, `completed`, `failed`, `aborted` or `input_required` |
+| `send_message({ to, text })` | Messages one of its sub-agents (name or id) or, from a sub-agent, its parent (`"parent"`). See [Messages](#messages) |
+| `interrupt_agent({ agent })` | Aborts one of its running sub-agents. Its notification follows with status `aborted` |
+
+The sub-agent is the same as a delegated one: the same targets, chain and depth
+limit, identity and key scope, and it lives a day. Its run's spend limit is a
+share of what its parent agent may still spend (its `spendLimit`): what no
+running sub-agent holds, split evenly among the slots `maxParallel` leaves. So
+sub-agents started together share it rather than each getting all of it. A
+[stateless run](/camelrun/stateless-runs) (`POST /v1/runs`) cannot start one,
+because nothing would hear it end.
+
+### Notifications
+
+When a sub-agent's run ends (completed, failed, aborted, or waiting on a
+person), camelRun sends its parent a prompt with request id
+`child_<the child's request id>`. It queues behind the parent's running turn, or
+starts a turn if the parent is idle. Its message is a user message with a
+`source` of its own, in history, events and exports:
+
+```json
+{ "role": "user", "content": [{ "type": "text", "text": "Found 3 sources: …" }],
+  "source": { "kind": "agent", "agentId": "client_…", "name": "researcher-1" }, "requestId": "child_spawn_…",
+  "metadata": { "agentId": "client_…", "name": "researcher-1", "status": "completed", "output": { … }, "usage": { … } } }
+```
+
+The model reads it in a block only camelRun writes, never as the person:
+
+```text
+<agent_notification name="researcher-1" status="completed">
+Found 3 sources: …
+</agent_notification>
+```
+
+The sub-agent's text can't close the block or open another: such tags in it,
+and in any user message or tool result, are neutralized. Your UI should render
+a message with `source` as a notification, not as the user.
+
+- A sub-agent whose ending a `wait_agent` call answered adds no notification.
+- A parent waiting on a person (an approval, `ask_user`) gets its notifications
+  once they answer, because a new message would supersede what it asked.
+- A sub-agent that waits on a person notifies with status `input_required`, and
+  `metadata.inputs` lists what it asked. Answer its inputs as any agent's
+  (`POST /v1/agents/{child}/inputs/{id}`, see [Human input](/camelrun/human-input)).
+  It resumes, and its next ending notifies again.
+
+### Messages
+
+`send_message` goes between an agent and its own sub-agents and parent, no one
+else:
+
+- **Parent to sub-agent:** the text joins the sub-agent's running turn, or
+  starts a turn that keeps its history. A sub-agent that had finished works
+  again, and its answer comes back as a new notification. The sub-agent reads
+  `<agent_message name="parent">…</agent_message>`.
+- **Sub-agent to parent:** `to: "parent"`, which camelRun resolves through the
+  run's signed chain. It reaches the parent as a notification does, without the
+  sub-agent's turn ending, as `<agent_message name="researcher-1">…`, with
+  `source` and `metadata.kind: "message"`. The parent's stream has
+  `subagent_message` (`{ agentId, name, text }`). A sub-agent camelRun made has
+  `send_message` even without the builtin.
+
+A turn sends at most 20 messages, and the turns that messages start count
+against the loop guard below, so two agents messaging each other stop.
+
+### Stopping background sub-agents
+
+- `interrupt_agent`, or `POST /v1/agents/{child}/abort` for one sub-agent: its
+  turn is aborted, and its parent's notification says `aborted`.
+- Aborting the parent (`agent.abort()`, `POST /v1/agents/{id}/abort`) aborts its
+  running sub-agents too. `{ "children": "keep" }` (`abort({ children: "keep" })`)
+  leaves them running.
+- An abort never drops a notification: one waiting for its turn lands in
+  history without a turn (its run ends `aborted`).
+- Deleting the parent aborts its running sub-agents and deletes the ones
+  camelRun made. Named agents it started (`{ agent: "…" }` targets) stay.
+
+### Exactly once
+
+camelRun records each sub-agent before it sends the task, keyed by the
+`spawn_agent` call, so a turn resumed on another node finds the same sub-agent
+and never starts a second. Its ending is delivered as its run ends, or, if a
+node was lost on the way, by a sweep a few seconds later. The parent takes each
+ending once, so a lost node delays a notification and never repeats it.
+
+### Cost and loop guards
+
+- What the sub-agent spent is charged to the parent's spend limit when its
+  notification lands (or its `wait_agent` answers it), and shows in that run's
+  `usage.subagentCostUsd`.
+- Spend limits apply to the turns notifications start. A parent at its limit
+  gets the notification in history, without a turn: the run ends with
+  `stopped: "spend_limit"`.
+- Notifications and messages may start at most 100 turns per chain of agents
+  (counted by its first agent) and clock hour, so agents that keep starting
+  each other stop. Past it, a notification or message lands in history without
+  a turn, and its run ends with `stopped: "agent_loop_limit"`, naming the
+  limit. Send the agent a message to go on.
+- At most `maxParallel` sub-agents run at once per parent. Past it,
+  `spawn_agent` fails and the model waits for one.
+
+### Events
+
+With `?subagents=1` (`subagents: true` in the SDKs), the parent's stream has:
+
+- `subagent_start` (with `background: true`) when a sub-agent starts;
+- `subagent_event` with its events while it runs on the parent's node;
+- `subagent_end` (with `background: true`, `name` and `status`) when its
+  notification lands or a `wait_agent` answers it;
+- `subagent_message` when it messages its parent.
+
+Its own stream and history always have everything. A
+[browser token](/camelrun/browser) minted with the `children` scope (plus the
+others it needs: `{ "scopes": ["events", "history", "children"] }`) reads the
+agent's sub-agents too, by their ids, so a chat can reload a sub-agent's
+transcript with its parent's token.
+
+### Workers your tools prepare
+
+A tool can start a sub-agent for the model, so the model never names an agent.
+Your tool does the authorization and setup with your API key, and answers with
+a spawn directive. Use it for workers per customer object (a bot, a repo, a
+ticket) that keep their history across tasks.
+
+<CodeGroup>
+```ts TypeScript
+import { serveTools, spawnAgent } from "@camelai/run/server";
+import { tool, schema } from "@camelai/run";
+
+export default { fetch: serveTools({
+  work_on_bot: tool({
+    description: "Hand a task to the bot's worker", input: schema.Object({ bot: schema.String(), task: schema.String() }),
+    execute: async ({ bot, task }, { identity }) => {
+      await assertOwnsBot(identity!.rootAgentId ?? identity!.agent, bot);
+      const worker = await agents.upsert(`bot-worker-${bot}`, { instructions: "You maintain one bot." });
+      return spawnAgent({ agent: worker.id, task, name: `bot-${bot}` });
+    },
+  }),
+}, { runtime: "https://run.camelai.com", tenant: "acme" }) };
+```
+
+```python Python
+from camelai_run import spawn_agent, tool
+
+@tool
+async def work_on_bot(bot: str, task: str) -> dict:
+    """Hand a task to the bot's worker"""
+    worker = await agents.upsert(f"bot-worker-{bot}", instructions="You maintain one bot.")
+    return spawn_agent(worker.id, task, name=f"bot-{bot}")
+```
+</CodeGroup>
+
+If you answer MCP yourself, the directive is
+`_meta["camelrun/spawn"]: { agent, task, name?, output? }` on the tool's result.
+camelRun takes it only from a tool server with auth `"runtime"` (a definition's
+or the agent's own). It checks that the agent is your tenant's, is not already
+in the calling agent's chain, and that the depth and `maxParallel` limits allow
+it (the calling agent's `delegate` settings, or the defaults). An agent that
+starts sub-agents only through your tools can set those limits alone, with
+`delegate: { maxParallel, maxDepth }` and neither the `delegate` nor the
+`agents` builtin, which gives the model no tool of its own to start them. The
+model's call then answers `{ agentId, name }`, and the worker's answer arrives
+as a notification.
+
+A worker is an agent of its own, so its runs go one at a time: a task given to
+a busy worker queues behind its current run (the call answers `queued: true`),
+and each task notifies when it ends. Deleting the parent leaves such workers
+alone. Aborting it aborts the worker only while it runs the parent's task.
+
+### In the SDKs and UIs
+
+- `agentNotice(message)` (Python `agent_notice`) tells a history message
+  camelRun wrote apart:
+  `{ kind: "notification" | "message", agentId, name, status?, error?, output?, usage?, inputs? }`,
+  or undefined for anyone else's.
+- `stream()` parts and watcher events include `subagent_message`.
+  `abort({ children: "keep" })` keeps background sub-agents running.
+- `<AgentChat>` shows notifications and agent messages as collapsible notices
+  (`AgentNotice`), never as the user's bubbles. The chat model's
+  `UserChatMessage.agent` says which (`labels.agentNotification` and
+  `labels.agentMessage` name them).
+- Tool servers read `identity.parentAgentId` and `identity.rootAgentId` in a
+  sub-agent's calls.
+
 ## Coming from the OpenAI Agents SDK
 
 | OpenAI Agents SDK | camelRun |
 | --- | --- |
 | `agent.as_tool(tool_name, tool_description)` | `delegate: { agents: [{ name, definition, description }] }` |
-| Agents as tools in parallel (`asyncio.gather` in a tool) | Several `delegate` calls in one response run at once (`maxParallel`) |
+| Agents as tools in parallel (`asyncio.gather` in a tool) | Several `delegate` calls in one response run at once (`maxParallel`), or `spawn_agent` in the background |
 | `handoffs=[…]`, `handoff()` | Not supported: there are no handoffs. Delegate to the specialist instead: the conversation stays with the first agent, which relays the answer. Or route in your code, running the agent the message is for (see [Migrating](/camelrun/migrating#handoffs-and-multi-agent)) |
 | `max_turns` | The run's `runLimits`, and `delegate.maxDepth` for chains of agents |
 

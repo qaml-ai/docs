@@ -44,6 +44,26 @@ Partners group in `docs.json` and link it from the relevant tab in
 `getting-started/connections.mdx`. Verify connection details (UI labels, the
 `CONNECTIONS.find()` signature, code examples) against the product repo before publishing.
 
+## camelRun documentation
+
+The **camelRun** tab (`camelrun/`) documents camelRun, the hosted agent runtime at
+run.camelai.com. The source of truth is the runtime repository (`qaml-ai/run`, locally
+`~/agent-runtime`) at **origin/main**: its `docs/` guides and references, `examples/`,
+and, where they disagree, the code (`src/`, `packages/`). These pages are rewritten for
+a developer on hosted camelRun, not copied: keep every fact exact, copy code samples
+verbatim, and leave out internals (process model, sandbox engine, nodes, storage
+internals, how platform keys are routed).
+
+- Document only what is on origin/main and available on run.camelai.com. A feature
+  that needs self-host configuration says so (email channels need your own mail domain;
+  scheduled report email needs SES account mail, see `configuration.mdx`).
+- Computers need the user's own provider account, and the provider bills the compute.
+- Don't list the ChatGPT subscription provider (`openai-codex`); it isn't self-serve.
+- The sidebar has three guide groups: Guides, Channels and voice, Users and spend.
+- When the runtime ships features, compare each page against its runtime source
+  (`git -C ~/agent-runtime log origin/main -- docs src packages`), and add a page for a
+  new runtime guide.
+
 ## camelBot documentation
 
 The **camelBot** tab (`camelbot/`, after camelRun) documents camelBot, the Discord

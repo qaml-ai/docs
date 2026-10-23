@@ -1,0 +1,90 @@
+---
+title: 'Workspaces: group agents and split spend by project on camelRun'
+sidebarTitle: 'Workspaces'
+description: 'Group camelRun agents and definitions into workspaces by project or use case, and see model and tool spend for each workspace.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/workspaces.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+A workspace groups an account's agents and definitions by project or use case,
+such as a trading desk, a support bot and an internal research agent. Spend is
+recorded against the workspace each call happened in, so you can see what each
+project costs.
+
+In the console, open **Workspaces**, create a workspace with **New workspace**,
+then add agents and definitions to it. The workspace switcher at the top of the
+sidebar scopes **Agents**, **Definitions** and **Usage** to one workspace.
+Channels, volumes, API keys and billing stay account-wide.
+
+## What belongs to a workspace
+
+- Each agent is in at most one workspace.
+- A new agent takes its definition's workspace. Sub-agents and forks take their
+  parent's.
+- Assigning a definition affects agents made from it afterward. Move its
+  existing agents one by one.
+- A workspace groups resources inside one account. It doesn't give anyone
+  access to another account, and it doesn't share files: each agent still has
+  its own `/workspace` filesystem.
+
+To choose when you make an agent or a [stateless run](/camelrun/stateless-runs),
+pass `workspaceId` (Python: `workspace_id`) to override what it would inherit,
+or `null` to leave it unassigned. An agent upsert without the field keeps the
+agent's current workspace. Only the account assigns workspaces: an agent's tools
+can't move it.
+
+## Spend by workspace
+
+Usage keeps the workspace a call was made in:
+
+- Moving an agent doesn't move its earlier spend. A provider's later cost
+  correction stays with the original call.
+- Deleting an agent doesn't remove its spend from the workspace.
+- Usage from before workspaces, and calls with no workspace, show as
+  **Unassigned**.
+- Costs include model calls and recorded tools such as web search, X search and
+  images. Account-wide charges for active time and storage are not split by
+  workspace (see [pricing](/camelrun/pricing)).
+
+The console's **Usage** page shows spend by workspace for the account, or one
+workspace's daily breakdown when the switcher has one selected.
+`GET /v1/usage?days=30` returns the account's totals with a `workspaces`
+summary (each workspace's spend; `id: null` is Unassigned) and `workspaceDays`
+(each workspace's responses and spend by UTC day). Add
+`workspaceId=ws_…`, or `workspaceId=unassigned`, for one workspace's usage.
+
+## Rename, archive and restore
+
+Renaming a workspace keeps its members and history. Archiving keeps its agents
+running and keeps their spend where it is, but stops new assignments to it.
+Restore it to assign more.
+
+## API
+
+| Call | Does |
+| --- | --- |
+| `GET /v1/workspaces` | List workspaces, archived ones included |
+| `POST /v1/workspaces` | Create one: `{ "name": "Trading Desk" }` |
+| `GET /v1/workspaces/{id}` | Read one |
+| `PATCH /v1/workspaces/{id}` | Rename, archive or restore: `name`, `archived` |
+| `GET /v1/workspaces/{id}/members` | Its agents and definitions |
+| `GET /v1/workspace-memberships` | Every current assignment |
+| `PUT /v1/workspace-memberships/{kind}/{id}` | Assign an `agent` or `definition`: `{ "workspaceId": "ws_…" }`, or `{ "workspaceId": null }` to unassign |
+| `GET /v1/agents?workspaceId=ws_…` | A workspace's agents (`unassigned` for agents in none) |
+| `GET /v1/usage?days=30&workspaceId=ws_…` | A workspace's usage |
+
+```bash
+curl -X PUT https://run.camelai.com/v1/workspace-memberships/agent/$AGENT_ID \
+  -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"workspaceId": "ws_..."}'
+```
+
+`GET /v1/agents` also pages and filters: `limit` (1 to 200) returns one page,
+and the `X-Next-Cursor` header holds the `cursor` for the next; `status`
+(`running`, `failed` in the last 24 hours, `expiring`), `subAgents` (`only` or
+`exclude`) and `q` (part of a name, key or id) narrow it. Each agent has its
+`workspaceId`, `lastActiveAt` and `lastError` (`{ at, class }`, such as
+`model_error` or `spend_limit`, never the error's text).
+
+An [account export](/camelrun/export) includes workspaces, their assignment
+history and usage.

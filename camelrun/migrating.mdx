@@ -117,13 +117,13 @@ see [Tools](/camelrun/tools).
 | Output guardrails | Your code, on `run.text` or `run.output`, before you use it |
 | Tool approval (`needs_approval`), interruptions | `@tool(needs_approval=True)`; the run ends `input_required` and `run.inputs[0].answer(True)` resumes it, from any process, days later if need be. See [Human input](/camelrun/human-input) |
 | `RunContextWrapper` (context for tools) | `context` and `subject` on the agent, plus `user` on each run. Tools get them in `context.identity`, set by your code and never by the model. See [Identity](/camelrun/tools#identity) |
-| Hosted tools: `WebSearchTool` | `builtins=["web_search"]` |
+| Hosted tools: `WebSearchTool` | `builtins=["web_search"]`, plus `x_search` for posts on X. See [Built-ins](/camelrun/tools#built-ins) |
 | `CodeInterpreterTool` | `js_exec`, always on: JavaScript in a sandbox that can call the agent's tools. It has no Python |
 | `FileSearchTool` (vector stores) | No equivalent. Agents have files and file tools, not vector search |
 | `MCPServerStreamableHttp` | `mcpServers` in a [definition](/camelrun/definitions): the runtime calls the server itself. A local MCP server object can be attached with `fromMcpServer` (TypeScript) |
 | Tracing (`trace()`, the traces dashboard) | OpenTelemetry trace export to your own backend (LangSmith, Langfuse, Honeycomb, Datadog, Tempo, any OTLP endpoint): a span per run, model call, tool call and wait, continuing your `traceparent`. See [Observability](/camelrun/observability). Also the event stream (`on_event`, `stream()`), `run.completed` and `usage.recorded` [webhooks](/camelrun/webhooks), and `GET /v1/agents/:id/history` |
-| `max_turns` | `run_limits={"maxResponses": n}` on the agent (at most 1,000 model responses and 2 hours a run by default); a run that reaches it stops with `stopped: "turn_limit"`. `spend_limit={"usd": …}` on a run, or on the agent, bounds what it spends |
-| `ModelSettings` (temperature, top_p) | `temperature=` (0 to 2) on the agent, or with `configure`, for a model that takes one; `top_p` isn't settable. `thinking_level` is |
+| `max_turns` | `run_limits={"maxResponses": n}` on the agent or a run (at most 1,000 model responses and 2 hours a run by default); a run that reaches it stops with `stopped: "turn_limit"`. `spend_limit={"usd": …}` on a run, or on the agent, bounds what it spends. See [Run limits](/camelrun/models-and-keys#run-limits) |
+| `ModelSettings` (temperature, max_tokens, top_p) | `temperature=` (0 to 2) and `max_output_tokens=` on the agent, a definition or a stateless run, or later with `configure`; a model that takes no temperature is refused with a 400. `thinking_level` is settable too. `top_p` isn't. See [Output length and temperature](/camelrun/models-and-keys#output-length-and-temperature) |
 
 ## LangGraph
 
@@ -197,4 +197,6 @@ conversations](/camelrun/multi-user#bring-in-existing-conversations).
   many of them from code in `js_exec`. See [Tools](/camelrun/tools).
 - **Channels and schedules.** Slack, Telegram, Discord, GitHub and webhooks
   can reach an agent directly, and agents can wake themselves. See
-  [Channels](/camelrun/channels).
+  [Channels](/camelrun/channels) and [Schedules](/camelrun/schedules).
+- **One-off runs.** A [stateless run](/camelrun/stateless-runs) answers a single
+  request with no agent to keep.

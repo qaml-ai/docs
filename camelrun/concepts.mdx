@@ -22,20 +22,39 @@ const agent = await agents.upsert("user-123", { model, instructions, tools });
 ```
 
 - The same key is the same agent, from any process, until you delete it with
-  `agent.delete()`.
+  `agent.delete()` (`DELETE /v1/agents/{id}`). Only your API key can delete an
+  agent. Its own token gets a 401, because deleting purges the agent's history
+  and workspace.
 - `upsert` makes the agent if there is none, and otherwise brings it to the
   configuration you pass. A changed model, instructions or tool list applies
   between turns, and the history carries over.
 - Who the agent acts for (`subject`, `context`), its definition and its mounts
   are fixed when it is made. Changing them is a 409 that names the field. Delete
-  the agent and upsert again to start over.
+  the agent and upsert again to start over. An upsert may change the mounts
+  with `remount: true`.
+- A deleted key makes a fresh agent the next time, with a new id and token.
+- Make an agent once per user, conversation or job, and reuse it. Creating
+  agents is cheap and limited only against abuse (600 a minute; an upsert that
+  changes nothing doesn't count). The limit to design around is **busy
+  agents**: how many may run at once, 20 on free credit and more with each
+  [usage tier](/camelrun/limits#usage-tiers). Runs are limited to 240 a minute
+  on free credit, 600 once you buy credit. See [Limits](/camelrun/limits).
 - Over REST, the key is the `Idempotency-Key` header of `POST /v1/agents`.
 
 Every agent also has an **id** (`client_...`), which is safe to log and store,
-and a **token**, which lets its holder run that agent and nothing else. You
-rarely need the token, because upserting by key gives you the agent again.
+and a **token**, which lets its holder run that agent and nothing else (not
+delete it, nor change who it acts for, its tools' sources or its limits). You
+rarely need the token, because upserting by key gives you the agent again. If a
+token leaks, `POST /v1/agents/{id}/credentials/rotate` gives the agent a new
+one. The old one stops working at once, and connections made with it close.
+
 Agents made without a key are scratch agents that expire after a day unless you
-set `ttlSeconds`.
+set `ttlSeconds`. `idleTtlSeconds` instead makes an agent live that long from
+its latest run, so an agent in use is kept and one left alone expires (say, a
+chat that should go once nobody has written in a week).
+
+Agents can be grouped into [workspaces](/camelrun/workspaces), each with its
+own spend and usage.
 
 ## Runs
 
@@ -43,7 +62,8 @@ A message to an agent starts a **run**: the model loop, with every tool call it
 makes, until the model answers or something stops it. An agent has one run at a
 time. A message sent during a run waits for it (`whileRunning: "queue"`, the
 default) or joins it (`whileRunning: "steer"`, read by the running turn after
-its current step).
+its current step). A steer is answered at once: `agent.steer()` returns a
+receipt, `accepted`, `taken` or `queued`.
 
 ```ts
 const run = await agent.run("Summarize ticket 123", { user: "alice" });
@@ -58,13 +78,50 @@ const run = await agent.run("Summarize ticket 123", { user: "alice" });
 | `inputs` | What it waits on, each with `answer()` |
 | `error` | `{code, message, uncertain?}` when it failed |
 | `toolErrors` (Python `tool_errors`) | Tool calls that didn't complete (timed out, connection lost, nobody serving the tools). The model was told and carried on |
-| `toolCalls` (Python `tool_calls`) | Every tool call the run made (the first 100), calls from `js_exec`'s code included: `{tool, toolCallId, innerCallId?, ok, code?}`. Arguments and results are in history |
+| `toolCalls` (Python `tool_calls`) | Every tool call the run made (the first 100), calls from `js_exec`'s code included: `{tool, toolCallId, innerCallId?, ok, code?, agentId?}`. A `delegate` call names its sub-agent (`agentId`). Arguments and results are in history |
 | `files` | Files the run wrote |
-| `usage` | What its model calls used |
+| `usage` | What its model calls used. `subagentCostUsd` is what its sub-agents spent, and `imageCostUsd` what its `generate_image` calls cost |
 
 `run()` has no timeout: runs can take minutes, and a run waiting on a person
 can wait for days. Pass an `AbortSignal` (Python: `timeout=`) to stop waiting;
-the run itself goes on until it ends or you call `agent.abort()`.
+the run itself goes on. `agent.abort()` stops it: the running turn ends, and
+the runs queued behind it are cancelled (code `cancelled`).
+`abort({ queued: "keep" })` stops the running turn only. A failed run throws a
+`RunError` carrying the run, unless you pass `throwOnError: false`.
+
+### Runs without the history
+
+`history: "none"` (Python `history="none"`) runs a message as a new
+conversation would. The model sees the agent's instructions and tools as they
+are now, and this message, not the messages before it. One agent can then
+answer many independent questions without making an agent for each.
+
+```ts
+const run = await agent.run("Is a hot dog a sandwich?", { history: "none", output: Verdict });
+```
+
+The run is still recorded in the agent's history, its user message marked
+`history: "none"`. It's for a prompt that starts its own turn, not
+`whileRunning: "steer"`. Resumed after a person answers, the run stays without
+the history.
+
+When there is no agent to keep at all (classify, extract, vote, judge),
+`agents.run({ instructions, input, output })` (REST: `POST /v1/runs`) takes a
+configuration and an input and returns the result, with no agent made. See
+[Stateless runs](/camelrun/stateless-runs).
+
+### Long conversations
+
+An agent's history can outgrow its model's context window, so camelRun
+**compacts** it: older messages are summarized, and the model sees the summary
+followed by the recent messages. History keeps every message; only what the
+model is sent changes.
+
+Compaction runs in the background. Once the context comes within a margin of
+its limit, the summary is made after the run ends, or between model requests,
+while the agent goes on. Only a run whose context wouldn't fit waits for a
+summary. Summaries are billed like model responses (`kind: "compaction"` in
+usage) and count against spend limits.
 
 ## Forking
 
@@ -92,7 +149,7 @@ earlier = await agent.fork(at_message=4)
   message and the tool results that answer it, and a run's request id keeps
   that run's whole turn. A message in a turn that hasn't ended is a 409
   `FORK_POINT_RUNNING`.
-- **Long conversations.** The copy keeps the source's summaries, so the fork's
+- **Compaction.** The copy keeps the source's summaries, so the fork's
   model sees what the source's would at that point. History keeps every
   message.
 - **Files.** The fork's `/workspace` is a fork of the source's volume as it is
@@ -111,9 +168,13 @@ earlier = await agent.fork(at_message=4)
   console) says where it came from.
 
 A fork is an agent like any other: it counts toward your agents and storage.
-The copy itself costs only storage, and shares stored content with the source.
-Over REST it's `POST /v1/agents/{id}/fork`; in the console, **Fork** on the
-agent's page, or **Fork from here** under a reply.
+It also counts against the agent-create rate limit (`atMessage: 0` included);
+to run one message without the history, send it with `history: "none"`
+instead. The copy itself costs only storage, and shares stored content with the
+source. Over REST it's `POST /v1/agents/{id}/fork` with `{key?, name?,
+atMessage?, ttlSeconds?, subject?, context?, systemPromptAppend?, modelHeaders?}`;
+in the console, **Fork** on the agent's page, or **Fork from here** under a
+reply. Browser tokens can't fork.
 
 ## The result is the truth; events are for display
 
@@ -137,8 +198,8 @@ Pick by where your code runs:
 
 | Your situation | Use | How |
 | --- | --- | --- |
-| A long-lived server or worker, and the tools touch its state | **Attached tools** | `tools` on `upsert`. The SDK holds a connection and camelRun calls your functions over it. One process serves an agent's tools at a time, and a call running when it restarts is lost |
-| Serverless functions, several instances, or one backend serving many users' agents | **Served tools** | `serveTools(tools)` on an HTTPS endpoint of yours, named in a definition with `auth: { type: "runtime" }`. camelRun calls it with a signed token saying who each call is for. Safe through your deploys and restarts |
+| A long-lived server or worker, and the tools touch its state | **Attached tools** | `tools` on `upsert`. The SDK holds a connection and camelRun calls your functions over it. One process serves an agent's tools at a time. Closing it on SIGTERM finishes its calls, so deploys lose none |
+| Serverless functions, several instances, or one backend serving many users' agents | **Served tools** | `serveTools(tools)` on an HTTPS endpoint of yours, named in a definition with `auth: { type: "runtime" }` (or in the agent's own `mcpServers`). camelRun calls it with a signed token saying who each call is for. Safe through your deploys and restarts |
 | A third-party API | **OpenAPI** or **MCP** sources in a definition | camelRun calls the API itself, with credentials it stores sealed |
 | Web search, fetching pages, scheduling, asking the user | **Built-ins** | `builtins: ["web_search", "web_fetch", "schedule", "ask_user"]` |
 | Other agents doing tasks for this one | The **`delegate`** built-in | `delegate: { agents: ["researcher"] }`. See [Multi-agent](/camelrun/multi-agent) |
@@ -154,17 +215,20 @@ model writes JavaScript that calls its tools. See [Tools](/camelrun/tools).
 A process that serves an agent's tools **attaches** to it: it holds the agent's
 event stream and answers its tool calls. Only one process at a time can, so a
 tool call never lands in the wrong place. A second process that tries gets
-`APPLICATION_CONNECTED`, unless it passes `takeover: true`.
+`APPLICATION_CONNECTED`, unless it passes `takeover: true`; the one it
+replaces hears `APPLICATION_REPLACED` and goes on without serving the tools.
 
 Any number of processes can **run** an agent without serving its tools: an
 agent upserted without local tools, or with `attach: false`, follows the stream
 read-only. That's how serverless functions and webhook handlers run agents whose
-tools are served elsewhere.
+tools are served elsewhere. Such a handle connects lazily: it holds the stream
+only while `agent.stream()` reads a run, so a server holding many agents holds
+no idle connections.
 
 A run of an agent with attached tools while no process serves them is refused
 with `APPLICATION_NOT_CONNECTED`, after a few seconds' grace. Pass
 `allowDisconnected: true` to run anyway; calls to those tools then fail and show
-in `toolErrors` as `not_connected`. Schedules and channels are never refused, so
+in `toolErrors` as `not_connected`. Schedules, channels and resumed runs are never refused, so
 agents that must work with nobody attached should use served tools.
 
 ## People in the loop
@@ -188,9 +252,13 @@ Everything that changes something can be retried safely:
   `idempotencyKey` (the request id). The same key returns the same agent or run.
 - Every other POST takes an `Idempotency-Key` header. A retry with the same key,
   path and body gets the first answer again for a day. The same key with a
-  different body is a 409.
+  different body is a 409. An answer with a secret shown once (an API token, a
+  signing secret, a browser token, a rotated agent token or a signed link) is
+  never stored: a retry of a key that succeeded is a 409, not the secret again.
 - Every tool call carries `context.idempotencyKey`, the same for every attempt
-  of that call. Key your side effects by it.
+  of that call: a retry after a lost connection, or the call run again after a
+  person answered. Key your side effects by it. (`context.callId` is new each
+  attempt.)
 
 A tool call whose answer was lost (the connection dropped, or its deadline
 passed) is never sent again. The model is told its outcome is unknown, so it
@@ -199,9 +267,22 @@ can check before repeating anything.
 ## Waking later
 
 An agent can be woken by a schedule (`agent.schedule({ text, inSeconds, at,
-everySeconds })`, or the `schedule` built-in so the agent sets its own), by a
-[channel](/camelrun/channels), or by your own code from a
-[webhook](/camelrun/webhooks).
+everySeconds, calendar })`, or the `schedule` built-in so the agent sets its own), by a
+[channel](/camelrun/channels) (Slack, Telegram, Discord), or by your own code
+from a [webhook](/camelrun/webhooks). See [Schedules](/camelrun/schedules) for
+calendar schedules and report emails.
+
+A repeating schedule's wake-ups are turns of the agent, so by default each one
+reads all the history before it. `history: "none"` on a text schedule wakes it
+with only the system prompt and the text. Write the text to say everything the
+run needs.
+
+A wake-up camelRun can't deliver (the agent is busy at its account's limit,
+say) is tried again 1, 5 and 15 minutes later, then given up. A refusal a retry
+can't change, like a spend limit (402), is given up at once. A repeating
+schedule then moves to its next occurrence and lists the failure (`failures`
+and `lastError`) until a delivery succeeds. A one-off schedule given up is
+removed.
 
 ## Definitions
 
@@ -209,3 +290,12 @@ A **definition** is a reusable configuration: model, instructions, tool sources
 (MCP servers, OpenAPI specs, built-ins), limits and mounts. Make agents from one
 with `definition: "def_..."` on `upsert`, and roll a change out to all of them
 with `apply: "all"`. See [Definitions](/camelrun/definitions).
+
+## Several agents
+
+Agents can work together. With the `delegate` built-in, an agent hands a task
+to a **sub-agent** (an agent of its own, made from a definition for the task,
+or an existing one) and gets its answer back as the call's result; several at
+once run in parallel. A sub-agent counts against its parent's limits. There are
+no handoffs: the conversation stays with the agent that has it. See
+[Multi-agent](/camelrun/multi-agent).

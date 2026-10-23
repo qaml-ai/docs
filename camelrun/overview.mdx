@@ -67,9 +67,9 @@ asyncio.run(main())
 
 The hosted MCP server at `https://run.camelai.com/mcp` needs no API key: sign
 in with GitHub or Google when your client asks, which creates your account.
-GitHub accounts older than 30 days start with free credit; everyone else
-verifies a card on the [Billing](https://run.camelai.com/console/billing) page
-(no charge).
+GitHub accounts older than 30 days start with free credit; when the
+[Billing](https://run.camelai.com/console/billing) page offers it, everyone else
+can unlock it by verifying a card (no charge).
 
 <Tabs>
   <Tab title="Claude Code">
@@ -137,9 +137,35 @@ verifies a card on the [Billing](https://run.camelai.com/console/billing) page
     Every agent is an MCP server, so Claude, Cursor or any MCP client can
     message it.
   </Card>
-  <Card title="Any model" icon="brain">
+  <Card title="Any model" icon="brain" href="/camelrun/models-and-keys">
     Pick from the catalog, bring your own provider keys, or add a model server
     of your own.
+  </Card>
+  <Card title="Scheduled agents and email reports" icon="calendar-clock" href="/camelrun/schedules">
+    Wake an agent daily or on weekdays at a local time, and email its report.
+  </Card>
+  <Card title="Stateless runs" icon="zap" href="/camelrun/stateless-runs">
+    One call for one answer: classify, extract or judge, with no agent kept.
+  </Card>
+  <Card title="Workspaces" icon="boxes" href="/camelrun/workspaces">
+    Group agents and definitions by project, and see model and tool spend for
+    each.
+  </Card>
+  <Card title="Computers" icon="monitor" href="/camelrun/computers">
+    Give an agent a Linux computer or a remote browser from Modal, Daytona,
+    E2B, Browserbase and more, or your own through Cloudflare Tunnel.
+  </Card>
+  <Card title="Projects" icon="hammer" href="/camelrun/projects">
+    An agent builds a bot, site or report; your app checks and publishes its
+    versions.
+  </Card>
+  <Card title="Voice and images" icon="mic" href="/camelrun/voice">
+    Audio in messages is transcribed for the model, agents talk in Discord
+    voice calls, and they make and edit images.
+  </Card>
+  <Card title="End-user credits" icon="coins" href="/camelrun/end-user-credits">
+    Charge your own users for what their agents spend, with balances and daily
+    allowances per person.
   </Card>
 </CardGroup>
 
@@ -164,7 +190,7 @@ verifies a card on the [Billing](https://run.camelai.com/console/billing) page
 
 | Package | |
 | --- | --- |
-| `@camelai/run` (npm) | TypeScript SDK: Node 22+, Bun, Deno, Cloudflare Workers |
+| `@camelai/run` (npm) | TypeScript SDK: Node 22+ (on Node 26, 26.5.1 or later), Bun, Deno, Cloudflare Workers |
 | `camelai-run` (PyPI) | Python SDK: Python 3.11+ |
 | `@camelai/run-react` | Chat components and hooks. Vue, Svelte and Solid bindings are `@camelai/run-vue`, `-svelte` and `-solid` |
 | `@camelai/create-run-app` | `npm create @camelai/run-app` scaffolds a Next.js chat app |

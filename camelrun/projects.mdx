@@ -1,0 +1,242 @@
+---
+title: 'Projects: agents that build sites, bots and reports on camelRun'
+sidebarTitle: 'Projects'
+description: 'An agent builds a site, bot or report in a keyed volume; your app checks the files and publishes immutable versions it serves, pins and restores.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/projects.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+A project is something an agent builds for your users, such as a bot, a site or
+a report, that your application then runs or serves. The agent works on the
+files with its file tools. Your application checks them and publishes versions.
+The pattern has four parts:
+
+1. **A volume per project**, made once per key (`projects.create`).
+2. **An agent that works in it**, with the volume mounted read-write and its
+   own workspace beside it (`project.mount`).
+3. **A publish step in your code.** It snapshots the volume, reads every file
+   at that snapshot, checks them, and stores them where your application keeps
+   what it serves (`project.publish`). The snapshot is the version: what you
+   checked is exactly what you stored, whatever the agent writes meanwhile.
+4. **A `publish` tool the model calls** when its work is ready
+   (`publishTool`). It finds the project from the call's signed identity and
+   tells the model what to fix when the check fails.
+
+## Make a project
+
+```ts
+import { Agents } from "@camelai/run";
+
+const agents = new Agents();
+const project = await agents.runtime.projects.create({
+  key: `bot-${bot.id}`,
+  template: { "bot.ts": starterCode, "README.md": "# My bot\n" },
+});
+```
+
+- `key` names the project within your account. The first create makes its
+  volume, and every later one returns the same volume for as long as it lives
+  (`POST /v1/volumes {key}`, with `existing: true` on the later ones). Store
+  `project.id` if you like, or create by key every time.
+- `template` (path to text or bytes) seeds a new project. It never overwrites a
+  file that is there. A project with no files is seeded again, so a create cut
+  off half-way finishes on its retry.
+- A deleted project's key makes no other (a 409): pick a new key.
+
+## The agent that builds it
+
+```ts
+const builder = await agents.upsert(`builder-${bot.id}`, {
+  definition: "bot-builder",            // its prompt and tools, including your publish tool
+  subject: owner.id, context: { bot: bot.id },
+  ...project.mount("/bot"),
+});
+```
+
+`project.mount(path)` does three things:
+
+- It mounts the project's volume read-write at `path`, first, so relative
+  paths are the project's.
+- It keeps the agent's own workspace at `/workspace` beside it. Uploads, tool
+  outputs and scratch files go there, not into the project.
+- It turns file tools on.
+
+To move an existing agent onto a project, add `remount: true` to its upsert.
+See [Files and volumes](/camelrun/files#volumes).
+
+## Publish
+
+```ts
+const result = await project.publish({
+  prefix: "/",                                  // only these files (default: all)
+  validate: files => check(files),              // [] when nothing is wrong
+  store: async (files, version) => saveRelease(bot.id, files, version.id),
+  keep: 20,                                     // published versions kept (default 20)
+});
+if (!result.ok) console.log(formatProblems(result.problems));
+```
+
+- `files` are `{path, size, contentType, sha256, text | data}`: `text` for
+  UTF-8 files, base64 `data` for any other (`fileBytes(file)` gives the bytes).
+- `validate` returns problems, `{path?, line?, message}`. Any problem keeps the
+  version from being published, and its snapshot is deleted. It may return
+  `{problems, data}` instead. `data` is whatever the check worked out (a
+  bundle, its manifest). It reaches `store` as `checked` and comes back in the
+  result (`result.checked`, and `published`'s argument in `publishTool`), so
+  `store` does not work it out again.
+- `store` runs once per version. It gets the version (`{id, seq, name,
+  createdAt}`) and `{project, identity}` (the identity when `publishTool`
+  published it). Keep `version.id` to read that version again with
+  `project.files({ version })`.
+- `idempotencyKey` publishes once per key: a retried call gets the version the
+  first one made (its check runs again only for its `data`).
+
+## Versions, pins and restore
+
+- `project.versions()` lists the published versions, oldest first. A volume
+  keeps at most 100 snapshots, so older versions beyond `keep` are deleted.
+- `publish({ pin: true, labels })` pins the version. A pinned version is kept
+  until `project.unpin(version)`, past `keep` (pinned versions do not count
+  against it), up to 10,000 of them. Pin the releases your application runs, so
+  their source is always there. `project.pin(version, labels?)` pins one later.
+- `project.versions({ labels })` finds versions by label, for example
+  `{ release: "v12" }`.
+- `project.archive({ version?, path? })` gives a version's files (or the
+  project as it is) as a tar.gz stream, for a build.
+- `project.restore(version)` puts the project back as a version had it, in
+  place: the agent working in it sees the files change. The version stays
+  published. Publish again to make the restored files a new version.
+
+## The publish tool
+
+Give the model a tool that publishes. Serve it from your application with
+[`serveTools`](/camelrun/tools#served-tools) and name it in the agent's
+definition with `auth: { type: "runtime" }`:
+
+```ts
+import { publishTool } from "@camelai/run";
+import { serveTools } from "@camelai/run/server";
+
+export default {
+  fetch: serveTools({
+    publish: publishTool({
+      // Who the call is for comes from the runtime's signed token, never from the model.
+      project: identity => agents.runtime.projects.get(volumeOfBot(identity.context.bot)),
+      validate: files => check(files),
+      store: (files, version, { identity }) => saveRelease(String(identity!.context.bot), files, version.id),
+    }),
+  }, { runtime: "https://run.camelai.com", tenant: "acme" }),
+};
+```
+
+The tool takes no arguments. On success the model gets
+`{published: true, version}`. Otherwise the call fails with the problems, one a
+line (`/bot.ts:12: …`), so the model fixes them and publishes again. A retried
+call publishes once, because camelRun sends each call's idempotency key. A
+client that sends none gets a new version for every call.
+
+An agent whose project changes during its life (one builder per user that
+moves its `/bot` mount from bot to bot with `remount: true`) has no project in
+its identity: its `context` was fixed when it was made. Look up what it has
+mounted now instead, from the agent the call came from:
+
+```ts
+project: async identity => {
+  const mount = (await agents.runtime.mounts(identity.agent)).find(entry => entry.path === "/bot");
+  if (!mount) throw new Error("No bot is open in this builder");
+  return agents.runtime.projects.get(mount.volumeId);
+},
+```
+
+Check that the volume is one of the user's projects (a key or row of yours
+names it) before you publish it. Your code set the mount, but the lookup is
+what decides which project a publish reaches.
+
+## In Python
+
+`camelai_run.projects` has the same helper, async:
+
+```python
+from camelai_run.projects import Projects, publish_tool
+
+projects = Projects(agents.runtime)
+project = await projects.create(f"bot-{bot.id}", template={"bot.py": starter})
+builder = await agents.upsert(f"builder-{bot.id}", definition="bot-builder", subject=owner.id, context={"bot": bot.id}, **project.mount("/bot"))
+result = await project.publish(validate=check, store=lambda files, version, about: save_release(bot.id, files, version["id"]))
+
+app = serve_tools([publish_tool(project=lambda identity: projects.get(volume_of_bot(identity.context["bot"])), validate=check, store=save)], runtime=RUNTIME, tenant="acme")
+```
+
+`publish_tool` works in `serve_tools` (ASGI) and in
+`camelai_run.sync.serve_tools` (WSGI: Django, Flask). Files are dicts with
+`"text"` or base64 `"data"` (`file_bytes(file)` gives the bytes).
+
+## Security
+
+- **Derive the project from identity.** `project(identity)` reads who the call
+  is for from the runtime's signed token (`subject`, `context`), which you set
+  when you made the agent and the model cannot change. Never take a project id,
+  a path or a version from the model's arguments. See
+  [Identity](/camelrun/tools#identity).
+- **Check what you read, not what the model says.** `publish` reads the files
+  server-side from a snapshot; the model never hands you content. Treat every
+  file as untrusted input: validate it, and run it only where your application
+  runs untrusted code.
+- **Keep the agent to its project.** Give the builder the project's volume and
+  its own workspace, nothing else of yours. Its own token can read and write
+  its mounts. Your API key, which reads every project, stays on your server.
+- **Store versions, serve versions.** Serve what `store` kept for a published
+  version, never the live volume, which the agent may be changing.
+
+## Examples
+
+[`examples/projects`](https://github.com/qaml-ai/run/tree/main/examples/projects)
+has two runnable apps on this pattern:
+
+| Example | The agent builds | `publish` checks | The app shows |
+| --- | --- | --- | --- |
+| `website` | A static site: HTML, CSS, JS under `/site` | An `index.html`, every local link and asset resolves, at most 200 files and 5 MB | Each version at `/sites/:project/v/:n/` |
+| `dashboard` | SQL queries and a chart spec under `/dashboard`, over a bundled SQLite dataset | The spec's schema; every query runs (read-only, one statement, at most 1,000 rows and 2 s) and returns the columns its chart draws | The dashboard, its queries run live |
+
+You need Node 22.13 or newer and a camelRun API key:
+
+```sh
+npm install
+export CAMELAI_API_KEY=art_...
+npm run website        # or: npm run dashboard
+```
+
+The app serves its viewer at http://localhost:3000 and opens a prompt in your
+terminal, where you talk to the project's agent:
+
+```
+demo> Make a one-page site for a bakery called Crumb, with a menu section, then publish.
+→ write /site/index.html
+→ write /site/style.css
+→ publish
+← {"published":true,"version":1,"url":"http://localhost:3000/sites/demo/v/1/"}
+Published: http://localhost:3000/sites/demo/v/1/
+demo> Make the header green and publish again.
+→ edit /site/style.css
+→ publish
+← {"published":true,"version":2,"url":"http://localhost:3000/sites/demo/v/2/"}
+```
+
+When `publish` finds problems (a page that links a missing file, a query naming
+a column that doesn't exist), the agent gets them as the tool's result, fixes
+the files and publishes again. Visitors only ever see published versions, which
+the app serves on its own: camelRun can be down and nothing they see changes.
+
+## From the REST API
+
+| | |
+| --- | --- |
+| Make or find a project's volume | `POST /v1/volumes {name, key}` |
+| Mount it beside the workspace | `mounts: [{volumeId, path: "/bot", mode: "rw"}, {workspace: true}]` on `POST /v1/agents` (`remount: true` on an upsert to change them) |
+| Take a version | `POST /v1/volumes/:id/snapshots {name}` |
+| Read every file of it at once | `GET /v1/volumes/:id/files?content=true&snapshot=snap_…` |
+| List and delete versions | `GET /v1/volumes/:id/snapshots`, `DELETE /v1/volumes/:id/snapshots/:snapshot` |
+| Restore a version in place | `POST /v1/volumes/:id/restore {snapshot}` |
+| Pin a version, label it | `PATCH /v1/volumes/:id/snapshots/:snapshot {pinned, labels}`, or `pinned` / `labels` on the create |
+| Bring in a version kept elsewhere | `POST /v1/volumes/:id/snapshots {name, files, pinned, labels}` |
+| Download a version as a tar.gz | `GET /v1/volumes/:id/archive?snapshot=snap_…` |

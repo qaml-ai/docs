@@ -66,7 +66,8 @@ New types may be added, so ignore ones you don't know.
 | `message_start` | A message begins: the user's, an assistant response, or a tool result |
 | `message_update` | The streaming assistant message grew. Carries only the delta, in `assistantMessageEvent` |
 | `message_end` | A message finished, as history keeps it |
-| `message_retracted` | A response was taken back (before a retry), and the message at `index` is gone |
+| `message_retracted` | A response was taken back (before a retry, or a compaction on overflow), and the message at `index` is gone |
+| `event_omitted` | An event was too large for the stream (over 1.1 MB). `was` is its type; read the message from history |
 
 `assistantMessageEvent.type` is `text_delta` for reply text, `thinking_delta`
 for reasoning, and `toolcall_delta` for a tool call's arguments as partial JSON,
@@ -80,6 +81,7 @@ each with its `start` and `end`. Fold deltas into the message from its
 | `tool_execution_start` | A tool call starts: `toolCallId`, `toolName`, `args` |
 | `tool_execution_update` | A tool reported progress (`partialResult`), at most every 250 ms per call |
 | `tool_execution_end` | A tool call finished: `result`, `isError` |
+| `output` | An `execute` request's code printed `text` |
 | `file_presented` | The agent presented a file, with a signed download `url` |
 | `input_required` | The turn waits on a person. `input` has `id`, `kind` (`question`, `approval`, `form` or `url`), `message`, `detail` and `expiresAt` |
 | `input_resolved` | An input settled: `answered`, `declined`, `cancelled`, `expired` or `superseded` |
@@ -93,9 +95,19 @@ See [Multi-agent](/camelrun/multi-agent). These events reach only streams that a
 | `subagent_start` | A `delegate` call started its sub-agent: `toolCallId`, `agentId`, `requestId`, `name`, `depth` |
 | `subagent_event` | One of the sub-agent's events (`event`), its streamed text left out; a grandchild's arrive nested in its parent's |
 | `subagent_end` | The sub-agent's run ended (`status`: `completed`, `input_required`, `failed`; `error?`), or its parent stopped waiting |
-| `auto_retry_start`, `auto_retry_end` | A transient provider failure is being retried |
-| `compaction_start`, `compaction_end` | The conversation is being summarized to fit the model's context |
-| `turn_resumed` | The node running this turn was lost, and it continues on another |
+
+### The runtime
+
+| Type | When |
+| --- | --- |
+| `auto_retry_start`, `auto_retry_end` | A transient provider failure (overload, rate limit, 5xx, dropped stream) is being retried |
+| `model_stream_stalled` | The model's stream went quiet (`phase`: `first_token` or `idle`), so camelRun ended the request and retries it |
+| `steer_taken` | A prompt sent with `whileRunning: "steer"` was read by the running turn `steeredInto` |
+| `run_cancelled` | A run queued behind the running one was cancelled by a stop before it began |
+| `compaction_start`, `compaction_end` | The conversation is being summarized to fit the model's context. `background: true` means it runs outside any run, and nothing waits for it |
+| `context_trimmed` | Older messages were left out of a model request to fit it |
+| `turn_resumed` | The turn continues elsewhere, with unresolved tool calls marked unknown. With `handoff`, nothing was lost: it moved at a step boundary during a deploy |
+| `turn_recovered` | camelRun restarted during a turn; unresolved tool calls were marked unknown |
 
 ## Run outcomes
 
@@ -109,15 +121,15 @@ A prompt's `outcome.result`, from a `response` frame or
 | `replyIndex` | That message's index in the agent's history |
 | `messages` | How many messages the history holds after the run |
 | `error` | The model's error (a provider refusal after retries), or `null` |
-| `code` | A stable name for `error`, where there is one: `model_key_missing` (no key for the agent's model), `model_key_invalid` (the provider refused the key), `output_missing` (a structured run ended without its output) |
-| `stopped` | Why the run stopped early: `input_required` or `spend_limit` |
+| `code` | A stable name for `error`, where there is one: `model_key_missing` (no key for the agent's model), `model_key_invalid` (the provider refused the key), `output_missing` (a structured run ended without its output), `model_stream_stalled` (the model stopped answering, past every retry), `aborted` (the agent was stopped during the run), `cancelled` (a stop cancelled it before it began), `resume_limit`, `spend_limit`, `turn_limit`, `end_user_credit` |
+| `stopped` | Why the run stopped early: `input_required`, `spend_limit` or `turn_limit` (its [run limits](/camelrun/models-and-keys)), with the reason in `error` |
 | `inputs` | When `stopped` is `input_required`, the pending inputs |
 | `files` | Files the run wrote (at most 100) |
 | `presented` | Files the run presented (at most 20) |
 | `toolErrors` | Tool calls that didn't complete. See [Tool errors](/camelrun/errors#tool-errors) |
 | `toolCalls` | Every tool call the run made, in order, the first 100: `{tool, toolCallId?, innerCallId?, ok, code?, agentId?}`; `agentId` is the sub-agent a `delegate` call ran. A call from `js_exec`'s code has js_exec's `toolCallId` and its own `innerCallId`; `js_exec` itself isn't listed. When `ok` is false, `code` is a `toolErrors` code, `tool_error` (the tool answered with an error), `input_required` (it waits on a person; the run that resumes it lists it again) or `aborted`. Arguments and results are left out: read them from history by `toolCallId` |
 | `sourceErrors` | Tool sources (MCP servers, OpenAPI specs) that couldn't be listed |
-| `usage` | What its model responses used; `subagentCostUsd`, what its sub-agents spent |
+| `usage` | What its model responses used: `{responses, input, output, cacheRead, cacheWrite, costUsd}`, plus `subagentCostUsd` (what its sub-agents spent) and `imageCostUsd` (what its `generate_image` calls cost) when there are any |
 
 `outcome.error` without a `result` means camelRun couldn't carry the request
 out, and `uncertain: true` means a restart cut it short so nobody can tell
@@ -129,7 +141,20 @@ also puts `status` (`completed`, `input_required` or `failed`), `error` and
 (up to 25 seconds): it answers as soon as the request settles, or when the wait
 ends with it still `running`, so you can ask again.
 
+A steered prompt's request completes as soon as the running turn reads its
+message, with `{steeredInto}` as its result; the turn's own request has the
+turn's outcome.
+
 The SDKs turn this into a typed `Run`: `status` (`completed`, `input_required`
-or `failed`), `text`, `inputs`, `error`, `files`, `toolErrors`, `toolCalls` and
-`sourceErrors`. A browser token never sees a run's result, `toolCalls`
-included: only whether and why it stopped.
+or `failed`), `text`, `output`, `inputs`, `error`, `files`, `toolErrors`,
+`toolCalls` and `sourceErrors`. A browser token never sees a run's result,
+`toolCalls` included: only whether and why it stopped.
+
+## Webhook events
+
+Your [webhook](/camelrun/webhooks) endpoints receive a different set of signed
+events: `run.started`, `run.completed`, `run.failed`, `input.requested`,
+`input.resolved`, `usage.recorded`, the `voice.*` events of
+[voice calls](/camelrun/voice-calls), and the `end_user.*` balance events of
+[end-user credits](/camelrun/end-user-credits). See
+[Webhooks](/camelrun/webhooks#events) for each one's fields.

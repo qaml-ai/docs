@@ -1,0 +1,480 @@
+---
+title: 'Voice calls: realtime voice bots on camelRun'
+sidebarTitle: 'Voice calls'
+description: 'Put a voice bot in Discord calls or a web page: a realtime speech model answers aloud and asks your agent for actions, or the bot only listens.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/voice-calls.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+camelRun can sit in a Discord voice call for your bot and talk with the people
+in it. A realtime speech-to-speech model hears the call and answers aloud, and
+asks your bot's agent for anything beyond talk. What people say also goes to
+your webhooks, transcribed. A session can instead only listen: muted, each
+utterance transcribed, nothing answering. The same pipeline takes calls from a
+web page, for trying a voice bot out.
+
+A session's `brain` is one of two:
+
+- **`realtime`** (the default): a speech-to-speech model (OpenAI Realtime,
+  Gemini Live, Grok or ElevenLabs Agents) hears the call and answers in its own
+  voice, with no text in between.
+- **`listen`**: no model answers and the bot never speaks. Each utterance is
+  transcribed and sent to your webhooks.
+
+For voice notes and recordings sent in a message, and for text to speech on its
+own, see [Voice and audio](/camelrun/voice).
+
+## How joining works
+
+Your app keeps its Discord gateway and its bot token; camelRun never sees
+either. This works with your own Discord bot, not the
+[Camel Discord bot](/camelrun/channels#add-the-camel-discord-bot).
+
+Joining a voice channel is the only step that needs the bot's gateway. Your app
+asks to join (OP 4, voice state update), and Discord answers on the gateway with
+two dispatches: the bot's `VOICE_STATE_UPDATE` (its voice `session_id`) and the
+guild's `VOICE_SERVER_UPDATE` (a voice server `endpoint` and a `token`). You
+forward them to `POST /v1/voice/sessions`, and camelRun holds the call: the voice
+connection, the audio, and Discord's end-to-end encryption.
+
+## Start a session
+
+<CodeGroup>
+```ts TypeScript
+import { Agents } from "@camelai/run";
+const agents = new Agents();
+
+// On your gateway: OP 4 {guild_id, channel_id, self_mute: false, self_deaf: false}; then, from Discord's answers:
+const session = await agents.voice.create({
+  discord: { guildId, channelId, userId: botUserId, sessionId: voiceState.session_id, endpoint: voiceServer.endpoint, token: voiceServer.token },
+  deliver: { agent: agent.id },     // the bot's agent, which the model asks for facts and actions
+  realtime: { instructions: "You are Mochi, a cheerful cat who loves puns." },
+  subject: ownerId,                 // whose usage it is (and whose credit, with end-user credits)
+  metadata: { botId: 42 },          // echoed in every voice.* event
+  ignoreUserIds: otherBotIds,       // never heard, and not company in the call
+});
+// People must know they are transcribed: post the notice in the voice channel's chat now.
+await postMessage(session.notice.channelId, session.notice.text);
+```
+
+```python Python
+session = await agents.voice.create(
+    {"guildId": guild_id, "channelId": channel_id, "userId": bot_user_id, "sessionId": state["session_id"],
+     "endpoint": server["endpoint"], "token": server["token"]},
+    agent=agent_id, realtime={"instructions": "You are Mochi, a cheerful cat who loves puns."},
+    subject=owner_id, metadata={"botId": 42})
+```
+
+```bash curl
+curl -X POST "https://run.camelai.com/v1/voice/sessions" -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"discord": {"guildId": "…", "channelId": "…", "userId": "…", "sessionId": "…", "endpoint": "c-ams12-1a2b.discord.media:443", "token": "…"},
+       "deliver": {"agent": "client_…"}, "subject": "user_42", "language": "en"}'
+```
+</CodeGroup>
+
+The answer is the session (`id`, `state: "connecting"`, its settings), its
+`notice`, and `join`: how your OP 4 should have joined. A realtime bot speaks, so
+your app joins un-muted (`self_mute: false`); a listening one joins muted.
+
+A bot has one session per server, as Discord allows one voice connection per
+user and server. A second `POST` for the same bot and server is a 409
+`VOICE_SESSION_EXISTS` naming the live one.
+
+| Field | |
+| --- | --- |
+| `discord` | `guildId`, `channelId`, `userId` (the bot), `sessionId`, `endpoint` (a `*.discord.media` host), `token`. The token is stored encrypted, never returned, and dropped when the session ends |
+| `brain` | `realtime` (the default) or `listen`; see [listening only](#listening-only) |
+| `realtime` | The model that answers: `{provider, model, voice, publicOwnerId, instructions, transcribe, speculative}`; see [the realtime brain](#the-realtime-brain) |
+| `deliver` | `agent`: the bot's agent, which the model asks for anything beyond talk (`ask_agent`); `webhooks` (default `true`): `voice.*` events to your endpoints |
+| `subject`, `context`, `keyScope` | Whose usage it is (`usage.recorded`'s `subject`), your claims in its `context`, and a [key scope](/camelrun/models-and-keys#key-scopes) whose key for the realtime provider is used |
+| `bucket` | With [end-user credits](/camelrun/end-user-credits) on: which of the subject's buckets pays |
+| `language`, `prompt` | The language spoken (`en`, `pt-BR`; detected when left out), and words to expect (names, jargon), for the transcripts. OpenAI transcription uses the base language (`pt-BR` → `pt`); unknown codes are dropped and the language detected |
+| `addressing` | Which turns are the bot's in a group call: `{names, mode, conversationMs}`; see [who it answers](#who-it-answers) (default: every turn) |
+| `endOfTurn` | How a speaker's turn ends: `smart` (the default) or `silence`, or `{mode, commitMs, threshold, maxSilenceMs}`; see [turns](#turns) |
+| `silenceMs` | With `endOfTurn: silence`: silence that ends a turn, 200 to 5000 ms, default 800 |
+| `maxMinutes`, `idleMinutes`, `emptySeconds` | The session ends after `maxMinutes` (default 240, at most 720), after `idleMinutes` without speech (default 30), or with no one else in the call for `emptySeconds` (default 60) |
+| `ignoreUserIds` | Users never heard and not counted as company: other bots |
+| `metadata` | Anything, at most 4 KB of JSON, echoed in every `voice.*` event |
+| `notice` | The notice text (`{bot}` is the bot's id). Default: `<@bot> is listening, transcribing speech and may speak in this channel. Audio is not stored.` |
+| `bargeIn` | A person talking over the bot stops what it is saying (default `true`, or `{minMs, confirmMs, resumeMs}`); see [barge-in](#barge-in) |
+| `voice` | The bot's voice by OpenAI's names (`alloy`, the default, `coral`, `nova`…), mapped to the provider's nearest; `realtime.voice` names the provider's own |
+| `speakers` | Names by Discord user id, for the model's note of who speaks (`{"400000000000000001": "Ana"}`); PATCH it as people join |
+
+## Listening only
+
+A bot that only needs to hear the call (notes, captions, commands it acts on in
+text) takes `brain: "listen"`. No realtime model is opened and the bot never
+speaks, so your app joins muted (`join.self_mute: true`). Each utterance is
+transcribed once its speaker's turn ends (OpenAI's `gpt-transcribe`, as
+[`POST /v1/transcriptions`](/camelrun/voice#transcribe-on-its-own) transcribes,
+on your OpenAI key or the platform's). It goes to your webhooks as
+`voice.utterance` with `brain: "listen"` and no `addressed`, or to the page of a
+browser session. Its notice says the bot listens and transcribes, not that it may
+speak.
+
+A listening session takes `language`, `prompt`, `endOfTurn`, `silenceMs` and the
+session's limits. It ignores `bargeIn`, `voice`, `addressing`, `realtime`,
+`speakers` and `deliver.agent` if sent, and needs `deliver.webhooks` on (a
+browser session's page gets every utterance itself). Each utterance is billed as
+a transcription (`usage.recorded` with `kind: "transcription"`), held against the
+subject's credit first with end-user credits on. `DELETE …/speak` is a 409
+`VOICE_SPEAK_DISABLED`.
+
+## The realtime brain
+
+A speech-to-speech model hears the call and answers aloud, in its own voice. It
+hears tone and hesitation, and asks the bot's agent for anything beyond talk.
+
+```ts
+await agents.voice.create({
+  discord, deliver: { agent: agent.id },
+  realtime: { instructions: "You are Mochi, a cheerful cat who loves puns.", voice: "marin" },
+  speakers: { "400000000000000001": "Ana", "400000000000000002": "Ben" },
+  addressing: { names: ["mochi"] },
+});
+```
+
+| `realtime.provider` | Models (`realtime.model`) | Voices (`realtime.voice`) | Your key |
+| --- | --- | --- | --- |
+| `openai` (the default) | `gpt-realtime-2.1` (the default), `gpt-realtime-2.1-mini` | `alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, `cedar` | `openai` |
+| `gemini` (Gemini Live) | `gemini-3.8-live` | Gemini's prebuilt voices: `Kore`, `Aoede`, `Leda`, `Puck`, `Charon`… | `google` |
+| `grok` (xAI) | `grok-voice-latest` (the default), `grok-voice-3.0` | `ara`, `eve`, `leo`, `rex`, `sal`… | `xai` |
+| `elevenlabs` (ElevenLabs Agents) | `gemini-2.5-flash-lite` | Any ElevenLabs voice id your key can use; see [find a voice](#find-a-voice) | `elevenlabs` |
+
+The session uses your key for its provider (set under **Models & keys**, or a
+key scope's), else the platform's. Without either it is a 400
+`REALTIME_UNAVAILABLE`. `realtime.voice` defaults to the session's `voice`, or
+its nearest match: OpenAI `nova` → `marin`, Gemini `coral` → `Kore`, Grok
+`alloy` → `sal`, and so on.
+
+- **Who said what.** Discord gives each person's audio apart; a model hears one
+  stream. The session mixes them, and each time the speaker changes, it adds a
+  note naming who speaks next: `[Ana]`, or `[Ana and Ben, at once]` while two
+  talk over each other. Names come from `speakers`, else `Speaker 1`,
+  `Speaker 2`…
+- **Tools.** `ask_agent(request)` prompts `deliver.agent` (its tools, memory and
+  system prompt), with the speaker as `from` and `metadata.via: "realtime"`. The
+  model says the answer in its own words and fills the wait itself ("let me
+  check"). If no reply is in after 45 seconds, the model says the agent is still
+  working, and says the reply when it comes (within 5 minutes). Without
+  `deliver.agent` there is no `ask_agent`. `stay_silent()` answers nothing.
+- **One character.** `realtime.instructions` (at most 8,000 characters) is the
+  bot's persona, before the call's own rules (short spoken answers, names,
+  `stay_silent`, and asking the agent for anything beyond small talk). Give it the
+  same persona as the agent, and say what the agent can do, so the model knows
+  what to ask it.
+- **Transcripts.** `realtime.transcribe` (default `true`) transcribes what people
+  say, for `addressing.names` and for `voice.utterance`.
+
+A provider connection that drops is opened again, briefed with what was said
+lately (three times in five minutes at most, else the session ends with reason
+`error` and detail `realtime_failed`).
+
+The providers differ where their APIs do. Gemini Live transcribes a turn only
+once it is asked to answer, and cannot take back audio once sent: a cut-off
+answer is described to it rather than truncated.
+
+### ElevenLabs Agents
+
+ElevenLabs Agents uses its own voice detection and turn taking, so `endOfTurn`
+and `speculative` don't apply, and its own model decides from the call's
+instructions whether a turn is addressed to it, rather than camelRun's name
+check. `ask_agent` and `stay_silent` work the same. Speaker notes are added
+around the mixed audio, so overlapping speech isn't reliably attributed. A
+barge-in stops playback, but audio already sent can't be withdrawn.
+
+Set `realtime.voice` to an ElevenLabs voice id (OpenAI voice names map to
+Jessica) and, for a shared library voice, `realtime.publicOwnerId` from
+[voice search](#find-a-voice). At session start camelRun adds a library voice to
+the ElevenLabs account once, reusing it after that. At the account's voice limit
+it removes the least recently used voice it added, never one you added. On your
+own ElevenLabs key, the key needs voice read access and, to add library voices,
+voice write and subscription read access.
+
+An ElevenLabs conversation lasts up to 30 minutes. When one reaches it, the call
+goes on in a fresh conversation, briefed with what was said.
+
+### Find a voice
+
+`GET /v1/voices/search` finds voices by name or description, and
+`GET /v1/voices/{provider}/{id}` checks an exact, case-sensitive id before you
+save it.
+
+<CodeGroup>
+```ts TypeScript
+const { voices } = await agents.voices.search({ provider: "elevenlabs", q: "cat", limit: 10 });
+
+const voice = await agents.voices.get("elevenlabs", savedVoiceId);
+if (!voice.usable) throw new Error(voice.reason);
+```
+
+```python Python
+result = await agents.voices.search(provider="elevenlabs", q="cat", limit=10)
+
+voice = await agents.voices.get("elevenlabs", saved_voice_id)
+```
+</CodeGroup>
+
+Search takes `provider` (required: `elevenlabs`, `grok`, `openai` or `gemini`),
+`q`, `limit` (1 to 30, default 10) and, for ElevenLabs, `category`
+(`professional`, `famous` or `high_quality`). It answers `{ voices: [...] }`,
+each with `provider`, `id`, `name`, `description`, `labels` (`accent`, `age`,
+`gender`, `use_case` where known), `publicOwnerId`, `previewUrl` and `category`.
+Save `id` as `realtime.voice`, and `publicOwnerId` as `realtime.publicOwnerId`
+when there is one. For `grok`, `openai` and `gemini` it filters the fixed lists
+above and needs no provider key.
+
+ElevenLabs search and checks use your ElevenLabs key, else the platform's. A
+check answers the voice with `usable` and a `reason`: a disabled or retired
+shared voice, or one with no public owner, is `usable: false`. A check only
+reads; it never adds a voice. A session can still fail to add a voice later,
+because of account permissions, subscription limits or a provider change.
+
+| Error | |
+| --- | --- |
+| `404 VOICE_NOT_FOUND` | No voice with that id |
+| `400 VOICE_SEARCH_UNAVAILABLE`, `400 VOICE_LOOKUP_UNAVAILABLE` | No ElevenLabs key to use |
+| `502 VOICE_SEARCH_FAILED`, `502 VOICE_LOOKUP_FAILED` | ElevenLabs failed (no upstream detail is returned) |
+
+## Who it answers
+
+By default every turn is answered. In a group call that makes a bot answer
+everything said near it. `addressing` makes it answer only its own turns:
+
+```ts
+await agents.voice.create({ discord, deliver: { agent: agent.id }, addressing: { names: ["camel", "hey camel"] } });
+```
+
+With `names` (its wake words; `mode: "addressed"` is then the default), a turn is
+the bot's when:
+
+- it says one of `names`, anywhere in it, as a word or phrase. A near miss of a
+  name of five letters or more counts too ("jarvys" for "jarvis"), as speech
+  recognition misspells names;
+- its speaker is in a conversation with the bot: the bot answered them, or they
+  named it, within `conversationMs` (default 20 s), and no one else has named it
+  since;
+- or no one else is in the call.
+
+Turns that aren't the bot's are still heard by the model as context, and still
+reach your webhooks (`voice.utterance` with `addressed: false`). Without names,
+the model is told when a turn didn't name it, and calls `stay_silent` when people
+are talking to each other. Every `voice.utterance` from a realtime session says
+`addressed` and `addressedBy` (`always`, `alone`, `named`, `conversation` or
+`not_addressed`).
+
+## Turns
+
+A turn is one speaker's stretch of speech, and the model is asked to answer when
+it ends. How it ends is `endOfTurn`:
+
+- `smart` (the default): speech is found by a voice activity model, not by
+  loudness, so room noise or an open mic isn't speech. At each pause, after 200 ms
+  of silence, a turn-detection model (Smart Turn, 23 languages) judges whether the
+  speaker is done. If they are, the turn ends at `commitMs` of silence (default
+  500; 200 to 3000). If they are mid-thought, they get up to `maxSilenceMs`
+  (default 1400; 500 to 5000) before it ends anyway. `threshold` (0.05 to 0.95,
+  default 0.5) is how sure it must be that they're done: higher waits more often.
+- `silence`: the turn ends after `silenceMs` without speech.
+
+On a test set of 920 turns in 23 languages, `smart` at its defaults ended a turn
+580 ms after the last word (median; `silence` at 800 ms: 816 ms), and held for a
+speaker who paused mid-thought 87% of the time.
+
+With `smart`, the model starts its answer at the likely end of the turn
+(`realtime.speculative`, default `true`) and the audio waits for the turn to end.
+If the person goes on, the answer is taken back unheard. While someone else is
+mid-turn the answer waits, and their turn replaces it: one answer to both.
+
+## Speaking and barge-in
+
+Each answer plays in the call as it is made. `voice.speech.started` gives its
+`speechId` and `latencyMs`, and `voice.speech.ended` its `reason` (`done`,
+`interrupted` or `error`), `by` for an interruption (`requested`, `barge_in`,
+`end`, `superseded` or `budget`), the `seconds` played and `costUsd`.
+
+`DELETE /v1/voice/sessions/{id}/speak` (`agents.voice.stopSpeaking(id)`, Python
+`stop_speaking`) stops what the bot is saying, and what it was about to say. A
+503 while the session moves says to retry; the SDKs do.
+
+The bot never hears itself as speech, and its own talking doesn't count as
+speech for `idleMinutes` or company for `emptySeconds`.
+
+### Barge-in
+
+With `bargeIn` (the default), a person talking over the bot stops its answer
+(`by: "barge_in"`), so the bot doesn't talk over people. Its answer is cut where
+people stopped hearing it, so its memory of the call matches what was heard.
+Someone on laptop speakers can send the bot's own voice back into the call, so
+the bot checks first:
+
+- After `minMs` (300) of their speech, it **pauses**, keeping what it was saying.
+- If they keep talking for `confirmMs` (1000) after the pause, it **stops**.
+  Echo stops when the bot does.
+- The pause lasts at most `resumeMs` (3000). Then it stops if they're still
+  talking, and **resumes** if not.
+- With `endOfTurn: smart`, a sound too short to be words (a cough, a click)
+  resumes it at once.
+
+`confirmMs: 0` stops at `minMs`, with no pause and no echo check. The session
+shows the timing in use as `interruption`.
+
+## Keep it connected, and end it
+
+Discord moves calls: a voice server restarts or changes, or someone drags the bot
+to another channel. Your gateway then gets a new `VOICE_SERVER_UPDATE` (or a
+`VOICE_STATE_UPDATE` for the bot with a new channel). Forward what changed:
+
+```ts
+await agents.voice.update(session.id, { discord: { endpoint: voiceServer.endpoint, token: voiceServer.token } });
+```
+
+`PATCH /v1/voice/sessions/{id}` takes `discord.channelId`, `sessionId`,
+`endpoint` (null: Discord is moving the call; send the next one) and `token`, and
+`ignoreUserIds`, `metadata` and `speakers`.
+
+When Discord stops taking the credentials, or its voice server keeps refusing
+reconnects, only your gateway can get new ones. camelRun sends
+`voice.session.error` with `code: "credentials_needed"` and `waitMs`. Send OP 4
+for the same channel again, and PATCH the session with what Discord answers
+(`session_id`, `endpoint`, `token`): it reconnects and goes on. Without new
+credentials within 15 seconds, the session ends.
+
+To leave, end the session and send the answer's `leave` on your gateway. Ending
+stops the listening; only your gateway can take the bot out of the channel.
+
+```ts
+const { leave } = await agents.voice.end(session.id);   // DELETE /v1/voice/sessions/{id}
+gateway.send(leave);                                      // {op: 4, d: {guild_id, channel_id: null, …}}
+```
+
+When camelRun ends a session itself (`voice.session.ended` with a `reason` other
+than `requested`), send the same OP 4 to leave. When your gateway sees the bot's
+own `VOICE_STATE_UPDATE` with `channel_id: null` (kicked), end the session.
+
+`GET /v1/voice/sessions/{id}` reads one (`state`: `connecting`, `live`,
+`reconnecting` or `ended`; `utterances`, `speechSeconds`, `speeches`,
+`spokenSeconds`, `costUsd`). `GET /v1/voice/sessions?state=live` lists them,
+newest first, a page at a time. Ended sessions are listed for 30 days.
+
+## Events
+
+Voice events go to your [webhook endpoints](/camelrun/webhooks) that select them
+(with `deliver.webhooks`, the default). Each carries `session`, `provider`,
+`guildId`, `channelId`, `botUserId`, `subject` and your `metadata`.
+
+| Event | When |
+| --- | --- |
+| `voice.session.started` | The session connected (once) |
+| `voice.session.ended` | It ended; your app leaves the channel. `reason`: `requested`, `empty`, `idle`, `max_duration`, `budget`, `kicked`, `credentials` or `error`. With `budget`, `limit` (`tenant` or `end_user`) and `endUserReason`. On a failure, `detail` (such as `realtime_failed`, `realtime_unavailable` or `media_crashed`) and `error`, a summary with no provider text. Also the session's totals: `utterances`, `speechSeconds`, `costUsd` |
+| `voice.session.error` | `media_crashed`: the session's audio failed. With `restarting: true` it reconnects at once and the call goes on; after 3 failures in 5 minutes it ends. `credentials_needed`: see above |
+| `voice.utterance` | A person's utterance, transcribed |
+| `voice.speech.started`, `voice.speech.ended` | The bot started or finished an answer |
+
+```json
+{"id": "evt_…", "type": "voice.utterance", "created": 1790000000,
+ "data": {"session": "vs_…", "provider": "discord", "guildId": "…", "channelId": "…", "botUserId": "…",
+          "speakerId": "<the Discord user who spoke>", "seq": 12, "text": "Can you add that to the list?", "language": "en",
+          "seconds": 2.4, "startedAt": 1790000000000, "endedAt": 1790000002400, "ended": "silence", "costUsd": 0.000225,
+          "addressed": true, "addressedBy": "always", "brain": "realtime", "subject": "user_42", "metadata": {"botId": 42}}}
+```
+
+With a realtime brain the model has already answered an utterance, so your app
+shouldn't. `speakers` lists everyone whose audio is in it when people spoke at
+once (`speakerId` is the first). `seq` numbers utterances in the order their
+transcripts were made. Events are delivered at least once: dedupe them by `id`.
+
+## From a browser
+
+A session with `provider: "browser"` is a call from a web page, with no Discord
+in it: for trying a voice bot out (a test panel, a preview) through the same
+turns, barge-in and realtime brain. Create it from your server, and give the
+page only the answer's `browser.url` and `browser.token`, never your API key:
+
+```ts
+const session = await fetch("https://run.camelai.com/v1/voice/sessions", {
+  method: "POST", headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+  body: JSON.stringify({ provider: "browser", deliver: { agent: agentId, webhooks: false }, metadata: { preview: true } }),
+}).then(response => response.json());
+// In the page:
+const socket = new WebSocket(`${session.browser.url}?token=${encodeURIComponent(session.browser.token)}`);
+socket.binaryType = "arraybuffer";
+```
+
+A browser session needs no `discord`, and its socket gets every utterance
+itself. The token opens the socket within 10 minutes;
+`POST /v1/voice/sessions/{id}/browser-token` makes another (for a page that
+reloads). One socket is open at a time, and closing it hangs up: the call is
+then empty, and `emptySeconds` ends the session.
+
+| Direction | Frame | What |
+| --- | --- | --- |
+| page → camelRun | binary, first byte `1` | An Opus packet, 20 ms at 48 kHz (mono or stereo, as WebCodecs' `AudioEncoder` makes it) |
+| page → camelRun | binary, first byte `2` | 20 ms of 16-bit little-endian PCM, 48 kHz mono (1,920 bytes) |
+| page → camelRun | `{"type":"speaker","id":"…"}` | Whose the frames that follow are (`browser` by default; letters, digits, `_` and `-`) |
+| page → camelRun | `{"type":"others","users":[…]}` | Who else is "in the call" (an empty list lets `emptySeconds` end it) |
+| page → camelRun | `{"type":"config","audio":"pcm"}` | The bot's speech as PCM rather than Opus |
+| camelRun → page | binary, first byte `1` or `2` | The bot's speech, a frame every 20 ms as it plays: Opus (48 kHz stereo) or PCM (48 kHz mono) |
+| camelRun → page | `{"type":"ready"}` | Connected |
+| camelRun → page | `{"type":"utterance",…}` | Each utterance transcribed: `speakerId`, `text`, `startedAt`, `endedAt`, `brain` |
+| camelRun → page | `{"type":"speech",…}` | `state: "started"` (`speechId`, `latencyMs`, `startedAt`, `turn`) and `state: "ended"` (`reason`, `by`, `seconds`) |
+
+## Cost and credit
+
+A realtime session is billed by the tokens its model uses, at the provider's list
+price on the platform's key. Each answer is a `usage.recorded` with
+`kind: "speech"`, the model as `model`, its tokens, and `audioSeconds` of audio
+made, with the session's `subject` and `context.voiceSession`. Each answer bills
+the conversation so far again (mostly cached, at a tenth of the price or less),
+so a minute costs more as a call goes on.
+
+| Brain | A conversational minute (people talk half of it, the bot a third) |
+| --- | --- |
+| `gpt-realtime-2.1` | About $0.05 |
+| `gpt-realtime-2.1-mini` | About $0.02 |
+| `gemini-3.8-live` | $0.02 to $0.035 |
+| ElevenLabs Agents | $0.081 per minute of connection, silence included ($0.08 for the agent, $0.001 estimated for its model) |
+
+What people say is transcribed at the
+[transcription price](/camelrun/voice#billing), as `kind: "transcription"`.
+`ask_agent`'s runs are billed as any run. On your own key the provider bills you
+directly, and the usage record still carries the cost. Holding the call itself
+costs nothing.
+
+A session starts only when your account may spend (402 `SPEND_LIMIT`
+otherwise). An account that runs out during a call ends it: `reason: "budget"`,
+`limit: "tenant"`.
+
+With [end-user credits](/camelrun/end-user-credits), a realtime session needs
+one answer's hold ($0.05) of the subject's credit to start; a listening session
+needs only some credit left. Without it the start is a 402 `END_USER_CREDIT`.
+Each answer holds $0.05 before it is asked for and settles at what it cost, and
+running out ends the session (`limit: "end_user"`).
+
+## Privacy and your duties
+
+- **People in the call must know they're transcribed.** camelRun can't post in
+  Discord, so your app posts `notice.text` in the voice channel's chat when it
+  joins, from code your bot's authors can't turn off. camelRun can't check this.
+- **Audio is never stored.** It streams to the realtime provider (or, listening,
+  the transcription provider) as it is spoken, and is dropped. Transcripts aren't
+  kept beyond delivery: an undelivered webhook event is retried for up to 3 days,
+  and an agent keeps what `ask_agent` asked in its history. Logs carry ids,
+  lengths and counts, never audio or text.
+- **Encryption.** camelRun takes part in Discord's end-to-end encryption, and a
+  speaking bot sends audio only while every member of the call's encryption
+  group is one Discord named, never unencrypted.
+- Discord doesn't document receiving audio for bots, though every recording bot
+  does it, so it may change without notice.
+
+## Limits
+
+| | |
+| --- | --- |
+| Live sessions per account | 10 |
+| Sessions per bot and server | 1 |
+| Session length | `maxMinutes`, at most 720 |
+| One utterance | Up to 30 s (longer speech goes on in the next) |
+| Reconnect wait for new credentials | 15 s |
+| `realtime.instructions` | 8,000 characters |
+| `metadata` | 4 KB of JSON |

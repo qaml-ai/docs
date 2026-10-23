@@ -23,7 +23,9 @@ never lands in your shell history.
 
 This creates a Next.js app with the chat, the server route it talks to, a tool
 drawn by its own component, and a demo sign-in for you to replace with your own.
-Pass `--base-url` to point it at a self-hosted runtime.
+Pass `--base-url` to point it at a self-hosted runtime. Examples with Vite
+(React, Vue, Svelte, Solid), the read proxy and the AI SDK are in
+[examples/frontend](https://github.com/qaml-ai/run/tree/main/examples/frontend).
 
 <Warning>
   The demo sign-in treats every browser as a user. Deployed with
@@ -94,7 +96,7 @@ npm install @camelai/run @camelai/run-react
 | `authorize(request, { thread, action })` | Required. Return `{ userId, name?, agentKey? }`, or `null` for a 401 |
 | `agent` | How the user's agent is made: `{ instructions, model, tools, definition, context, spendLimit, ... }`, or a function of the user |
 | `onSend({ auth, text, data, request })` | Runs before each message. Return `{ text?, metadata? }`, or `throw new Response(...)` to refuse it (quotas, moderation) |
-| `browserToken` | `{ ttlSeconds, events, redact, url }` for the tokens it mints. Default 15 minutes, with provider costs left out |
+| `browserToken` | `{ ttlSeconds, events, redact, scopes, url }` for the tokens it mints. Default 15 minutes, with provider costs left out. `scopes: ["events", "state", "history", "inputs", "children"]` adds `children`, to read the agent's background sub-agents too |
 | `allowedOrigins` | Other origins whose pages may call the route, with CORS |
 | `proxy` | `true`: browsers also read their agent through this route and only ever talk to your origin. See [below](#read-through-your-route) |
 | `linkAnyMountedPath` | `true`: users may download any file in the agent's mounts. By default, only files the agent presented or wrote to its own workspace |

@@ -53,8 +53,21 @@ Generate the secrets with `openssl rand -hex 32`.
 | Variable | |
 | --- | --- |
 | `AGENT_DRAIN_TIMEOUT_MS` | How long a stop waits for running turns before handing them off. Default 100,000 |
+| `AGENT_MAX_RESUMES` | How many times a turn resumes after losing its node (default 2); the next loss fails the run with `resume_limit`. Handoffs at a step boundary don't count |
 | `AGENT_DATABASE_POOL_SIZE` | Database connections per node. Default 10 |
 | `AGENT_TOOL_SEARCH` | Ranking for `tools.search`: `keyword` (default), or `embeddings` with an embeddings API key |
+
+## Account mail
+
+Optional. With a sender, people can reset a forgotten password by email, and
+[scheduled agents](/camelrun/schedules) can email their reports. Without it,
+schedules with `email` are refused; schedules without email are unaffected.
+
+| Variable | |
+| --- | --- |
+| `AGENT_ACCOUNT_EMAIL_FROM` | The sender: a verified Amazon SES identity |
+| `AGENT_ACCOUNT_EMAIL_PROVIDER` | `ses` (default), with the runtime's AWS credentials and `AWS_REGION`, allowed `ses:SendEmail`. `log` writes each link to the log instead and sends no mail, so scheduled email needs `ses` |
+| `AGENT_ACCOUNT_EMAIL_NAME`, `AGENT_ACCOUNT_EMAIL_CONFIGURATION_SET` | The sender's display name (default `camelRun`), and an SES configuration set to send with |
 
 ## Several tenants
 

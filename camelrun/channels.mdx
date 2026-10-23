@@ -23,7 +23,8 @@ curl https://run.camelai.com/v1/channels \
 ```
 
 Each conversation's agent is made from the channel's `definition`. A channel
-created without one gets an empty definition of its own.
+created without one gets an empty definition of its own, which is deleted with
+the channel.
 
 | Service | Credentials | Messages arrive by | One conversation (one agent) is |
 | --- | --- | --- | --- |
@@ -32,7 +33,7 @@ created without one gets an empty definition of its own.
 | `discord` | `botToken` | The Gateway, which camelRun keeps connected | A DM, or a channel or thread where the bot is @mentioned |
 | Camel Discord bot | None: one Discord authorization from the console | Camel's shared Gateway | An allowed server channel or thread where Camel is @mentioned |
 | `github` | `appId`, `privateKey`, `webhookSecret` | Webhook, pasted into the GitHub App | A pull request or issue |
-| `webhook` | `secret`, optional `replyUrl` | Webhook, pasted into the sending service | Whatever the `key` template names |
+| `webhook` | `secret`, optional `replyUrl` | Webhook, pasted into the sending service | Whatever the `key` template names (one agent by default) |
 
 Creating a channel checks its credentials with the service. Credentials are
 stored encrypted, and the API returns only masked values.
@@ -118,13 +119,17 @@ with your own bot token below.
     `im:history`, `channels:history` (and `groups:history` for private
     channels), `files:read` and `files:write`, and install it. Paste the
     channel's `webhookUrl` into Event Subscriptions and subscribe to
-    `app_mention`, `message.im` and `message.channels`. A mention starts a
-    thread and replies go there; later messages in that thread reach its agent
-    without a mention.
+    `app_mention`, `message.im` and `message.channels`. Deliveries must carry a
+    valid `X-Slack-Signature` from the signing secret, at most five minutes
+    old. A mention starts a thread and replies go there; later messages in that
+    thread reach its agent without a mention. Slack has no typing indicator for
+    bots.
   </Accordion>
   <Accordion title="Discord">
     Create an application, add a bot, and invite it with View Channel, Send
     Messages, Send Messages in Threads, Attach Files and Read Message History.
+    camelRun keeps the bot's Gateway connection, reconnecting as needed, and
+    retries a token Discord rejects every five minutes.
     The bot needs no privileged intents: it answers DMs and messages that
     mention the bot user. A mention of a role with the bot's name doesn't
     count: in autocomplete, pick the entry with the App badge. Each DM, channel
@@ -140,11 +145,21 @@ with your own bot token below.
     secret, and install it. Create the channel with the App ID, the private key
     and the secret, then paste the channel's `webhookUrl` into the app.
 
-    Each pull request or issue gets its own agent. A pull request's diff is
-    attached as `pr-<n>.diff`, and the reply is a comment. `settings` choose
-    what starts a turn: `events`, `repos` (`owner/repo` or `owner/*`),
-    `ignoreDrafts` (default `true`), `reply` (`comment` or `none`), `authors`
-    (`allowlist` or `members`) and `debounceSeconds` (default 30).
+    Each pull request or issue gets its own agent. The prompt describes the
+    event, a pull request's current diff is attached as `pr-<n>.diff`, and the
+    reply is a comment (files are sent as links). Nothing the app does itself
+    starts a turn. The channel's `settings` choose what does:
+
+    | Setting | Default | Meaning |
+    | --- | --- | --- |
+    | `events` | All but `issues.opened` | Some of `pull_request.opened`, `pull_request.reopened`, `pull_request.ready_for_review`, `pull_request.synchronize` (new commits), `issue_comment` and `pull_request_review_comment` (comments that @mention the app), `issues.opened` |
+    | `repos` | Every repository the app is installed on | `owner/repo` or `owner/*` |
+    | `ignoreDrafts` | `true` | Draft pull requests start nothing until marked ready |
+    | `reply` | `comment` | `none`: nothing is posted; the agent acts through its tools |
+    | `authors` | `allowlist` | `members`: repository owners, members and collaborators need no allowlist entry |
+    | `debounceSeconds` | `30` | New commits wait this long for more, so a burst of pushes starts one turn |
+
+    The allowlist takes GitHub logins.
 
     <Warning>
       On a public repository, anyone can open pull requests and comments.
@@ -155,9 +170,10 @@ with your own bot token below.
 </AccordionGroup>
 
 <Note>
-  The runtime also supports email channels, an address that agents answer
-  mail at. They require a runtime configured to receive mail, and aren't
-  enabled on run.camelai.com.
+  The runtime also supports `email` channels: an address that agents answer
+  mail at, with allowlists, threads and forwarded support mail. They need a
+  runtime with its own mail domain set up to receive mail, so they're available
+  when you [self-host](/camelrun/self-hosting), and not on run.camelai.com.
 </Note>
 
 ## What all channels share
@@ -165,16 +181,18 @@ with your own bot token below.
 - Each external conversation gets its own agent, made on first contact from the
   channel's definition, at its revision then.
 - Senders must be on the allowlist (`access.allow`) unless the channel sets
-  `access.public`. Each sender is rate limited (`limits.perSenderPerMinute`,
+  `access.public`: Telegram and Discord user ids or @usernames, Slack member
+  ids (`U0123ABCD`). Each sender is rate limited (`limits.perSenderPerMinute`,
   default 10), and the channel has a daily turn cap (`limits.turnsPerDay`,
   default 1,000).
 - Each message carries its sender as `from`, and tool calls carry a runtime-set
   `origin` (`{channel, conversationId, sender}`) that tools can authorize
-  against.
+  against. See [Multi-user](/camelrun/multi-user).
 - Attachments are streamed into the agent's workspace at
   `uploads/<requestId>/<name>`: up to 10 files a message, 25 MiB each (20 MB
   on Telegram) and 100 MiB in all. A file too large or that fails to download
-  is left out, and the prompt says so.
+  is left out, and the prompt says so. Voice notes and audio files are
+  transcribed for the model as they arrive: see [Voice](/camelrun/voice).
 - The turn's final answer is sent back when the turn ends, split to the
   service's message limit (4,096 characters on Telegram, 4,000 on Slack, 2,000
   on Discord), with a typing indicator meanwhile where the service has one.
@@ -207,22 +225,30 @@ curl https://run.camelai.com/v1/channels \
 | Setting | |
 | --- | --- |
 | `signature` | How a delivery proves itself: `{"type": "standard"}` (Standard Webhooks, the default), `{"type": "hmac-sha256", "header", "prefix"?, "encoding"?}` (GitHub, Sentry, Linear, Shopify), or `{"type": "token", "header"}` (GitLab). Unsigned or wrongly signed deliveries get a 401. A signature over a timestamp and the body, such as Stripe's, isn't one of these, so it can't be verified |
-| `key` | Picks the conversation, and so the agent. Deliveries that render to the same key go to the same agent. Without a key, the channel has one agent |
-| `prompt` | What the agent is told. By default, the payload itself. Either way the whole payload is attached as `payload.json` |
-| `sender` | Who a delivery is from, for `from` and rate limits, such as `{{actor.email}}` |
-| `filter` | Conditions that must all hold (`path` with `in`, `equals` or `exists`), or the delivery is acknowledged and ignored |
-| `idPath`, `idHeader` | Where a delivery's id is, so retries are dropped |
+| `key` | Picks the conversation, and so the agent. Deliveries that render to the same key go to the same agent, which keeps its history. Without a key, the channel has one agent. A key with characters other than letters, digits, `_`, `.` and `-`, or longer than 64, is cleaned up and given a hash suffix |
+| `prompt` | What the agent is told. By default, the payload itself, pretty-printed (cut off past 8,000 characters). Either way the whole payload is attached as `payload.json` |
+| `sender` | Who a delivery is from, for `from` and rate limits (default `webhook`), such as `{{actor.email}}` |
+| `filter` | Conditions that must all hold (`path` with `in`, `equals` or `exists`), or the delivery is acknowledged and ignored. Values are compared as text |
+| `idPath`, `idHeader` | Where a delivery's id is, so retries are dropped. Without either, the id is the first of `webhook-id`, `X-Request-Id`, `X-Delivery-Id`, `X-GitHub-Delivery`, `Linear-Delivery` and `Idempotency-Key`, else a hash of the body |
+
+The `hmac-sha256` header holds the HMAC-SHA256 of the raw body, in hex (or
+`"encoding": "base64"`), after the optional prefix: Linear uses
+`Linear-Signature`, Shopify `X-Shopify-Hmac-Sha256` with base64. For
+`standard`, a `whsec_` secret is base64 after the prefix; any other secret is
+used as it is.
 
 Templates are `{{path}}`: a dotted path into the JSON payload
-(`data.items.0.id`), or `{{headers.<name>}}` for a request header. Bodies must
-be JSON, up to 1 MiB.
+(`data.items.0.id`), `{{headers.<name>}}` for a request header, or
+`{{body.<path>}}` for a payload field named `headers`. A missing value renders
+as nothing, and an object as JSON. Bodies must be JSON, up to 1 MiB.
 
 There's no conversation to answer, so the agent acts through its tools and the
 turn's end reaches you as a [`run.completed`](/camelrun/webhooks) event. To get
 the reply too, set `credentials.replyUrl`: each reply is POSTed there as
 `{"type": "message", "conversationId", "text"}`, signed per Standard Webhooks
-with the channel's secret.
+with the channel's secret, and retried like any channel's messages. Each
+`send_message` goes there too, and files are sent as a link.
 
 A webhook channel is public (`access.public: true`) and allows 60 deliveries a
 minute per sender: the signature is what keeps others out. It still has the
-daily turn cap.
+daily turn cap, and `access` and `limits` can be set as for any channel.

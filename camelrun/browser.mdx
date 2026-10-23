@@ -30,11 +30,18 @@ Python: `await agents.runtime.browser_token(agent.id, ttl_seconds=900)`. REST:
 `POST /v1/agents/{id}/browser-tokens {ttlSeconds?, scopes?, events?, redact?, subject?}`.
 
 - The token reads that one agent: only `GET /v1/agents/{id}/events`, `/state`,
-  `/history` and `/inputs`. Everything else is a 403.
+  `/history` and `/inputs` (or the `scopes` you name). Everything else is a 403.
+  Add `children` to its scopes and it reads the same of the agent's
+  [background sub-agents](/camelrun/multi-agent#background-sub-agents), by
+  their ids.
 - It lasts `ttlSeconds` (default 900, from 5 to 3,600), and its event stream
   ends when it expires. Nothing revokes it sooner, so keep it short.
-- `events` limits the event types it gets. `redact: ["usage.cost"]` leaves
-  provider costs out of everything it reads.
+- `events` limits the event types it gets. The watcher needs `turn_opened`,
+  `message_start`, `message_update` and `message_end` to follow messages.
+- `redact: ["usage.cost"]` leaves every cost out of everything it reads: each
+  message's `usage.cost`, and the provider's own `usage.providerCost` and
+  `providerCreditCost`, in events, snapshots, history and inputs.
+- It never gets a run's result, only whether and why a run stopped.
 - It works from any origin: the token grants the read. Send it as
   `Authorization: Bearer`, never in a URL.
 
@@ -67,12 +74,21 @@ to under 30 KB. `state` is:
 | `pendingInputs` | Inputs the agent waits on. Answer them through your server |
 | `lastOutcome` | How the latest run ended: `{id, stopped?, error?}` |
 | `hasOlder` | Whether `loadOlder()` has more |
+| `loaded` | History and state have been read since it connected. Until then, no messages means they are on their way: show a loading state, not an empty chat |
 | `connected`, `transport` | `sse`, or `poll` where a proxy buffers streams |
-| `expired` | The token expired and couldn't be renewed, so the watcher stopped |
+| `expired` | The token expired (or was refused) and couldn't be renewed, so the watcher stopped. Watch again with a new token |
 
-The watcher streams over SSE and falls back to long polls where streams deliver
-nothing. It reconnects from its cursor, or from a snapshot of the running turn,
-and closes the stream while the page is hidden.
+- The watcher streams over SSE and falls back to long polls where streams
+  deliver nothing. It reconnects from its cursor, or from a snapshot of the
+  running turn, and closes the stream while the page is hidden
+  (`hiddenGraceMs`, default 30 s).
+- Without `getToken`, the watcher stops when its token expires, with
+  `state.expired` set and an error saying so. Pass `getToken` for any view that
+  stays open longer than the token.
+- In a browser, a network failure and a CORS refusal both look like "Failed to
+  fetch", so the watcher's error says which to check. The usual cause is a
+  token that isn't a browser token (cross-origin reads need one), or a wrong
+  `url`.
 
 ## Send messages through your server
 
@@ -88,6 +104,21 @@ return Response.json({ reply: run.text });
 
 The watcher shows the run as it happens, and `metadata.clientId` lets the page
 match the stored message to the bubble it showed optimistically.
+
+## Ready-made components
+
+camelRun serves a [shadcn](https://ui.shadcn.com) registry of React components:
+a streaming chat with tool cards, questions, approvals and files
+(`agent-chat`), its streaming-tolerant Markdown (`agent-markdown`), and the
+Next.js App Router route the chat talks to (`agent-route`), which keeps your API
+key on the server and lets each user reach only their own agent.
+
+```bash
+npx shadcn@latest add https://run.camelai.com/r/agent-chat.json
+```
+
+`https://run.camelai.com/r/registry.json` lists them. See
+[Chat app](/camelrun/chat-app).
 
 ## Without the watcher
 

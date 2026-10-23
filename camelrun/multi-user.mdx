@@ -26,9 +26,11 @@ const run = await agent.run(message, { user: currentUser.id });
 - `subject` and `context` are set when the agent is made, with your API key.
   Neither the agent's own token nor the model can change them. Your tools get
   them as `identity.subject` and `identity.context`.
-- `user` names who sent this message. The model sees who sent it, and tools get
-  it as `identity.actor`. Use `user: { id, name }` to give the model a display
-  name too.
+- `user` names who sent this message. The model sees who sent it, in a block
+  only camelRun can write, and tools get it as `identity.actor` (and
+  `identity.user`). Use `user: { id, name }` to give the model a display name
+  too. Names are the sender's own and never proof of anything, and camelRun
+  tells the model so.
 - An agent shared by several people shares its whole conversation with all of
   them. Keep private data in agents of one person each.
 
@@ -47,6 +49,7 @@ const tools = {
     execute: (_args, { identity }) => db.todos({ user: identity!.user, org: identity!.context.org }),
   }),
 };
+// tenant: yours (GET /v1/me). Other tenants' agents can reach this URL too, claiming any user: their tokens are refused.
 export default { fetch: serveTools(tools, { runtime: "https://run.camelai.com", tenant: "acme" }) };
 ```
 
@@ -58,7 +61,8 @@ const definition = await agents.runtime.upsertDefinition("support", {
 ```
 
 Authorize every call as `identity.user` within `identity.context`, never from
-the model's arguments. See [Served tools](/camelrun/tools#served-tools) and
+the model's arguments. That identity is only meaningful within your own tenant,
+which is why `serveTools` requires `tenant`. See [Served tools](/camelrun/tools#served-tools) and
 [Identity](/camelrun/tools#identity).
 
 Your request handlers can be serverless: an agent upserted without local tools
@@ -72,34 +76,80 @@ messages through your server.
 
 ## Spend limits and keys per user
 
+- **To charge each person** (by `subject`) for what their agents spend, with a balance, daily
+  free allowances and a markup, see [End-user credits](/camelrun/end-user-credits).
 - **`spendLimit: { usd }`** caps what one agent may spend on model calls from
   now on. Set it on upsert or with `PATCH /v1/agents/{id}/configuration`.
   Setting it starts counting from zero, so you can set the remaining allowance
-  before each run. An agent at its limit gets 402 for new runs.
+  before each run. An agent at its limit gets 402 for new runs, and a running turn ends with
+  the run failed as `spend_limit`.
 - **A key scope per customer** holds that customer's own provider keys, so
-  their agents call providers with them. See [Key scopes](/camelrun/models-and-keys#key-scopes).
+  their agents call providers with them: `PUT /v1/key-scopes/{scope}/providers/{provider}`,
+  then `keyScope` on upsert. See [Key scopes](/camelrun/models-and-keys#key-scopes).
 - **`modelHeaders`** label each model call, for example for a gateway's
   per-conversation logs.
 - **The `usage.recorded` [webhook](/camelrun/webhooks)** reports each model
   response's cost with the agent's `subject`, `context`, `actor` and `keyScope`,
   so you can meter per user.
+- **[Workspaces](/camelrun/workspaces)** group agents and definitions by
+  project or use case, with usage per workspace. They group resources inside
+  your one account; they don't separate users.
 
 ## Match messages to your records
 
 `run(text, { metadata })` attaches your own key-value data to the message (at
 most 16 string values). The stored message and its run carry it in history,
 events and webhooks; the model never sees it. Pass `idempotencyKey` to choose the
-run's id, so a retried request never runs twice.
+run's id, so a retried request never runs twice, and to find the run later.
 
 ## Bring in existing conversations
 
 A conversation that began elsewhere can continue on an agent made with its
-history: `initialMessages` on `POST /v1/agents` (or on an upsert's first
-create). Messages are [Pi](https://github.com/earendil-works/pi) messages:
-`user`, `assistant` and `toolResult`, plus an optional `compactionSummary` that
-the model sees in place of every message before it.
+history: `initialMessages` on `POST /v1/agents` (`createAgent({ initialMessages })`,
+or an upsert's first create; Python `agents.upsert(key, initial_messages=[…])`).
+Messages are [Pi](https://github.com/earendil-works/pi) messages, kept as they
+are, with what a message leaves out filled in:
 
-History is imported only when the agent is made, up to 16 MB of JSON. An
-invalid message is `INVALID_HISTORY` (400), naming the message and what it
-lacks. If the history is larger than the model's context, the first run
-compacts it before calling the model.
+- `user` (content a string, or text, image and file blocks), `assistant` (text,
+  thinking and `toolCall` blocks, with its `usage`, `provider` and `model` if
+  you have them) and `toolResult` (`toolCallId`, `toolName`, content).
+- `compactionSummary` (`summary`, `tokensBefore`): the model sees this summary
+  instead of every message before it. Put it just before the first message it
+  keeps; only the last counts. History still shows every message.
+
+### From another API's format
+
+`importMessages` (instead of `initialMessages`) takes `{format, messages, model?}`
+and converts the conversation to Pi messages, tool calls and results included:
+
+| `format` | `messages` |
+| --- | --- |
+| `anthropic` | Messages API messages: text, images, `tool_use`, `tool_result`, `thinking` and `redacted_thinking` |
+| `openai-responses` | Responses API input items: messages, `function_call`, `function_call_output` and `reasoning` |
+| `openai-chat` | Chat Completions messages, `tool_calls` and `tool` results included |
+
+```ts
+await agents.upsert(`thread-${thread.id}`, { importMessages: { format: "openai-chat", messages: thread.messages, model: "openai/gpt-6-sol" } });
+```
+
+`model` names the model that wrote the assistant turns. Its reasoning (signed
+thinking, encrypted reasoning items) goes back as it came to that same model;
+any other model gets it as text, or not at all. System and developer messages
+are left out: the agent's own prompt replaces them. Images must be base64 (or
+`data:` URLs); nothing is fetched. Python takes `import_messages={…}`, and
+`toPiMessages(input)` (TypeScript) converts one yourself, to see what an agent
+will begin with.
+
+### Import rules
+
+History is imported only when the agent is made: an agent that has one keeps
+it, and an upsert with the same key makes the agent once. `GET …/history` shows
+it at once. A tool call with no result gets one saying so, and tools the old
+conversation called need not exist. If the history is larger than the model's
+context, the first run compacts it before calling the model, charged as any
+compaction.
+
+A refused import makes no agent. `INVALID_HISTORY` (400) names the message and
+what it lacks, and past 16 MB of JSON it is `HISTORY_TOO_LARGE` (413). Send the
+most recent messages that fit, after a `compactionSummary` of the rest, and
+upload images as files first to keep them out of those 16 MB.

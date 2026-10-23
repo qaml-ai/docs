@@ -1,7 +1,7 @@
 ---
 title: 'camelRun models, provider keys and spend limits'
 sidebarTitle: 'Models and keys'
-description: 'Choose a model for each camelRun agent, bring your own provider keys, give each customer a key scope, and cap what agents spend.'
+description: 'Choose a model for each camelRun agent, set temperature and output length, bring your own provider keys, give each customer a key scope, cap spend.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/models-and-keys.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -9,7 +9,8 @@ description: 'Choose a model for each camelRun agent, bring your own provider ke
 ## Choose a model
 
 Agents name a model as `provider/model-id` from the catalog, such as
-`anthropic/claude-sonnet-5-5` or `openrouter/anthropic/claude-sonnet-5`. List it
+`anthropic/claude-sonnet-5-5`, `openai/gpt-5.2` or
+`openrouter/anthropic/claude-sonnet-5`. List it
 with `GET /v1/models` (`?available=true` for the models your account can use
 now), or on the console's **Models & keys** page. Change an agent's model between
 runs with `upsert` (a changed `model`) or `agent.configure({ model })`; its
@@ -17,20 +18,39 @@ history carries over. `?available=true` answers `[]` when your account has no
 key any model can use (a self-hosted runtime before its first key, say); that
 response's `X-Camelrun-Hint` header says how to set one.
 
-An agent that names no model gets the runtime's default, Claude Sonnet 5.5, on
-the first of Anthropic, OpenRouter and Bedrock you have a key for. It is chosen
-when the agent is made and stays its model. `GET /v1/me` returns it as
-`defaultModel`.
+Each model in the list says whether it streams tool-call arguments as it writes
+them (`toolCallStreaming`, the console's **Tool args** column). With `true`,
+`toolcall_delta` events arrive while the model writes a call's arguments, so a
+page that renders what a tool writes (a section, a card, a form) can show it as
+it is written. With `false`, the arguments sometimes arrive in one piece, so you
+can't count on streaming: Gemini, most GLM 4.x and Mercury 2 through OpenRouter
+do this. `"unknown"` means the model hasn't been measured, not that it streams.
+A latency-first app that renders tool output should pick a model that says
+`true`.
+
+An agent that names no model (and whose definition names none) gets the
+runtime's default: Claude Sonnet 5.5, on the first of Anthropic
+(`anthropic/claude-sonnet-5-5`), OpenRouter
+(`openrouter/anthropic/claude-sonnet-5.5`) and Bedrock
+(`amazon-bedrock/global.anthropic.claude-sonnet-5-5`) you have a key for (its key
+scope's keys count too), else `openrouter/openai/gpt-6-luna`. It is chosen when
+the agent is made and stays its model. `GET /v1/me` returns it as
+`defaultModel` (`runtime.me()` in the SDKs).
 
 A model call uses, in order:
 
 1. The key of the agent's [key scope](#key-scopes) for the model's provider.
 2. Your account's own key for the provider, set in the console or with
    `PUT /v1/providers/{provider}/key`.
-3. For prepaid accounts, the platform's key, charged to your credit.
+3. The platform's key, charged to your credit at the provider's price.
 
-An agent on a provider none of these has a key for is still made, and its runs
-fail with `model_key_missing`, naming the key to set.
+A provider with your own key never uses the platform's, and an account that
+signed up before billing never uses the platform's. An agent on a provider none
+of these has a key for is still made, and its runs fail with
+`model_key_missing`, naming the key to set. Web search, X search and
+`web_fetch`'s page rendering take their keys (`exa`, `brave`, `parallel`,
+`xai`, `firecrawl`) the same way, without key scopes (see
+[Built-ins](/camelrun/tools#built-ins)).
 
 `PUT /v1/providers/{provider}/key` checks the key with the provider before it
 stores it, and refuses one the provider rejects. `{"apiKey": "...", "verify": false}`
@@ -46,6 +66,112 @@ A model on a server of your own that speaks OpenAI's or Anthropic's API (vLLM,
 Ollama, a gateway, a hosted API the catalog lacks) works the same way once you
 add it as a provider. See [Custom models](/camelrun/custom-models).
 
+### Amazon Bedrock
+
+Bedrock takes a [Bedrock API key](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html),
+sent as a bearer token, and the AWS region to call. It is the only credential
+camelRun takes for Bedrock: no AWS access keys and no SigV4 signing.
+
+- For the whole account: `PUT /v1/providers/amazon-bedrock/key` with
+  `{"apiKey": "...", "region": "us-west-2"}`, or the console's **Models & keys**
+  page. The region is required. The key isn't checked when saved (Bedrock has no
+  free call for it); the first model call is.
+- For one key scope: `PUT /v1/key-scopes/{scope}/providers/amazon-bedrock` with
+  `{"apiKey": "...", "region": "us-west-2"}`, or a regional `baseUrl`
+  (`https://bedrock-runtime.<region>.amazonaws.com`) the region is read from.
+
+Name Bedrock's Claude models by an inference profile:
+`amazon-bedrock/global.anthropic.claude-sonnet-5-5` (routed anywhere, at the
+catalog's price), or a geography's, such as `us.` or `eu.` (kept in that
+geography, a tenth dearer). Bedrock refuses a Claude model's base id on demand,
+so `GET /v1/models` lists the profiles only, and an agent that names a base id
+is called through its global profile. An inference profile's geography must
+include the key's region.
+
+### Azure OpenAI
+
+The catalog's `azure/<model>` entries (`azure/gpt-6-sol`, `azure/gpt-6-luna`,
+`azure/gpt-6.1-sol` and others) are OpenAI's models served on the platform's
+keys only: you can't set an Azure key. `GET /v1/models?available=true` lists the
+ones you can use. Each costs what the same model does on OpenAI, charged to your
+credit, and takes the same thinking levels, tools and structured output. Azure's
+own content filter may refuse a prompt OpenAI would answer; the run then fails
+with Azure's words.
+
+### OpenRouter routing
+
+OpenRouter's models are called through its Responses API, whatever key they
+use, except Anthropic's, which keep its Messages API for prompt caching.
+DeepSeek's models keep its Chat Completions API, where every earlier turn's
+reasoning goes back as `reasoning_content`, as DeepSeek requires.
+
+Some models are served only by the OpenRouter hosts the platform lists for them,
+and OpenRouter balances load among those. DeepSeek V4.1 Flash goes to Fireworks,
+Together, Parasail, CoreWeave and Nebius. Any other model, DeepSeek V4.1 Flash
+1017 included, is OpenRouter's to route among all its hosts. A routing variant
+such as `:nitro` is named as usual
+(`openrouter/anthropic/claude-sonnet-5:nitro`).
+
+An agent, definition or run with `dataCollection: "deny"` asks OpenRouter for
+hosts that don't collect its data: OpenRouter skips the providers whose data
+policy says they may train on it (for DeepSeek V4.1 Flash 1017, DeepSeek's own
+endpoint). It applies to the agent's turns and compaction summaries. Nothing is
+sent by default, and only you can change it (`PATCH
+/v1/agents/{id}/configuration`; `null` removes it).
+
+## Output length and temperature
+
+Two settings shape each model response, and both can be set.
+
+- `maxOutputTokens` is the most the model writes in one response. It must be at
+  most the model's own maximum (`maxTokens` in `GET /v1/models`), which is also
+  the default. A response that reaches it ends with `stopReason: "length"`. On a
+  Claude model with a thinking budget (models before adaptive thinking, such as
+  Claude Sonnet 4.5), the budget comes on top. Elsewhere, reasoning counts
+  toward it.
+- `temperature` (0 to 2) sets how varied the model's sampling is: lower is more
+  deterministic. The default is the provider's.
+
+```json
+{"model": "anthropic/claude-sonnet-5", "maxOutputTokens": 2000, "temperature": 0.2}
+```
+
+Not every model takes a temperature, and one a model would refuse would fail
+every run, so camelRun refuses it with a 400 where you set it:
+
+- Claude Opus 4.7 and later, Sonnet 5.5 and Fable models take none, wherever
+  they are served (Anthropic, Bedrock, OpenRouter).
+- A model that always reasons takes none: OpenAI's o-series and GPT-5.
+- A reasoning model takes none while it reasons: its `thinkingLevel` must be
+  `off`. Give `"thinkingLevel": "off"` with the temperature, or
+  `"temperature": null` with a new thinking level.
+
+Set them when you make an agent, for a [stateless
+run](/camelrun/stateless-runs), or for every agent of a
+[definition](/camelrun/definitions). Change them with
+`PATCH /v1/agents/{id}/configuration`; `null` removes either. The same check
+runs there, against the model and thinking level the agent will have.
+`GET /v1/agents/{id}` shows both (`null` when unset). Compaction summaries keep
+camelRun's own settings. If a later change makes a temperature inapplicable (a
+definition applied with a new model or thinking level), the agent's calls leave
+it out rather than fail.
+
+## Prompt caching
+
+camelRun marks the system prompt and tools (and the latest message) as a cached
+prefix on Anthropic's API and on Bedrock's Claude models; OpenAI and others
+cache on their own. The prefix is the same bytes from run to run (no dates or
+ids in it), so from an agent's second run on, `usage.cacheRead` counts what came
+from the cache.
+
+A provider caches only a prefix past its minimum: on Anthropic 1,024 tokens for
+Sonnet 5 and Opus 4.8, 2,048 for Opus 4.7, 4,096 for Haiku 4.5 and Opus 4.6. An
+agent's built-in prompt and tools come to about 2,000 tokens, so on Haiku 4.5 a
+short-instruction agent caches nothing (`cacheRead: 0`) until its prefix passes
+4,096 tokens; on Sonnet 5 its second run reads about 2,400 tokens from the
+cache. An agent that needs no tools can drop most of that prefix instead
+(`codeMode: false`; see [Tools](/camelrun/tools#without-code-codemode-false)).
+
 ## Key scopes
 
 An application that serves many customers can give each one its own provider
@@ -58,46 +184,120 @@ curl -X PUT https://run.camelai.com/v1/key-scopes/org_abc123/providers/openroute
   -d '{"apiKey": "sk-or-..."}'
 ```
 
-- An entry is `{apiKey?, baseUrl?, headers?, region?}`. `baseUrl` replaces the
-  provider's API root, for example to route through an AI gateway, and
-  `headers` are sent with every call. Keys and headers are stored sealed.
+In Python, `await agents.runtime.set_scope_key("org_abc123", "openrouter", api_key=…, base_url=…, headers=…)`;
+`key_scope(scope)`, `delete_scope_key(scope, provider)` and
+`delete_key_scope(scope)` read and remove them.
+
+- An entry is `{apiKey?, baseUrl?, headers?, region?}`, for any model provider
+  of `GET /v1/providers` that takes a key, or `amazon-bedrock`. `headers` are
+  sent with every call. Keys and headers are stored sealed.
+- `baseUrl` (HTTPS, on a public address) replaces the provider's API root in
+  each request's URL, as an AI gateway's provider path stands for it (Cloudflare
+  AI Gateway's `…/openrouter`, `…/anthropic`, `…/openai`). Google's and
+  Mistral's entries take no `baseUrl`.
+
+  | Provider | Root `baseUrl` replaces | Requests |
+  | --- | --- | --- |
+  | `openrouter` | `https://openrouter.ai/api/v1` | `POST <baseUrl>/responses`; Anthropic models `POST <baseUrl>/messages?beta=true` |
+  | `anthropic` | `https://api.anthropic.com` | `POST <baseUrl>/v1/messages?beta=true` |
+  | `openai` | `https://api.openai.com/v1` | `POST <baseUrl>/responses` (or `/chat/completions`, per the catalog's API for the model) |
+  | `amazon-bedrock` | `https://bedrock-runtime.<region>.amazonaws.com` | `POST <baseUrl>/model/<URL-encoded id>/converse-stream` |
+  | Others | The model's base URL in `GET /v1/models` | As the provider's API appends |
+
 - `apiKey` may be left out for `openrouter`, `anthropic` or `openai` behind a
-  `baseUrl` whose gateway holds the provider key itself.
+  `baseUrl` whose gateway holds the provider key itself (authenticated by, say,
+  `cf-aig-authorization` in `headers`). Its calls send no `Authorization` or
+  `x-api-key` header, only the entry's `headers`.
 - For `amazon-bedrock`, the key is a Bedrock API key, and the entry needs a
-  `region`.
+  `region` (or a regional `baseUrl`). See [Amazon Bedrock](#amazon-bedrock).
 - Give an agent its scope with `keyScope` at creation, or with
   `PATCH /v1/agents/{id}/configuration` (`null` clears it). The agent's own
-  token can't change it.
-- Each call reads the key at call time, so a changed key applies to every agent
-  in the scope within five seconds.
+  token can't change it. Applying a definition keeps it. An agent may be created
+  on a provider only its scope has a key for.
+- Each call, compaction summaries included, reads the key at call time, so a
+  changed key applies to every agent in the scope within five seconds.
 - `GET /v1/key-scopes/{scope}` lists the providers set, with each key's last four
-  characters, never a secret. `DELETE /v1/key-scopes/{scope}/providers/{provider}`
-  removes one entry, and `DELETE /v1/key-scopes/{scope}` the whole scope.
+  characters, `baseUrl`, `region` and the extra headers' names, never a secret.
+  `DELETE /v1/key-scopes/{scope}/providers/{provider}` removes one entry, and
+  `DELETE /v1/key-scopes/{scope}` the whole scope. Scope ids are 1 to 100
+  letters, digits, `_`, `.` and `-`.
+- A scope's `openai` key also transcribes its agents' audio and makes images for
+  `POST /v1/images` with that `keyScope` (see [Images](/camelrun/images) and
+  [Voice](/camelrun/voice)).
 
-Calls on scope keys aren't charged as platform tokens.
+Calls on scope keys aren't charged as platform tokens (agent time is charged as
+usual), and they're counted in `/v1/usage` under the model as usual.
 
 ## Model headers
 
 `modelHeaders: {name: value}`, set at creation or through
 `PATCH /v1/agents/{id}/configuration`, are non-secret headers sent on each of
-the agent's model calls. For example,
+the agent's model calls, compaction included. For example,
 `{"cf-aig-metadata": "{\"org\": ..., \"thread\": ...}"}` labels a shared
-gateway's logs per conversation. At most 20 headers and 8 KB. Auth and transport
-headers are refused with a 400.
+gateway's logs per conversation. A PATCH replaces them whole; `null` or `{}`
+removes them. They come after a key scope entry's `headers` and win on a clash.
+At most 20 headers and 8 KB. Auth headers (`authorization`, `x-api-key`,
+`cf-aig-authorization`, `x-amz-*` and the like) and transport headers are
+refused with a 400.
 
 ## Spend limits
 
 `spendLimit: {"usd": n}`, set at creation or through
 `PATCH /v1/agents/{id}/configuration`, is the most the agent may spend on model
-calls from then on, whoever's key they run on. Setting a value starts counting
-from zero; `null` removes it. `GET /v1/agents/{id}` shows
-`spendLimit: {usd, spent}`.
+calls from then on (turns and compaction summaries, at the provider's reported
+cost, else the catalog price), whoever's key they run on. Setting a value starts
+counting from zero; `null` removes it. A PATCH applies it at once, ahead of runs
+already queued. `GET /v1/agents/{id}` shows `spendLimit: {usd, spent}`.
 
-- An agent at or over its limit gets a 402 for new runs.
-- A running turn ends after the response that crossed the limit, with
-  `stopped: "spend_limit"`. The SDKs' `run()` fails with code `spend_limit`.
+- An agent at or over its limit gets a 402 for new `prompt` and `continue` runs.
+- A running turn ends after the response that crossed the limit (its tool calls
+  run and are recorded), with `stopped: "spend_limit"`. The SDKs' `run()` fails
+  with code `spend_limit`.
+- The result's `limit` says which limit it was: `"run"` (the run's own budget),
+  `"agent"`, `"tenant"` (your account's monthly cap) or `"credit"` (your prepaid
+  credit ran out). Where you meter end users, a run their credit stops fails
+  with code `end_user_credit` and `limit: "end_user"` (see
+  [End-user credits](/camelrun/end-user-credits)).
 - Only you can set it, not the agent's own token.
 
 A single run can have its own budget: pass `spendLimit` to `run`, `stream` or
-`POST /v1/agents/{id}/prompt`. The run ends the same way once it has spent that,
-and the agent's own limit still counts it.
+`prompt` (`spend_limit=` in Python), or to `POST /v1/agents/{id}/prompt`. The run
+ends the same way once it has spent that, before its next model request, and
+the agent's own limit still counts it. To give each prompt what is left of a
+budget you keep, send it with the prompt instead of reconfiguring the agent.
+
+## Run limits
+
+A run also stops at **1,000 model responses** (compaction summaries count) or
+**2 hours** from when it began, whichever comes first, so a model that never
+stops calling tools ends on its own. The turn ends after the response that
+reached the limit, before the next model request, with
+`stopped: "turn_limit"` and `code: "turn_limit"`; the reason is in `error`. The
+history stays valid, and the next message picks up from there.
+
+Lower them with `runLimits` when you make an agent, through
+`PATCH /v1/agents/{id}/configuration` (`null` removes them), or for every agent
+of a definition. One run can lower `maxResponses` and `maxSeconds` further with
+`runLimits` on `run`, `stream`, `prompt` or `send` (`run_limits=` in Python),
+only where they are lower than the agent's.
+
+| Field | |
+| --- | --- |
+| `maxResponses` | Model responses one run may make (default and at most 1,000) |
+| `maxSeconds` | Seconds one run may take (default and at most 7,200). A turn still inside a model request or tool call 60 seconds past it is aborted then |
+| `firstTokenSeconds` | Seconds a model request may wait for its first token before it fails as stalled and is retried (default 120, or 300 for a reasoning model at `thinkingLevel` high and up) |
+| `idleSeconds` | Seconds a streaming response may go quiet before it fails as stalled and is retried (default 45) |
+| `contextTokens` | The most context one model request carries (at least 20,000). Agent and definition only |
+
+A stalled request is retried like other transient provider errors; when retries
+run out, the run fails with code `model_stream_stalled`.
+
+### Context size
+
+A long history is compacted (its older part summarized) before a request would
+not fit the model's context window. On a model with a large window that is
+late: every request reads the whole context, so a long-lived agent pays for its
+history on each step. `runLimits.contextTokens` keeps each request within that
+many tokens instead: compaction starts in the background somewhat below it. For a
+chat agent whose turns mostly need what happened recently, 100,000 is a
+reasonable start.

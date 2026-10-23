@@ -11,7 +11,7 @@ version numbers are their own and do not line up.
 
 <CodeGroup>
 ```bash TypeScript
-npm install @camelai/run   # Node 22+, Bun, Deno, Cloudflare Workers
+npm install @camelai/run   # Node 22+ (on Node 26: 26.5.1+), Bun, Deno, Cloudflare Workers
 ```
 
 ```bash Python
@@ -21,16 +21,26 @@ pip install "camelai-run[pydantic]" # adds pydantic, for run(output=Model)
 ```
 </CodeGroup>
 
+<Warning>
+Node 26.3.1 to 26.5.0 ship a `fetch` that stops sending requests on a
+connection that holds an agent's event stream, so tool replies and later calls
+time out. The TypeScript SDK warns once when it runs on one of them. Upgrade to
+Node 26.5.1 or later, or use Node 24 LTS.
+</Warning>
+
 | TypeScript entry | |
 | --- | --- |
 | `@camelai/run` | Everything portable: `Agents`, `tool`, `schema`, the lower-level `AgentRuntime` and `AgentClient`, and the types |
 | `@camelai/run/node` | The same for Node and Bun, plus local file paths as attachments and `nodeListener` |
-| `@camelai/run/server` | `serveTools`, `verifyRuntimeToken`, `runtimeAuth`, `runtimeIdentity`, `createAgentHandler` |
+| `@camelai/run/server` | `serveTools`, `verifyRuntimeToken`, `runtimeAuth`, `runtimeIdentity`, `createAgentHandler`; `verifyFileUrl`, for checking a file URL a tool was sent |
 | `@camelai/run/watch` | `watchAgent`, for reading an agent from a browser |
 | `@camelai/run/chat` | `createAgentChat`, the framework-free chat store |
 | `@camelai/run/ai-sdk` | `AgentRuntimeChatTransport`, for the AI SDK's `useChat` |
-| `@camelai/run/mcp` | `fromMcpServer`, for attaching an MCP SDK server |
-| `@camelai/run/testing` | `testRuntime`, for signing identity tokens in tests |
+| `@camelai/run/mcp` | `fromMcpServer`, for attaching an MCP SDK server (needs `@modelcontextprotocol/sdk`) |
+| `@camelai/run/testing` | `testRuntime`, for signing identity tokens (and file URLs, `fileUrl`) in tests |
+
+The public types need nothing else installed: messages and events are declared
+in the SDK (`Message`, `AgentEvent`, `AssistantMessage` and the rest).
 
 ## Agents
 
@@ -54,14 +64,24 @@ without `await`. Its names are the TypeScript ones in snake_case
 - `apiKey` defaults to `CAMELAI_API_KEY`, and `url` to `CAMELAI_BASE_URL`, else
   `https://run.camelai.com`.
 - `agents.close()` closes every agent's connection so the process can exit.
-  Their runs go on in camelRun.
+  Their runs go on in camelRun. A process serving tools first finishes the calls
+  it is running, up to `drainMs` (Python `drain=`, seconds; default 25 s), while
+  new calls go to another process: call it on SIGTERM.
+- `connection` (Python `connection=`) says when agent handles hold their event
+  stream. `"lazy"`, the default, holds it only while `agent.stream()` reads a
+  run, so a server holding many agents keeps no idle connections, and
+  `agent.run()` asks for its outcome instead. A handle that serves tools, or has
+  `onEvent`, `onInput` or `onConnection`, holds the stream from `upsert` or
+  `get` until `close()`. `"eager"` holds it from the start for every handle.
+  Each `upsert`, `get`, `fork` and `agent` call can say otherwise.
 - `agents.runtime` is the lower-level `AgentRuntime`: definitions, volumes,
-  `listAgents()`, `browserToken(agentId)`, `inbox()` and `toolSources(agentId)`.
+  mounts, `listAgents()`, `browserToken(agentId)`, `inbox()` and
+  `toolSources(agentId)`.
 
 ### `agents.upsert(key, config)`
 
-The agent for `key`, made if there's none and brought to `config` if it
-differs. Returns a connected `Agent`.
+The agent for `key` (1 to 80 of `A-Z a-z 0-9 _ -`), made if there's none and
+brought to `config` if it differs. Returns a connected `Agent`.
 
 | TypeScript | Python | |
 | --- | --- | --- |
@@ -69,16 +89,30 @@ differs. Returns a connected `Agent`.
 | `instructions` | `instructions=` | The system prompt |
 | `instructionsAppend` | `instructions_append=` | Text after the prompt, such as per-conversation context |
 | `tools` | `tools=` | Tools served from this process: `{ name: tool({...}) }`, or a list of `@tool` functions |
-| `builtins` | `builtins=` | `web_search`, `web_fetch`, `schedule`, `ask_user`, `delegate`, `generate_image`, `agents` |
-| `definition` | `definition=` | Make it from a definition |
+| `mcp` | | An MCP server of yours to attach instead (`fromMcpServer`) |
+| `builtins` | `builtins=` | Tools camelRun answers itself: `web_fetch`, `web_search`, `x_search`, `schedule`, `ask_user`, `delegate`, `generate_image`, `agents`. See [Built-ins](/camelrun/tools#built-ins) |
+| `definition` | `definition=` | Make it from a definition (its model, prompt and tool sources) |
 | `thinkingLevel` | `thinking_level=` | `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` |
+| `maxOutputTokens`, `temperature` | `max_output_tokens=`, `temperature=` | The most the model writes in a response, and its sampling temperature (0 to 2; refused for a model or thinking level that takes none) |
 | `subject`, `context` | `subject=`, `context=` | Whom it acts for, and claims for its tools. Fixed at creation |
-| `keyScope`, `spendLimit`, `modelHeaders` | `key_scope=`, `spend_limit=`, `model_headers=` | See [Models and keys](/camelrun/models-and-keys) |
+| `keyScope`, `spendLimit`, `runLimits`, `modelHeaders` | `key_scope=`, `spend_limit=`, `run_limits=`, `model_headers=` | See [Models and keys](/camelrun/models-and-keys) |
+| `workspaceId` | `workspace_id=` | The [workspace](/camelrun/workspaces) it belongs to, or `null` for none. A new agent otherwise inherits its definition's; an upsert without it keeps the current one |
 | `mounts`, `fileTools` | `mounts=`, `file_tools=` | Its volumes (changed later only with `remount: true`), and whether it has file tools |
+| `codeMode` | `code_mode=` | `false`: no `js_exec`; the model calls every tool directly |
+| `delegate` | `delegate=` | Sub-agents it may hand tasks to (`{ agents, instructions?, maxDepth?, maxParallel? }`). See [Multi-agent](/camelrun/multi-agent) |
+| `mcpServers` | `mcp_servers=` | Remote MCP servers of its own, without a definition and without credentials. See [MCP servers](/camelrun/tools#mcp-servers) |
+| `subagents` | `subagents=` | Also deliver its sub-agents' progress, as events and stream parts |
 | `name` | `name=` | A label shown in the console |
 | `attach` | `attach=` | `false`: declare `tools` without serving them |
 | `takeover` | `takeover=` | Replace the process serving the tools now |
 | `onEvent`, `onInput`, `onError` | `on_event=`, `on_input=`, `on_error=` | Callbacks for events, inputs as they're asked, and connection errors |
+| | `initial_messages=`, `import_messages=` | The history it begins with, used only when it's made; or a conversation in Anthropic's or OpenAI's format, converted by camelRun (TypeScript: `runtime.createAgent({ initialMessages })`, `importMessages`). See [Bring in existing conversations](/camelrun/multi-user#bring-in-existing-conversations) |
+
+`agent.configHash` (Python `agent.config_hash`), from `upsert` and `get`, is a
+hash of the agent's configuration. An upsert that changes nothing returns the
+hash the agent has and doesn't count as an agent create. Every agent's hash is
+in `listAgents()`, so a deploy script can tell what changed. Compare it; never
+parse it.
 
 ### `agents.get(keyOrId, config)`
 
@@ -97,8 +131,11 @@ agent = await agents.get("support-triage")
 It throws an `AgentError` with `status` 404 when no live agent has the key or
 id, and 409 `AGENT_KEYLESS` for an agent made without a key. It takes `tools`,
 the callbacks, `attach` and `takeover` as `upsert` does. Over REST,
-`GET /v1/agents/{keyOrId}/credentials` returns `{id, token, expiresAt}`.
-Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
+`GET /v1/agents/{keyOrId}/credentials` returns `{id, token, expiresAt}`, to
+your account's own credentials only (an API key, an OAuth grant, a console
+session). `agents.agent(session, { tools })` connects to an agent whose
+credentials (`{id, token}`) you hold, without changing it. Available from
+`@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
 
 ### `agent.fork(options)`
 
@@ -124,6 +161,36 @@ instead of the source's. `fork.forkedFrom`
 (`forked_from`) is `{agentId, atMessage}`, and `agents.fork(id, options)` forks
 an agent by id. Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
 
+### `agents.run(config)` and `agents.runs`
+
+A [stateless run](/camelrun/stateless-runs): a configuration and an input in, a
+`Run` out, nothing carried over and no agent made.
+
+```ts
+const run = await agents.run({ instructions: "Vote yes or no.", input: "Ship on Friday?", output: Vote });
+```
+
+```python
+run = await agents.run("Ship on Friday?", instructions="Vote yes or no.", output=Vote)
+```
+
+`config` takes an agent's configuration (`model`, `instructions`, `definition`,
+`builtins`, `delegate`, `mcpServers`, `thinkingLevel`, `maxOutputTokens`,
+`temperature`, `subject`, `context`, `workspaceId`, `keyScope`, `runLimits`,
+`modelHeaders`, `mounts`, `fileTools`, `codeMode`, `name`) and the run's own:
+`input`, `files`, `output`, `user`, `metadata`, `idempotencyKey`, `spendLimit`,
+`retentionSeconds`, `signal`, `throwOnError`, `traceparent`. Python takes
+snake_case keywords, `input` first. It resolves with a `Run` (no `inputs`).
+
+| `agents.runs.` | |
+| --- | --- |
+| `create(config, { wait })` | Start one; resolves at once with its state, or with `wait` once it ends within it |
+| `get(id, { wait })` | The run, as it is or as it ended (`wait`: seconds, at most 25) |
+| `stream(config)` / `stream(id)` | A stream of its parts, `done` last; `result()` is the run |
+| `abort(id)` | Stop it: it ends `failed`, code `aborted` |
+| `delete(id)` | Delete it before its retention ends |
+| `messages(id)`, `events(id, { lastEventId })` | Its messages, and its raw event frames |
+
 ### `Agent`
 
 | TypeScript | Python | |
@@ -133,28 +200,32 @@ an agent by id. Available from `@camelai/run` 0.14.0 and `camelai-run` 0.10.0.
 | `agent.stream(text, options)` | `agent.stream(text, ...)` | The run as it happens: `for await` / `async for` over parts |
 | `agent.pendingInputs()` | `pending_inputs()` | Inputs waiting on people, each with `answer()` |
 | `agent.history()`, `historyPage({ before, limit })` | `history()`, `history_page(...)` | The whole history, or a page of whole turns |
-| `agent.steer(text)` | `steer()` | Join the running turn, or start one |
-| `agent.configure({ model, instructions, thinkingLevel, tools })` | `configure(...)` | Change it between runs |
-| `agent.schedule({ text, inSeconds, at, everySeconds })` | `schedule(...)` | Wake it later; `schedules()`, `unschedule(id)` |
+| `agent.send(text, options)`, `agent.wait(id)` | `send(text, ...)`, `wait(id)` | Send a message without waiting: resolves once camelRun has it, with `{id, state}`. `wait(id)` is its `Run` later, from this process or another. For work queues and webhooks |
+| `agent.steer(text, options)` | `steer(text, ...)` | Hand the running turn a message (else start one). Resolves at once with `{id, status: "accepted" \| "taken" \| "queued", steeredInto?}`; `wait: true` resolves with the run that took it |
+| `agent.configure({ model, instructions, thinkingLevel, tools, maxOutputTokens, temperature })` | `configure(...)` | Change it between runs; `null` (`None`) removes `maxOutputTokens` or `temperature` |
+| `agent.schedule({ text, inSeconds, at, everySeconds, calendar, email, history })` | `schedule(...)` | Wake it later, on a calendar, optionally emailing the reply; `schedules()`, `unschedule(id)`. See [Schedules](/camelrun/schedules) |
 | `agent.files` | `agent.files` | `list`, `download`, `upload`, `link` by the paths the agent sees |
-| `agent.abort()` | `abort()` | Stop the running turn |
+| `agent.abort({ queued })` | `abort(queued=)` | Stop its running turn and the runs queued behind it (each fails with code `cancelled`); `queued: "keep"` stops the running turn only. Resolves with `{aborted, cancelled}` |
 | `agent.fork({ key, name, atMessage })` | `fork(key=, name=, at_message=)` | A new agent with its configuration, a copy of its history and of its files. See [Forking](/camelrun/concepts#forking) |
 | `agent.delete()` | `delete()` | Delete it, its history and files |
 | `agent.close()` | `close()` | Close this process's connection |
+| `agent.client` | `agent.client` | The lower-level `AgentClient` |
 
 Run options for `run` and `stream`:
 
 | TypeScript | Python | |
 | --- | --- | --- |
-| `user` | `user=` | Who sent it: your user id, or `{ id, name, username }` |
-| `files` | `files=` | Attachments. See [Files](/camelrun/files) |
+| `user` | `user=` | Who sent it: your user id, or `{ id, name, username }`. The model sees who; tools get `identity.actor` |
+| `files` | `files=` | Attachments, by bytes, path, `{ url }` or `{ path }` in the agent's mounts. Audio is transcribed for the model, and the text may then be `""`. See [Files](/camelrun/files) and [Voice and audio](/camelrun/voice) |
 | `metadata` | `metadata=` | Your own key-value data (16 strings); the model never sees it |
 | `idempotencyKey` | `idempotency_key=` | The run's id. The same key returns the same run |
 | `signal` | `timeout=` | Stop waiting; the run goes on |
 | `throwOnError` | `throw_on_error=` | `false` returns a failed run instead of throwing `RunError` |
+| `history` | `history=` | `"none"`: the model sees the instructions and this message only; the run is still recorded. See [Runs without the history](/camelrun/concepts#runs-without-the-history) |
 | `whileRunning` | `while_running=` | `"queue"` (default) or `"steer"` |
 | `spendLimit` | `spend_limit=` | `{usd}`: this run's own budget |
-| `allowDisconnected` | `allow_disconnected=` | Run even with nobody serving the agent's tools |
+| `runLimits` | `run_limits=` | `{maxResponses, maxSeconds}`: this run's own, lowering the agent's |
+| `allowDisconnected` | `allow_disconnected=` | Run even with nobody serving the agent's tools (else refused with `APPLICATION_NOT_CONNECTED`) |
 | `output` | `output=` | Structured output: a zod, TypeBox or JSON Schema (Python: a pydantic model class, or a JSON Schema dict) for an object. The answer is `run.output`. See [Structured output](/camelrun/structured-output) |
 | `traceparent` | `traceparent=` | A W3C trace context (`00-<trace-id>-<span-id>-<flags>`): with [trace export](/camelrun/observability) set, the run's spans continue your trace under that span. Not part of the run's idempotency |
 
@@ -163,7 +234,9 @@ Run options for `run` and `stream`:
 A `Run` is `{ id, status, text, output?, inputs, error, usage, files, toolErrors, toolCalls, sourceErrors, raw }`
 (Python: `tool_errors`, `tool_calls`, `source_errors`). `toolCalls` lists every
 tool call the run made, with `ok` or an error `code`, not their arguments or
-results (see [Run outcomes](/camelrun/events#run-outcomes)). `output` is the
+results (see [Run outcomes](/camelrun/events#run-outcomes)). A `delegate` call
+has its sub-agent's `agentId`, and `usage.subagentCostUsd` is what its
+sub-agents spent. `error` is `{ code, message, uncertain? }`. `output` is the
 answer of a run sent with `output`, typed by its schema (Python: an instance of
 the pydantic model). `status` is `completed`,
 `input_required` or `failed`. Each of `run.inputs` has `answer(value, { from })`
@@ -176,12 +249,14 @@ which resolve with the resumed run.
 | `tool_call` | `id`, `name`, `arguments` |
 | `tool_result` | `id`, `name`, `output`, `isError` (Python `is_error`) |
 | `input_required` | `input`, with `answer()` |
+| `subagent_start`, `subagent_end` | With `subagents: true`: `toolCallId`, `agentId`, `name` at the start, `status` at the end |
 | `done` | `run`, always last |
 
 `run.toolCalls` names a call's tool `tool` and its id `toolCallId`. Stream parts
 carry the same values as `name` and `id`, and, from `@camelai/run` 0.14.0 and
 `camelai-run` 0.10.0, also as `tool` and `toolCallId` (Python `tool_call_id`).
-`name` and `id` stay.
+`name` and `id` stay. Every part but `done` has `raw`, the event it came from.
+Breaking out of the loop stops the reading, not the run.
 
 ## Tools
 
@@ -192,19 +267,32 @@ tool({ description, input: schema.Object({ ... }), execute: (args, context) => r
 ```
 
 ```python Python
-@tool(name=None, description=None, timeout=None, needs_approval=None)
+@tool(name=None, description=None, timeout=None, needs_approval=None, exposure=None)
 def my_tool(arg: str, context: ToolContext): ...
 ```
 </CodeGroup>
+
+`exposure` is how the model may call the tool: `"direct"` (as a tool of its
+own), `"codemode"` (only from code in `js_exec`) or `"both"`. Left out, it's
+`both` for an agent with up to 10 tools and `codemode` past that.
 
 | `context` (TypeScript) | Python | |
 | --- | --- | --- |
 | `idempotencyKey` | `idempotency_key` | The same for every attempt of this call |
 | `callId` | `call_id` | This attempt's id |
-| `identity` | `identity` | Who the call is for. See [Identity](/camelrun/tools#identity) |
+| `toolCallId` | `tool_call_id` | The model's tool call |
+| `identity` | `identity` | Who the call is for: `user`, `subject`, `actor`, `tenant`, `agent`, `context`, `origin`, `approval`. See [Identity](/camelrun/tools#identity) |
+| `origin` | `origin` | Where the turn came from (a channel) |
 | `signal` | (task cancellation) | Aborted when camelRun cancels the call |
 | `progress(message)` | `progress(message, progress=, total=)` | Report progress; restarts the deadline |
 | `confirm`, `ask`, `requireUrl` | `confirm`, `ask`, `require_url` | Ask the user. See [Human input](/camelrun/human-input) |
+
+A tool of a definition's source may be sent the agent's files as URLs.
+`verifyFileUrl(url, { runtime, tenant?, agent?, issuer? })` (Python
+`await verify_file_url(url, runtime=, ...)`) checks one came from camelRun for
+the account and agent you expect and hasn't expired, and returns what it grants
+(`tenant`, `agent`, `tool`, `volume`, `path`, `agentPath`, `kind`, `exp` and
+more). It throws `RuntimeTokenError` otherwise.
 
 With several processes (web workers, task queues, serverless), serve tools over
 HTTP: see [Several processes, workers and deploys](/camelrun/tools#several-processes-workers-and-deploys).
@@ -224,21 +312,46 @@ with Agents() as agents:  # reads CAMELAI_API_KEY
     for part in agent.stream("And the next one?"):
         if part.type == "text":
             print(part.text, end="")
+    vote = agents.run("Ship on Friday?", instructions="Vote yes or no.", output=Vote)
 ```
 
+- `Agents` has `upsert`, `get`, `fork`, `agent(session)`, `run` and `runs`
+  (stateless), and `close`. `Agent` has `run`, `stream`, `steer`, `history`,
+  `history_page`, `pending_inputs`, `configure`, `abort`, `fork`, `schedule`,
+  `files` and `delete`. Answer a run's inputs with `run.inputs[0].answer(...)`.
+- `AgentRuntime` has every call of the async one that is a single request
+  (definitions, providers, key scopes, tokens, usage, webhooks, `me`,
+  `browser_token`, runs, `telemetry`), and `wait_for_run` and `run_events`.
+- Handles hold no connection. `agent.run()` sends the message and asks for its
+  outcome; `agent.stream()` reads the agent's events while it reads the run.
+  `timeout=` (seconds) stops the wait, not the run.
 - It never serves tools, since that needs the agent's connection held. Serve
   them over HTTP with `camelai_run.sync.serve_tools` (a WSGI app) and a
-  definition; see [Served tools](/camelrun/tools#served-tools).
-- `timeout=` (seconds) stops the wait, not the run.
-- Not here: `on_event`, `on_input` and volumes. One `Agents` is for one thread
-  at a time; give each thread (or Celery worker) its own.
+  definition; see [Served tools](/camelrun/tools#served-tools). It also has
+  `verify_runtime_token`, `verify_file_url` and a `TestRuntime`.
+- Not here: `on_event`, `on_input`, volumes and `create_agent`. One `Agents` is
+  for one thread at a time; give each thread (or Celery worker) its own.
 
 ## Errors
 
-`AgentError` has `status` (HTTP, or 0), `code` (a stable name where camelRun
-gives one), `requestId`, `uncertain` and `retryAfterMs` (Python `request_id`,
-and `retry_after` in seconds). `RunError` is an `AgentError` for a failed run,
-with `run`.
+- `AgentError` has `status` (HTTP, or 0), `code` (a stable name where camelRun
+  gives one: `APPLICATION_CONNECTED`, `APPLICATION_REPLACED`, `spend_limit` and
+  others), `requestId`, `uncertain` and `retryAfterMs` (Python `request_id`, and
+  `retry_after` in seconds). With `END_USER_CREDIT` (a 402) or
+  `end_user_credit` (a run), it also has `reason` (`balance`, `daily_limit` or
+  `bucket_limit`, listed in `CREDIT_REASONS`), `bucket` and `endUser` (Python
+  `end_user`). See [End-user credits](/camelrun/end-user-credits).
+- `endUserCredit(errorOrRun)` (Python `end_user_credit`) returns an end user's
+  credit refusal from a thrown error, a run or its error in one shape, else
+  undefined.
+- `RunError` is an `AgentError` for a failed run, with `run`. When a model call
+  failed it, `run.error` also has `errorClass` (`billing`, `rate_limit`,
+  `server`, `refusal`, `auth`, `timeout`, `other`), `providerStatus`,
+  `retryable` and `model`: branch on those, not the message. `run.servedModel`
+  (Python `run.served_model`) is the model that made its last response.
+
+The SDKs retry 429 and 503 (honoring `Retry-After`) and transient failures of
+idempotent requests. See [Errors](/camelrun/errors).
 
 ## The lower-level API
 
@@ -250,14 +363,22 @@ available for code that needs the wire's shape: `agents.runtime`,
 | --- | --- | --- |
 | `runtime.upsertAgent(key, options)` | `upsert_agent(key, ...)` | Upsert, returning credentials without connecting |
 | `runtime.connectAgent(session, { tools, attach, takeover })` | `connect_agent(...)` | Connect with stored credentials |
+| `runtime.createAgent({ tools, ttlSeconds, idempotencyKey, ... })` | `create_agent(tools=[...], ...)` | Provision and connect; with `idempotencyKey`, the same as an upsert |
 | `runtime.me()` | `me()` | Your `tenant` id and default model |
+| `runtime.listAgents()` | `list_agents()` | Every agent, with its `key` (`null` without one), `name`, `configHash`, `workspaceId`, `lastActiveAt` and `lastError`. See [Listing agents](#listing-agents) |
 | `runtime.upsertDefinition(key, input)` | `upsert_definition(key, ...)` | Definitions; also `createDefinition`, `updateDefinition`, `deleteDefinition` |
 | `runtime.setProvider(name, config)` | `set_provider(name, ...)` | A [custom provider](/camelrun/custom-models) |
-| `runtime.createVolume`, `volume(id)` | `create_volume`, `volume(id)` | Volumes |
-| `runtime.inbox(state)` | `inbox(state=)` | Inputs across all agents |
+| `runtime.createVolume`, `volume(id)`, `mounts`, `setMounts` | `create_volume`, `volume(id)`, ... | Volumes and mounts |
+| `runtime.projects.create({ key, template })`, `project.publish` | `Projects(runtime).create(key, template=)`, `publish` | [Projects](/camelrun/projects): an agent builds in a keyed volume; your code checks and publishes versions |
+| `runtime.inbox(state)`, `toolSources(agentId)` | `inbox(state=)`, `tool_sources(agent_id)` | Inputs across all agents; an agent's tools |
+| `agents.endUsers.configure(...)`, `get`, `list`, `update`, `ledger`, `grant`, `refund`, `adjust` | `agents.end_users....` | Your users' credit, in micro-USD. See [End-user credits](/camelrun/end-user-credits) |
+| | `set_scope_key(...)`, `usage(days=)`, `tokens()`, `create_token(name)`, `create_webhook(...)`, `rotate_agent_credentials(agent_id)` | Key scopes, usage, API keys, webhooks and agent credentials (TypeScript: over REST) |
+| `client.prompt(text, options)`, `client.request(method, params)` | `prompt(text, ...)`, `request(...)` | A run's raw result, `{ reply, output, error, stopped, inputs, files, toolErrors, ... }`; any request |
 | `client.execute(code)` | `execute(code)` | Run code in the sandbox with the agent's tools, outside its history |
 | `client.waitForRequest(id)` | `wait_for_request(id)` | Wait for a request already sent, from any process |
 | `client.requestStatus(id, { wait })` | `request_status(id, wait=)` | A request's record; `wait` (seconds, at most 25) waits for it to settle first, with no stream connected |
+| `client.status()` | `status()` | Whether the agent is busy (`busy`, `activeRun`, `queuedRuns`) |
+| `client.setMetadata({ name, type })` | `set_metadata(name=, type=)` | Rename or regroup it, keeping its history |
 | `runtime.telemetry.set({ endpoint, headers, protocol, sampleRate, include })`, `get()`, `test()`, `clear()` | `await runtime.telemetry.set(endpoint, headers=, protocol=, sample_rate=, include_content=)`, `get()`, `test()`, `clear()` | [Trace export](/camelrun/observability): `set` changes only what it is given; `get` shows header names, never values; `test` sends one span now |
 
 ```ts
@@ -268,6 +389,48 @@ const { ok, traceId } = await agents.runtime.telemetry.test();
 ```python
 await agents.runtime.telemetry.set("https://api.smith.langchain.com/otel/v1/traces", headers={"x-api-key": os.environ["LANGSMITH_API_KEY"]})
 result = await agents.runtime.telemetry.test()
+```
+
+`client.prompt()` resolves with the run's raw result even when the model failed
+(`result.error`), and rejects only on a runtime error. Requests have no timeout
+unless you pass `timeoutMs` or `signal` (Python: `timeout`).
+
+### Listing agents
+
+`listAgents()` (`list_agents()`) returns every agent, as `GET /v1/agents` does
+without a `limit`. For an account with many, call the
+[REST API](/camelrun/api#list-agents) with filters and pages:
+
+- `limit` (1 to 200) returns a page by id. While more match, the response's
+  `X-Next-Cursor` header holds the cursor to pass as `cursor` for the next.
+- `workspaceId`: a workspace's agents, or `unassigned`.
+- `status`: `running` (loaded now), `failed` (a run failed in the last 24
+  hours), or `expiring` (has an `expiresAt`).
+- `subAgents`: `only` or `exclude`.
+- `q`: part of the name, key or id, ignoring case.
+
+Each agent also has `workspaceId`, `lastActiveAt` (when its latest run ended)
+and `lastError` (`{ at, class }` of its latest failed run: a class such as
+`model_error`, `spend_limit` or `aborted`, never the error's text; the run's
+outcome has the message).
+
+## Audio, voice and images
+
+| TypeScript | Python | |
+| --- | --- | --- |
+| `agents.transcriptions.create({ file \| url, language, prompt, keyScope })` | `transcriptions.create(file, language=, ...)` | Speech to text on its own: `{ text, language, durationSeconds, model, costUsd }`. Not retried, as each attempt is billed. See [Voice and audio](/camelrun/voice) |
+| `agents.voices.search({ provider, q?, category?, limit? })`, `get(provider, id)` | `voices.search(provider=, ...)`, `get(provider, id)` | Find voices; `get` checks a saved voice id (`usable`, `reason`) |
+| `agents.voice.create`, `get`, `list`, `update`, `end`, `stopSpeaking(id)` | `voice.create`, ..., `stop_speaking(id)` | Discord voice calls for your bot. See [Voice calls](/camelrun/voice-calls) |
+| `agents.images.generate(prompt, options)`, `edit(prompt, images, options)` | `images.generate(...)`, `edit(...)` | Make or edit images: `{ images, model, usage, costUsd }`. Not retried. See [Images](/camelrun/images) |
+
+```ts
+const { text } = await agents.transcriptions.create({ file: await readFile("voice.ogg"), language: "en" });
+const { images: [image], costUsd } = await agents.images.generate("A watercolor camel at dawn", { size: "1536x1024" });
+```
+
+```python
+result = await agents.transcriptions.create(Path("voice.ogg"), language="en")
+result = await agents.images.generate("A watercolor camel at dawn", size="1536x1024")
 ```
 
 ## Examples

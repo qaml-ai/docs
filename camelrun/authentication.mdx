@@ -14,12 +14,12 @@ Every request to `https://run.camelai.com` sends a token as
 | **API key** | `art_...` | Your servers | Everything in your account: create, run and delete agents, manage definitions, keys, channels and webhooks |
 | **Agent token** | Returned when an agent is made | The SDK, on your server | Run that one agent and nothing else |
 | **Browser token** | Minted per user | A browser | Read one agent's events, state, history and inputs for up to an hour |
-| **OAuth access token** | Issued to MCP clients | A coding agent | Act as your account at `/mcp`. In the REST API, only agents, runs, definitions, inputs and reads of the account (see [below](#oauth-for-coding-agents)) |
+| **OAuth access token** | Issued to MCP clients | A coding agent | Act as your account at `/mcp`. In the REST API, only agents, runs, definitions, workspaces, inputs and reads of the account (see [below](#oauth-for-coding-agents)) |
 
 ## API keys
 
 Create API keys in the [console](https://run.camelai.com/console) under
-**API tokens**, or with `POST /v1/tokens`. Each key has full access to your
+[**API keys**](https://run.camelai.com/console/tokens), or with `POST /v1/tokens`. Each key has full access to your
 account, so give each application or script its own and revoke any you no
 longer use.
 
@@ -56,15 +56,18 @@ any origin, for 5 to 3,600 seconds (default 900). See
 
 The hosted MCP server at `https://run.camelai.com/mcp` signs clients in with
 OAuth 2.1, as MCP's authorization spec describes. Access tokens last an hour,
-and refresh tokens last 30 days and rotate on each use. Connected apps appear in
-the console under **API tokens**, where you revoke them (or
+and refresh tokens last 30 days and rotate on each use. Connected apps appear on
+the console's **API keys** page under **Connected apps**, where you revoke them (or
 `DELETE /v1/oauth/grants/{id}`). See [CLI and MCP server](/camelrun/cli#connect-your-coding-agent).
 
-In the REST API, an OAuth access token reaches your agents (not their tokens),
-runs, definitions and pending inputs, and reads your models, providers, usage
-and billing. It can't make a credential (API, agent or browser tokens, signed
-links) or send your data somewhere new (webhooks, trace export, channels,
-provider keys), so revoking the grant leaves no access behind.
+In the REST API, an OAuth access token reaches your agents (not their tokens)
+with their runs, inputs, schedules and mounts, stateless runs, definitions,
+workspaces, and images, transcription and speech, and reads your models,
+providers, usage and billing. It can't make a credential (API, agent or browser
+tokens, signed links) or send your data somewhere new (webhooks, trace export,
+channels, provider keys and endpoints), and volumes, computers and the account
+export are closed to it too: each answers `403`. Revoking the grant leaves no
+access behind.
 
 ## Identity tokens for your servers
 

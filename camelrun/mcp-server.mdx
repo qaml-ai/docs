@@ -46,10 +46,12 @@ lists every agent with its key.
 | Argument | |
 | --- | --- |
 | `text` | The message to send |
-| `requestId` | Optional. Sending the same text with the same id again is the same message: it isn't sent twice, and the call returns its reply |
+| `requestId` | Optional. Sending the same text with the same id again is the same message: it isn't sent twice, and the call returns its reply (waiting for it if it's still running) |
 
-The tool's description tells the calling model what the agent is, so it knows
-when to use it.
+The tool's description names the agent and, when the agent is made from a
+[definition](/camelrun/definitions) with a `description`, says what it's for:
+`"description": "Answers questions about orders and refunds."` (1 to 1,000
+characters). The agent's system prompt is never shown.
 
 ## How it behaves
 
@@ -85,7 +87,8 @@ new message instead sets the waiting inputs aside.
 
 Anyone who may prompt the agent: the agent's own token (the `token` it was
 created with), an API key of your account, or an OAuth sign-in. A `401` names the
-agent's protected-resource metadata, so clients sign in the same way as with the
+agent's protected-resource metadata
+(`/.well-known/oauth-protected-resource/v1/agents/<id>/mcp`), so clients sign in the same way as with the
 [hosted MCP server](/camelrun/cli#connect-your-coding-agent). Other accounts' tokens get
 a `404`.
 

@@ -51,29 +51,47 @@ itself where the model can take it:
 | --- | --- | --- |
 | Images (PNG, JPEG, GIF, WebP) | Models with image input | 5 MiB and 8,000 px a side each |
 | PDFs | Anthropic, Google, OpenAI and OpenRouter models with image input | 16 MiB and 100 pages each |
+| Per model request | | The newest 100 images, up to 20 MiB as sent, and 24 MiB of PDFs shown. Older ones past that are named only |
 
-Anything else is only named, and the model reads it with its file tools.
+An image goes to the model at most 1,568 px a side. A larger one is scaled down
+in the request, keeping its shape (the file itself is unchanged), so a
+conversation with many images stays within every provider's limits. One that
+can't be scaled down is named, with why, instead.
+
+Audio is transcribed when it is attached, and the model reads the transcript
+(see [Voice and audio](/camelrun/voice)). Anything else is only named, and the
+model reads it with its file tools. The history keeps a reference to each
+file's content, never its bytes, so a file changed or deleted later still reads
+as it was when attached.
 
 ## The agent's file tools
 
 `read`, `write`, `edit`, `ls`, `glob` and `grep` work on mount paths such as
-`/workspace/notes.md`. Every file has a version, and `write` and `edit` take
-one, so an edit based on a stale read fails and the model reads again. Pass
-`fileTools: false` when the agent is made to leave them out.
+`/workspace/notes.md`. `read` shows an image or PDF to a model that can view
+it. camelRun remembers which version of each file the agent last read or wrote,
+so a `write` or `edit` of a file someone else changed since then fails ("changed
+since you last read it; read it again") and the model reads again. The model
+never sees version numbers. Pass `fileTools: false` (in a definition, or when
+the agent is made) to leave the tools out.
 
 Code in `js_exec` has `fs` over the same mounts:
 
 ```js
 const csv = await fs.readFile("/workspace/data.csv", { encoding: "utf8" });
 await fs.writeFile("/workspace/out/chart.png", png, { contentType: "image/png" });
+await fs.stat("/workspace/out/chart.png");  // {path, type, size, updatedAt, contentType}
 await fs.list("/workspace/out");
 ```
+
+One `fs` call moves at most about 700 KiB. Read larger files in windows with
+`tools.read({ path, offset, encoding: "base64" })`.
 
 ## Files out
 
 A run lists what it wrote in `run.files` (`[{path, version, size, contentType}]`,
-up to 100). Files the model handed over with `present_file` are also sent as
-`file_presented` events, each with a signed download `url`.
+up to 100). The files the model handed over with `present_file` (with a
+caption, up to 20) are in `run.raw.presented`, and each is also a
+`file_presented` event as soon as it is presented, with a signed download `url`.
 
 <CodeGroup>
 ```ts TypeScript
@@ -91,6 +109,10 @@ await agent.files.upload("/workspace/in/config.json", json.dumps(config))
 ```
 </CodeGroup>
 
+Tools from a definition's sources take the agent's files as `{"$file": path}`,
+and their file outputs are saved to the workspace. See
+[Tools](/camelrun/tools).
+
 ## Volumes
 
 A volume is a shared file tree. Without `mounts`, each agent gets its own
@@ -107,17 +129,73 @@ const agent = await agents.upsert("support", {
 ```
 
 - Mounts are `{volumeId, path, mode: "ro" | "rw", subpath?, notify?}`, at most
-  16 per agent. `notify` prompts the agent when others change files under the
-  mount. An agent's mounts are set when it is made: an upsert with other mounts
-  is a 409, unless it sends `remount: true`, which sets them between its turns.
+  16 per agent. `notify` prompts the agent (about a second after, coalesced)
+  when others change files under the mount. Only your own volumes can be
+  mounted. An agent's mounts are set when it is made: an upsert with other
+  mounts is a 409, unless it sends `remount: true`, which sets them between its
+  turns.
 - `PUT /v1/agents/{id}/mounts` replaces them during a turn too. The change
   applies at the agent's next tool call; a call under way keeps the mounts it
-  began with.
+  began with. A removed volume is refused, a read-only one is read-only, and
+  one added or swapped in is there at its path.
+- The agent's own workspace stays at `/workspace`, after the mounts you give.
+  `{workspace: true}` among them puts it at that position, `{workspace: false}`
+  leaves it out, and a mount you give at `/workspace` takes its place. The first
+  mount is where relative paths resolve. `{workspace: true, path: "/scratch"}`
+  mounts the workspace elsewhere, for example beside a project volume:
+  `[{volumeId: project, path: "/workspace", mode: "rw"}, {workspace: true, path: "/scratch"}]`.
+- Attachments are saved under `uploads/<request>/` in the agent's own
+  workspace, tool file outputs under `tool-outputs/`, and the model keeps
+  scratch files in `tmp/`. Without the workspace, they go to a read-write
+  `/workspace`, else the first read-write mount; an agent with none can't take
+  attachments or tool files.
+- An agent's own workspace is deleted with the agent. Volumes it only mounted
+  stay.
+- `createVolume({ name }, { idempotencyKey })` (Python
+  `create_volume(name=…, idempotency_key=…)`) makes a volume once per key, for a
+  day: a retry, or another process, gets the same volume.
 - `volume.write(path, data, { version })` writes only if nobody changed the file
-  since that version (`0` means it must not exist yet).
+  since that version (`0` means it must not exist yet). Volumes also have
+  `read`, `list`, `remove` and `changes(since, { prefix? })`, and
+  `runtime.volumes(ids)` reads up to 50 volumes' `seq` (and files and bytes) in
+  one request, to see which changed.
+- `volume.readAll({ prefix?, glob?, snapshot? })` (Python `read_all`) reads
+  every matching file with its contents in one request, as the volume was at one
+  `seq`: `{seq, files: [{path, size, version, contentType, sha256, text | data}]}`.
+  Use it to check or publish what an agent wrote. At most 1,000 files and 16 MiB
+  a read. REST: `GET /v1/volumes/{id}/files?content=true&prefix=…`.
+- `volume.archive({ snapshot?, path?, glob? })` (`GET /v1/volumes/{id}/archive`)
+  streams the files as a tar.gz, at most 10,000 files and 1 GiB.
+- A volume suits up to about 100,000 files. Uploads may take 15 minutes.
+
+For an agent that builds something your application publishes (a bot, a site,
+a report), a volume per project plus a publish step built on snapshots is the
+pattern: see [Projects](/camelrun/projects).
+
+## Snapshots
+
 - `volume.snapshot()` and `volume.fork({ snapshot })` copy metadata only: a fork
-  shares its source's content and diverges independently.
-- A volume holds up to 100,000 files.
+  shares its source's content and diverges independently. `read`, `list` and
+  `readAll` take `{ snapshot }` to read a snapshot as it was.
+- `volume.restore(snapshot)` (`POST /v1/volumes/{id}/restore {snapshot}`) makes
+  the volume as the snapshot was, in place, in one write that agents mounting it
+  see. It answers `{snapshot, seq, written, removed}`, and the snapshot stays.
+- A volume keeps 100 snapshots. A pinned one (`snapshot({ pinned: true })`, or
+  `updateSnapshot(id, { pinned })`) is kept until unpinned and counts against
+  10,000 pinned snapshots instead. Deleting it takes unpinning first, or
+  `deleteSnapshot(id, { force: true })`.
+- Snapshots take `labels`, your own string map (16 at most), and
+  `snapshots({ labels })` (`?label=key:value`) lists those that have them.
+- `volume.snapshot({ files })` makes a snapshot of the files you give (path to
+  text or bytes; 1,000 files and 16 MiB at most) instead of the volume, which it
+  leaves untouched: for bringing in versions kept elsewhere. Its answer has each
+  file's `sha256`.
+- Deleting a volume deletes all its snapshots, pinned ones too.
+
+Deleted files, volumes and snapshots stop being stored and billed about a day
+after nothing refers to them. A file an agent was sent or shown stays until the
+agent is deleted, since its history refers to it. Storage is billed per
+GB-month: see [Pricing](/camelrun/pricing).
 
 ## Signed links
 
@@ -125,8 +203,9 @@ const agent = await agents.upsert("support", {
 `{url, expiresAt}`: a URL that downloads (`GET`) or uploads (`PUT`, with
 `maxBytes` and `contentType`) that one file without a token, so a browser or
 another service moves the bytes directly. Links last 15 minutes by default and
-at most 24 hours, and can't be revoked sooner.
+at most 24 hours, and can't be revoked sooner. Downloads take `Range`.
 
-From your server, `POST /v1/agents/{id}/links {path, method?, expiresIn?}` signs
-a link by the path the agent sees, and `POST /v1/volumes/{id}/links` by a
-volume's own path.
+From your server, `POST /v1/agents/{id}/links {path, method?, expiresIn?, maxBytes?, contentType?}`
+signs a link by the path the agent sees (`/workspace/report.pdf`), and
+`POST /v1/volumes/{id}/links` by a volume's own path. Both answer
+`{url, method, path, expiresAt}`.

@@ -8,13 +8,17 @@ description: 'Reusable camelRun agent configurations (model, prompt, tools, limi
 
 A definition is a reusable agent configuration: name, model, system prompt,
 thinking level, tool sources (built-ins, remote MCP servers and OpenAPI specs),
-limits and mounts. Manage definitions with the SDKs, `/v1/definitions`,
+limits (`ttlSeconds`, or `idleTtlSeconds`: a lifetime from each agent's latest
+run), run limits (`runLimits`) and mounts. Manage definitions with the SDKs
+(`agents.runtime.upsertDefinition`, `createDefinition`, `updateDefinition`,
+`definition(s)`, `deleteDefinition`; `upsert_definition` and so on in Python), `/v1/definitions`,
 [`camelrun deploy`](/camelrun/cli), or the console's Definitions page, and make
 agents from one.
 
 Run `upsertDefinition(key, ...)` at every deploy. The same key is the same
 definition, set to what you send (fields left out are cleared), with a new
-revision only when something changed.
+revision only when something changed. `createDefinition` makes a new one each
+time.
 
 <CodeGroup>
 ```ts TypeScript
@@ -45,9 +49,31 @@ Over REST, the key is the `Idempotency-Key` of `POST /v1/definitions`. Saving a
 definition lists its MCP servers: credentials a server refuses are a 400, and the
 answer's `toolSources` shows what each server offers.
 
+A definition is where a source's credentials go: they are sealed once, for all
+its agents. An agent without a definition, or a stateless run, can list MCP
+servers of its own, but without credentials (identity tokens or none); see
+[MCP servers](/camelrun/tools#mcp-servers). An agent made from a definition has
+only its definition's sources.
+
+Each MCP server and OpenAPI source takes `exposure`: `"direct"` (the model calls
+its tools itself), `"codemode"` (only from code in `js_exec`) or `"both"`. Left
+out, a source of up to 10 tools is `both` and a larger one `codemode`. Set
+`"direct"` on a source whose tools must never be called from code.
+
+A `description` (1 to 1,000 characters) says what its agents are for. Models see
+it as the description of each agent's [MCP tool](/camelrun/mcp-server), and as
+what the agent is for when another definition can delegate to it.
+
+`delegate`, with its builtin, lets its agents hand tasks to sub-agents:
+`"builtins": ["delegate"], "delegate": {"agents": ["researcher"]}`. It may name
+definitions not saved yet, so two can name each other. See
+[Multi-agent](/camelrun/multi-agent).
+
 ## What an agent keeps
 
-The definition supplies the model, prompt, thinking level and tool sources. An
+The definition supplies the model, prompt, thinking level, `maxOutputTokens`,
+`temperature` and tool sources. `name`, `ttlSeconds` (or `idleTtlSeconds`),
+`mounts` and `initialMessages` given alongside it override its defaults. An
 agent can also have configuration of its own, which applying the definition
 leaves alone:
 
@@ -56,19 +82,25 @@ leaves alone:
  "systemPromptAppend": "Thread thr_123 in workspace ws_9."}
 ```
 
-- `model` and `thinkingLevel` given at creation or later, and `fileTools` given
-  at creation, are the agent's own.
+- `model`, `thinkingLevel`, `maxOutputTokens`, `temperature` and `runLimits`
+  given at creation or later, and `fileTools` given at creation, are the
+  agent's own: an apply changes every other field and keeps them. An agent's
+  own temperature that the definition's new model or thinking level can't take
+  is left out of its calls (see [Models and keys](/camelrun/models-and-keys)).
 - `systemPromptAppend` is text the model reads after the definition's prompt,
   such as per-conversation context. An apply replaces the prompt and keeps the
-  addition.
+  addition. Configuring `systemPromptAppend` changes it, and `""` removes it.
+  Agents not made from a definition can have one too.
 - `systemPrompt` can't be given alongside a definition, because the definition
-  owns the prompt.
+  owns the prompt. A `systemPrompt` configured on one agent later lasts until
+  the next apply.
 - Tools of your process (`tools` on `upsert`) are added as the agent's attached
   server.
 
 ## Roll out a change
 
-Every change is a new revision. An agent records the definition and revision it
+Every change is a new revision (`PATCH` replaces the fields given, `null`
+removes one, and `revision` makes it conditional). An agent records the definition and revision it
 was made from, and keeps that configuration when the definition changes, so
 only new agents get the new revision by default.
 
@@ -81,9 +113,32 @@ curl -X PATCH https://run.camelai.com/v1/definitions/def_... \
 ```
 
 Each agent is reconfigured between its turns, keeping its history and attached
-tools. The response's `applied` lists each agent with its `status`: `updated`,
-`queued` (it takes the revision after its current turn), or `failed`.
+tools, and the tool lists of the definition's MCP servers are read again, so a
+server that changed its tools with the deploy is seen at once. Only your API
+key can apply a definition, never an agent's own token. The response's
+`applied` lists each agent with its `requestId` and `status`: `updated`,
+`queued` (it takes the revision after its current turn; poll
+`GET /v1/agents/{id}/requests/{requestId}`), or `failed`, with an `error`.
 `GET /v1/definitions/{id}/agents` lists the agents and the revision each has.
+
+To have every change reach live agents without asking each time, save the
+definition with `applyOnUpdate: true`. Every save that makes a new revision
+then applies it as `apply: "all"` does, and answers with `applied`. An upsert
+that changes nothing, as at most deploys, applies nothing.
+
+```ts
+const definition = await agents.runtime.upsertDefinition("builder", {
+  name: "Builder", systemPrompt: "You build bots.", applyOnUpdate: true,
+  mcpServers: [{ name: "builder", url: "https://bots.example.com/builder/mcp", auth: { type: "runtime" } }],
+});
+// definition.applied: every live agent asked to take the new revision, when this deploy changed it
+```
+
+A definition can belong to a [workspace](/camelrun/workspaces): agents made
+from it afterward join that workspace.
+
+On the console's Channels page, **Model & prompt** opens a channel's definition
+with apply selected.
 
 Deleting a definition leaves its agents as they are. A definition a channel
 uses can't be deleted.
@@ -91,8 +146,8 @@ uses can't be deleted.
 ## Change one agent
 
 `PATCH /v1/agents/{id}/configuration` changes one agent's `model`,
-`systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `keyScope`, `spendLimit`
-or `modelHeaders` without touching its definition or history:
+`systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `maxOutputTokens`,
+`temperature`, `keyScope`, `spendLimit` or `modelHeaders` without touching its definition or history:
 
 ```bash
 curl -X PATCH https://run.camelai.com/v1/agents/client_.../configuration \
@@ -102,4 +157,6 @@ curl -X PATCH https://run.camelai.com/v1/agents/client_.../configuration \
 
 It answers `202` with a queued request that survives a restart. Poll it for the
 outcome, and reuse `requestId` to retry. A model must be in `GET /v1/models` and
-have a key for its provider, or the change is a 400.
+have a key for its provider, or the change is a 400. So is a `temperature` the
+agent's model or thinking level, after the change, can't take. An agent that
+isn't running takes the change when it next starts.

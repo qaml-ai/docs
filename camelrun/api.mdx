@@ -31,10 +31,14 @@ curl https://run.camelai.com/v1/agents \
 ```
 
 The `Idempotency-Key` is the agent's key: the same key returns the same agent,
-brought to the configuration you send. The body takes `name`, `model`,
-`systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `builtins`, `definition`,
-`subject`, `context`, `keyScope`, `spendLimit`, `modelHeaders`, `mounts`,
-`fileTools`, `ttlSeconds` and `initialMessages`.
+brought to the configuration you send. The body takes `name`, `type`, `model`,
+`systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `maxOutputTokens`,
+`temperature`, `dataCollection`, `builtins`, `delegate`, `mcpServers`,
+`definition`, `workspaceId`, `subject`, `context`, `keyScope`, `spendLimit`,
+`bucket`, `runLimits`, `modelHeaders`, `mounts`, `remount`, `fileTools`,
+`codeMode`, `ttlSeconds`, `idleTtlSeconds`, and `initialMessages` or
+`importMessages` (a conversation in Anthropic's or OpenAI's format). An unknown
+field is refused with a 400.
 
 It also takes `prompt`, a first message with the same body as
 `POST /v1/agents/{id}/prompt`. The answer then carries `prompt`: the request to
@@ -51,7 +55,8 @@ curl https://run.camelai.com/v1/agents/$AGENT/prompt \
 The prompt answers `202` with the request record. `requestId` is optional; it
 makes the prompt idempotent, so sending the same one again returns the same run.
 Other fields are `files`, `metadata`, `whileRunning` (`queue` or `steer`),
-`spendLimit`, `allowDisconnected` and `output` (`{schema}`, for
+`history` (`"none"`: without the agent's history), `spendLimit`, `runLimits`,
+`bucket`, `allowDisconnected` and `output` (`{schema}`, for
 [structured output](/camelrun/structured-output)).
 
 Read the request with `?wait=25`: it answers as soon as the run ends, or after
@@ -74,6 +79,33 @@ waits on a person. See [Run outcomes](/camelrun/events#run-outcomes). Instead of
 polling, you can register a [webhook](/camelrun/webhooks) for `run.completed`
 and `run.failed`.
 
+## List agents
+
+`GET /v1/agents` without parameters returns every agent. For an account with
+many, page and filter:
+
+```bash
+curl -si "https://run.camelai.com/v1/agents?limit=50&status=failed&subAgents=exclude" \
+  -H "Authorization: Bearer $CAMELAI_API_KEY"
+```
+
+| Parameter | |
+| --- | --- |
+| `limit` | A page of at most this many (1 to 200), by id. While more match, the `X-Next-Cursor` response header holds the next page's cursor |
+| `cursor` | The previous page's `X-Next-Cursor` |
+| `workspaceId` | Only agents in this [workspace](/camelrun/workspaces), or `unassigned` for agents in none |
+| `status` | `running` (loaded now, idle or not), `failed` (a run failed in the last 24 hours) or `expiring` (has an `expiresAt`) |
+| `subAgents` | `only` (agents a `delegate` or `spawn_agent` call made) or `exclude` |
+| `q` | Part of the name, key or id, ignoring case (at most 200 characters) |
+
+Each agent has `id`, `key` (`null` for one made without), `name`, `type`,
+`model`, `configHash`, `connected` (whether a process serving its tools is
+connected), `running`, `expiresAt`, `parentAgentId` for a sub-agent,
+`workspaceId`, `lastActiveAt` (when its latest run ended, ms since the epoch)
+and `lastError`: `{at, class}` of its latest failed run, where `class` says how
+it failed (such as `spend_limit`, `aborted`, `resume_limit` or `model_error`),
+never the error's text.
+
 ## Endpoints
 
 <AccordionGroup>
@@ -81,18 +113,30 @@ and `run.failed`.
     | Endpoint | |
     | --- | --- |
     | `POST /v1/agents` | Create or upsert an agent (with `Idempotency-Key`) |
-    | `GET /v1/agents` | List your agents, each with its key and name |
-    | `GET /v1/agents/{id}` | One agent: configuration, definition, `spendLimit`, `toolSources` |
-    | `DELETE /v1/agents/{id}` | Stop an agent and delete its history and files |
+    | `GET /v1/agents` | List your agents, with paging and filters. See [List agents](#list-agents) |
+    | `GET /v1/agents/{id}` | One agent: configuration, definition, `spendLimit`, `toolSources` (`?schemas=true` adds tool schemas, `?refresh=true` lists MCP servers now) |
+    | `GET /v1/agents/{keyOrId}/credentials` | An existing agent's `{id, token, expiresAt}`, its configuration untouched |
+    | `POST /v1/agents/{id}/credentials/rotate` | A new token for the agent; the old one stops at once |
+    | `DELETE /v1/agents/{id}` | Stop an agent and delete its history and files, and the sub-agents made for it |
     | `POST /v1/agents/{id}/fork` | A new agent with its configuration, a copy of its history and of its workspace: `{key?, name?, atMessage?, ttlSeconds?, subject?, context?, systemPromptAppend?, modelHeaders?}`. See [Forking](/camelrun/concepts#forking) |
-    | `PATCH /v1/agents/{id}/configuration` | Change model, prompt, thinking level, key scope, spend limit or headers between turns |
+    | `PATCH /v1/agents/{id}/configuration` | Change `model`, `systemPrompt`, `systemPromptAppend`, `thinkingLevel`, `maxOutputTokens`, `temperature`, `keyScope`, `spendLimit`, `runLimits`, `modelHeaders`, `builtins`, `delegate` or `mcpServers` between turns |
     | `POST /v1/agents/{id}/prompt` | Send a message |
     | `GET /v1/agents/{id}/requests/{requestId}` | A request's state and outcome; `?wait=<seconds>` (at most 25) waits for it to settle |
-    | `POST /v1/agents/{id}/abort` | Stop the running turn |
+    | `POST /v1/agents/{id}/abort` | Stop the running turn, the runs queued behind it (unless `queued: "keep"`) and its background sub-agents (unless `children: "keep"`) |
     | `GET /v1/agents/{id}/state` | Every request's state, and the stream's cursor |
     | `GET /v1/agents/{id}/history` | Messages, in pages of whole turns (`?limit=`, `?before=`) |
     | `GET /v1/agents/{id}/events` | The event stream (SSE, or `?poll=1&wait=25`). See [Events](/camelrun/events) |
     | `POST /v1/agents/{id}/browser-tokens` | A token for a browser to read this agent |
+  </Accordion>
+  <Accordion title="Stateless runs">
+    | Endpoint | |
+    | --- | --- |
+    | `POST /v1/runs` | Run once with a configuration and an input, nothing kept after its retention. See [Stateless runs](/camelrun/stateless-runs) |
+    | `GET /v1/runs/{id}` | The run, running or as it ended (`?wait=<seconds>`, at most 25) |
+    | `GET /v1/runs/{id}/events` | Its event stream |
+    | `GET /v1/runs/{id}/messages` | Its input, the model's turns and tool results |
+    | `POST /v1/runs/{id}/abort` | Stop it: it ends `failed`, code `aborted` |
+    | `DELETE /v1/runs/{id}` | Delete it before its retention ends |
   </Accordion>
   <Accordion title="Human input">
     | Endpoint | |
@@ -111,14 +155,16 @@ and `run.failed`.
     | `GET`, `POST /v1/volumes`; `GET`, `DELETE /v1/volumes/{id}` | Volumes |
     | `GET /v1/volumes/{id}/files`; `GET`, `PUT`, `DELETE /v1/volumes/{id}/files/{path}` | A volume's files |
     | `GET /v1/volumes/{id}/changes` | The change feed |
-    | `POST /v1/volumes/{id}/snapshots`, `POST /v1/volumes/{id}/fork` | Snapshots and forks |
+    | `GET`, `POST /v1/volumes/{id}/snapshots`; `PATCH`, `DELETE .../snapshots/{snapshotId}` | Snapshots, pinned and labeled |
+    | `POST /v1/volumes/{id}/restore`, `GET /v1/volumes/{id}/archive`, `POST /v1/volumes/{id}/fork` | Restore a snapshot, download a tar.gz, fork |
     | `POST /v1/volumes/{id}/links` | Sign a link by a volume's path |
   </Accordion>
   <Accordion title="Schedules">
     | Endpoint | |
     | --- | --- |
-    | `GET`, `POST /v1/agents/{id}/schedules` | List, or add a wake-up: `{text, inSeconds \| at, everySeconds?}` |
+    | `GET`, `POST /v1/agents/{id}/schedules` | List, or add a wake-up: `{text \| code, history?, inSeconds \| at, everySeconds?, calendar?, email?}`. See [Schedules](/camelrun/schedules) |
     | `DELETE /v1/agents/{id}/schedules/{scheduleId}` | Remove one |
+    | `GET /v1/agents/{id}/schedule-deliveries` | Scheduled report emails and their delivery state |
   </Accordion>
   <Accordion title="Definitions and channels">
     | Endpoint | |
@@ -127,6 +173,43 @@ and `run.failed`.
     | `GET`, `PATCH`, `DELETE /v1/definitions/{id}` | One definition. `PATCH` with `apply: "all"` reconfigures its agents |
     | `GET /v1/definitions/{id}/agents` | Agents made from it, with their revisions |
     | `GET`, `POST /v1/channels`; `GET`, `PATCH`, `DELETE /v1/channels/{id}` | Channels |
+  </Accordion>
+  <Accordion title="Workspaces">
+    | Endpoint | |
+    | --- | --- |
+    | `GET`, `POST /v1/workspaces` | List workspaces (archived ones too), or create one: `{name}` |
+    | `GET`, `PATCH /v1/workspaces/{id}` | One workspace; rename, archive or restore it (`name`, `archived`) |
+    | `GET /v1/workspaces/{id}/members` | Its agents and definitions |
+    | `GET /v1/workspace-memberships` | Every current assignment |
+    | `PUT /v1/workspace-memberships/{kind}/{id}` | Assign an `agent` or `definition`: `{workspaceId}`, or `null` to unassign. See [Workspaces](/camelrun/workspaces) |
+  </Accordion>
+  <Accordion title="Computers">
+    | Endpoint | |
+    | --- | --- |
+    | `GET`, `POST /v1/computers` | Provider connections (credentials never returned), or connect an agent: `{agent, provider, credentials, leaseSeconds, dailySeconds}` |
+    | `DELETE /v1/computers/{id}` | Stop its session and disconnect it |
+    | `GET /v1/computers/usage` | Session time by provider and workspace |
+    | `GET /v1/agents/{id}/computer` | An agent's connection and session status |
+    | `POST /v1/agents/{id}/computer/stop` | Stop its session |
+    | `POST /v1/agents/{id}/computer/confirm-cleanup` | `{providerCleanupConfirmed: true}`, after you removed an uncertain machine at the provider. See [Computers](/camelrun/computers) |
+  </Accordion>
+  <Accordion title="Images, audio and voice">
+    | Endpoint | |
+    | --- | --- |
+    | `POST /v1/images` | Make or edit images. See [Images](/camelrun/images) |
+    | `POST /v1/transcriptions` | Speech to text on its own |
+    | `POST /v1/speech` | Text to speech, streamed back. See [Voice and audio](/camelrun/voice) |
+    | `GET /v1/voices/search`, `GET /v1/voices/{provider}/{id}` | Find voices; check a saved voice id |
+    | `GET`, `POST /v1/voice/sessions`; `GET`, `PATCH`, `DELETE /v1/voice/sessions/{id}` | Discord voice calls for your bot. See [Voice calls](/camelrun/voice-calls) |
+    | `DELETE /v1/voice/sessions/{id}/speak` | Stop what the bot is saying |
+  </Accordion>
+  <Accordion title="End-user credits">
+    | Endpoint | |
+    | --- | --- |
+    | `GET`, `PUT`, `PATCH /v1/end-user-settings` | Turn end-user credits on and set allowances, markup and limits |
+    | `GET /v1/end-users`; `GET`, `PATCH /v1/end-users/{id}` | Your users' balances and limits |
+    | `GET /v1/end-users/{id}/ledger`, `GET /v1/end-users/{id}/days` | A person's ledger and per-day totals |
+    | `POST /v1/end-users/{id}/entries` | Grant, refund or adjust credit. See [End-user credits](/camelrun/end-user-credits) |
   </Accordion>
   <Accordion title="Models, providers and keys">
     | Endpoint | |
@@ -143,12 +226,14 @@ and `run.failed`.
     | Endpoint | |
     | --- | --- |
     | `GET /v1/me` | Your tenant id and default model |
-    | `GET`, `POST /v1/tokens`; `DELETE /v1/tokens/{id}` | API tokens |
+    | `GET`, `POST /v1/tokens`; `DELETE /v1/tokens/{id}` | API keys |
     | `GET /v1/oauth/grants`; `DELETE /v1/oauth/grants/{id}` | Apps connected over OAuth |
     | `GET`, `POST /v1/webhooks`; `GET`, `PATCH`, `DELETE /v1/webhooks/{webhookId}` | [Webhook](/camelrun/webhooks) endpoints |
     | `POST /v1/webhooks/{webhookId}/secret` | Rotate an endpoint's secret |
-    | `GET /v1/usage` | Model usage and cost |
+    | `GET`, `PUT`, `DELETE /v1/telemetry`; `POST /v1/telemetry/test` | [Trace export](/camelrun/observability) |
+    | `GET /v1/usage` | Model and tool usage and cost per day (`?days=` 1 to 365, default 30; `?workspaceId=` a workspace's, or `unassigned`) |
     | `GET /v1/billing`, `GET /v1/billing/ledger` | Prepaid credit and its ledger |
+    | `GET /v1/account/export` | The [account export](/camelrun/export) |
   </Accordion>
 </AccordionGroup>
 

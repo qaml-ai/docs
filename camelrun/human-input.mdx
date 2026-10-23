@@ -10,7 +10,9 @@ A run can stop and wait for a person: the model asks a question, a tool needs
 approval before it runs, or a tool asks for a form or a setup step. The run
 **suspends**. It ends with `status: "input_required"` and the `inputs` it waits
 on, and the agent sleeps (nothing is billed while it waits). Once the last input
-is answered, minutes or days later and from any process, the turn resumes. For
+is answered, minutes or days later and from any process, the turn resumes. The
+model sees an ordinary tool call and its result, told who answered and how long
+it took. For
 a short tour, see [human-in-the-loop AI agents on camelRun](https://camelai.com/run).
 
 <CodeGroup>
@@ -34,15 +36,19 @@ print(run.text)
 
 ## Where inputs come from
 
-- **Approvals.** A tool with `needsApproval: true` (`@tool(needs_approval=True)`)
-  is approved before each call. A definition's MCP and OpenAPI sources take an
-  approval policy:
+- **Approvals.** A tool with `needsApproval: true` (`@tool(needs_approval=True)`),
+  or a function of its arguments that decides per call, is approved before each
+  call. A definition's MCP and OpenAPI sources take an approval policy:
   `"approval": {"default": "never" | "always" | "destructive", "tools": {"delete_repo": "always"}}`.
   `destructive` means MCP tools annotated `destructiveHint`, and OpenAPI
-  operations other than GET, HEAD and OPTIONS. The person sees the real call,
-  and an approved call runs with exactly those arguments.
-- **Questions.** The `ask_user` built-in lets the model ask 1 to 4
-  multiple-choice questions, with free text where it allows.
+  operations other than GET, HEAD and OPTIONS. OpenAPI also takes
+  `"methods": ["POST", "DELETE"]`. The person sees the real call: the tool, its
+  source and its arguments. An approved call runs with exactly those arguments
+  and carries the approval (`context.identity.approval`), so a tool can require
+  it. A declined call never runs.
+- **Questions.** The `ask_user` built-in (`"builtins": ["ask_user"]` on the
+  agent or its definition) lets the model ask 1 to 4 multiple-choice questions,
+  with free text where it allows.
 - **The tool itself.** `context.confirm(message)`, `context.ask(message, schema)`
   (a flat form) and `context.requireUrl(url, message)` (a step on an https page,
   such as connecting an account).
@@ -65,6 +71,10 @@ const deleteApp = tool({
   `context.idempotencyKey`, which is the same on both calls.
 </Warning>
 
+Code in `js_exec` can't wait for days. A call from code that would ask fails
+with "needs the user's input: call it directly", so tools that ask are always
+offered to the model directly.
+
 ## Answering
 
 `input.answer(value, { from })` (Python `answer(value, from_=)`) takes a plain value by the input's `kind`:
@@ -73,33 +83,48 @@ const deleteApp = tool({
 | --- | --- |
 | `approval` | `true` to approve, `false` to decline |
 | `question` | The chosen option's label (or labels, or free text where allowed). For several questions, `{ "<question>": answer }` |
-| `form` | The fields, as an object. A confirmation (`context.confirm`, a form without fields) takes `true` or `false` |
-| `url` | `true` once the person has done what the page asks |
+| `form` | The fields, as an object, checked against the form's schema. A confirmation (`context.confirm`, a form without fields) takes `true` or `false` |
+| `url` | `true` once the person has done what the page asks, else `false` |
 
-`input.decline()` declines any input. Answering the same way twice is safe; a
+`input.decline()` declines any input. Answering resolves with the resumed run.
+When the run also waits on other inputs, it resolves with the run still
+`input_required`, listing those. Answering the same way twice is safe; a
 different answer to an input that already settled is a 409 that says how it
 settled.
 
 Inputs outlive your process, so you can answer later from anywhere:
 
 - `agent.pendingInputs()` (Python `pending_inputs()`) lists an agent's waiting
-  inputs.
+  inputs, each with `answer()`.
 - `agents.runtime.inbox("pending")` lists inputs across all your agents, for an
   approvals queue.
 - Over REST: `GET /v1/agents/{id}/inputs?state=pending`, then
   `POST /v1/agents/{id}/inputs/{inputId}` with
   `{"action": "accept" | "decline" | "cancel", "content": ..., "from": ...}`.
-- `onInput` on `upsert` hears each input as it's asked. Return an answer to give
-  it right away, or nothing to answer later.
-- Events `input_required` and `input_resolved`, and the webhooks
-  `input.requested` and `input.resolved`.
+  A question's `content` is
+  `{"answers": {"<question>": "<label>" | ["<label>"] | "<own words>"}}`, and a
+  form's is its fields. The reply is `{input, request}`, where `request` is the
+  resumed run (null until the last input is answered). Poll it like a prompt.
+- `onInput` (Python `on_input`) on `upsert` hears each input as it's asked.
+  Return an answer to give it right away, or nothing to answer later.
+- An MCP client talking to the agent through its
+  [MCP endpoint](/camelrun/mcp-server) is asked through elicitation, when it
+  supports it.
+- Events `input_required` and `input_resolved`, and the
+  [webhooks](/camelrun/webhooks) `input.requested` and `input.resolved`.
+
+A [background sub-agent](/camelrun/multi-agent#background-sub-agents) that waits
+on a person tells its parent so. Answer its inputs as you would any agent's, by
+the sub-agent's id.
 
 ## Who may answer
 
-By default, the person whose message started the turn, plus the definition's
-`humanInput.approvers`. An answer must say who is answering (`from`) whenever
-the input names who may. A `from` who may not answer gets a 403. The model has no
-way to answer.
+By default, the person whose message started the turn (the run's `user`, or its
+`actor`), plus the definition's `humanInput.approvers`. An answer must say who
+is answering (`from`) whenever the input names who may (`responders.audience`,
+or the definition has approvers). The SDKs refuse to send an answer without it,
+and the API refuses it with a 400. A `from` who may not answer gets a 403. The
+model has no way to answer.
 
 ## Waiting and giving up
 
@@ -108,7 +133,8 @@ way to answer.
   runs.
 - `agent.abort()` cancels them.
 - Inputs expire after `humanInput.expiresInSeconds`: 7 days by default, at most
-  30.
+  30. Expired and cancelled inputs close their calls and end the turn without
+  calling the model, unless `humanInput.onExpire` is `resume`.
 
 ```json
 {"name": "Ops", "builtins": ["ask_user"],
@@ -116,7 +142,11 @@ way to answer.
  "mcpServers": [{"name": "github", "url": "...", "approval": {"tools": {"delete_repo": "always"}}}]}
 ```
 
+## In a channel
+
 In Slack, Telegram or Discord, a suspended turn's reply ends with its first
-input as text. The next message from someone allowed to answer, if it fits (an
-option's number, `approve` or `deny`, `done`), is the answer. See
+input as text: a question's numbered options, the call to approve, the URL, or
+a confirmation. The next message from someone allowed to answer, if it fits (an
+option's number or label, `approve` or `yes`, `deny` or `no`, `done`), is the
+answer. Anything else is a new message. See
 [Channels](/camelrun/channels).

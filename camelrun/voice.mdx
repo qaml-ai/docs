@@ -1,0 +1,227 @@
+---
+title: 'Voice and audio: transcription and speech on camelRun'
+sidebarTitle: 'Voice and audio'
+description: 'Send camelRun agents voice notes and recordings, transcribed before the model reads them, or transcribe audio and synthesize speech on their own.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/voice.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+Agents hear audio. Attach a voice note or a recording to a message, and camelRun
+transcribes it before the model sees it, so every model, Claude included, reads
+what was said. `POST /v1/transcriptions` transcribes audio on its own, with no
+agent, and `POST /v1/speech` turns text into speech. For live calls, where a
+bot listens and talks back, see [Voice calls](/camelrun/voice-calls).
+
+Transcription runs on OpenAI's `gpt-transcribe` with the OpenAI key a model call
+of yours would use: a [key scope](/camelrun/models-and-keys#key-scopes)'s, your
+own (`PUT /v1/providers/openai/key`), else the platform's, which a prepaid
+account pays for per second of audio.
+
+## Audio in a message
+
+Attach audio as any file. A file whose type is `audio/*` is transcribed by
+default:
+
+<CodeGroup>
+```ts TypeScript
+const run = await agent.run("Summarize this and list the action items", { files: ["./standup.m4a"] });
+```
+
+```python Python
+run = await agent.run("Summarize this and list the action items", files=[Path("standup.m4a")])
+```
+
+```bash curl
+curl -X POST "https://run.camelai.com/v1/agents/$AGENT/prompt" -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"files": [{"url": "https://example.com/voice-message.ogg"}]}'
+```
+</CodeGroup>
+
+A voice note alone needs no text: `agent.run("", { files: [voiceNote] })`. In
+the SDKs a file is also `{ url }` (Python `{"url"}`), and takes
+`transcribe: true | false`.
+
+A file is attached as [Files](/camelrun/files#attach-files-to-a-message)
+describes (uploaded, inline base64 up to 4 MiB, or `{path}` of a file in the
+agent's mounts), or by URL: `{url, name?, contentType?}`, which camelRun fetches
+from the public internet (at most 64 MiB, three redirects).
+
+camelRun transcribes the audio **before it accepts the message**. The prompt's
+answer comes once the transcript is ready (a second or two for a voice note,
+longer for a long recording). A transcription that fails fails the request, and
+nothing runs. The message, its events and the agent's history keep the audio
+file's reference with its transcript:
+
+```json
+{ "type": "file", "path": "/workspace/uploads/r1/voice-message.ogg", "contentType": "audio/ogg", "size": 12538,
+  "transcript": { "text": "Hello from camelRun.", "language": "en", "seconds": 5, "model": "gpt-transcribe" }, ... }
+```
+
+The model reads it as text:
+
+```
+[Audio /workspace/uploads/r1/voice-message.ogg (audio/ogg, 0:05, en), transcript:
+Hello from camelRun.
+]
+```
+
+The audio stays in the agent's workspace like any attachment, for its tools to
+use.
+
+- `transcribe: false` on a file keeps audio a plain file (named to the model,
+  not transcribed).
+- `transcribe: true` transcribes a file whose type does not say audio
+  (`application/octet-stream`, or a video such as `video/mp4` or `video/webm`,
+  whose sound is transcribed).
+- Audio transcribed by default that can't be (no OpenAI key, a format or length
+  it doesn't take, the provider failing) is attached without a transcript, and
+  the model is told why (`[File …: not transcribed (…)]`). A voice note from a
+  channel still reaches the agent. A file you asked to transcribe
+  (`transcribe: true`) fails the request instead.
+- A spend limit refuses the request either way: the agent's, or the run's own
+  `spendLimit`, which pays for the message's audio first (what is left is the
+  run's to spend on its model).
+
+[Channels](/camelrun/channels) get this with no setup: a Discord or Telegram
+voice message, or any audio file sent in a channel, reaches the agent with its
+transcript. [Stateless runs](/camelrun/stateless-runs) take audio as input
+parts: `{"type": "file", "url": "…"}` or `{"type": "file", "data": "…"}`.
+
+Audio in `initialMessages` isn't transcribed: transcribe it first with
+`POST /v1/transcriptions` and import the text.
+
+## Transcribe on its own
+
+<CodeGroup>
+```ts TypeScript
+const { text } = await agents.transcriptions.create({ file: await readFile("voice-message.ogg"), language: "en" });
+```
+
+```python Python
+result = await agents.transcriptions.create(Path("voice-message.ogg"), language="en")
+```
+
+```bash curl
+curl -X POST "https://run.camelai.com/v1/transcriptions" -H "Authorization: Bearer $CAMELAI_API_KEY" -F file=@voice-message.ogg -F language=en
+```
+</CodeGroup>
+
+```json
+{ "text": "Hello from camelRun.", "language": "en", "durationSeconds": 5, "model": "openai/gpt-transcribe", "costUsd": 0.000375 }
+```
+
+It takes the audio as multipart (`file`) or JSON: `{"data": "<base64>"}` or
+`{"url": "https://…"}`. With either:
+
+| Field | |
+| --- | --- |
+| `language` | ISO 639-1 (`en`) or a locale (`pt-BR`); detected when left out |
+| `prompt` | Names, jargon or the conversation so far, as a hint (at most 2,000 characters) |
+| `keyScope` | A key scope whose OpenAI key goes first |
+| `subject`, `context`, `actor` | Who it is for and who asked, carried to its `usage.recorded` event, as an agent's identity is |
+
+Nothing is kept: the audio goes to the provider and the transcript comes back to
+you. A retry transcribes (and bills) again; it takes no `Idempotency-Key`. API
+tokens and OAuth tokens may transcribe; browser tokens may not. Runs-per-minute
+limits count each transcription as a run.
+
+## Speech
+
+`POST /v1/speech` turns text into speech and streams the audio back as it is
+made:
+
+```bash
+curl -sS https://run.camelai.com/v1/speech -H "Authorization: Bearer $CAMELAI_API_KEY" -H "Content-Type: application/json" \
+  -d '{"text": "Hi, I am your bot.", "voice": "coral", "format": "wav"}' -o hello.wav
+```
+
+| Field | |
+| --- | --- |
+| `text` | At most 4,000 characters |
+| `format` | `pcm` (the default: raw 16-bit little-endian mono at 24 kHz) or `wav` (the same in a WAV container, which an `<audio>` element plays as it downloads) |
+| `voice` | An OpenAI voice (`alloy`, `coral`, `verse`…) |
+| `instructions` | How OpenAI should say it: tone, pace, accent (at most 1,000 characters) |
+| `language` | Which language to pronounce, for providers that speak many |
+| `speech` | `{providers, voices}`: other providers to try, and their voices (below) |
+| `keyScope`, `subject`, `context`, `actor`, `bucket` | As for a transcription; `bucket` picks an [end user's credit](/camelrun/end-user-credits) bucket |
+
+By default speech is made with OpenAI's `gpt-4o-mini-tts` in `voice`, on your
+OpenAI key or the platform's. Text OpenAI refuses is a 400, as is a request with
+no key to make it (`SPEECH_UNAVAILABLE`).
+
+`speech.providers` names providers to try in order instead, each `<provider>`
+(its default model) or `<provider>/<model>`, on your key for it
+(`PUT /v1/providers/<provider>/key`, or a key scope's), else the platform's. One
+with no key is skipped. Without `providers`, `voices` that name a provider other
+than OpenAI choose them: those providers in the order given, then OpenAI.
+`{"voices": {"elevenlabs": "…", "openai": "coral"}}` speaks with ElevenLabs.
+
+| Provider | Default model | Voice (`speech.voices.<provider>`) |
+| --- | --- | --- |
+| `elevenlabs` | `eleven_flash_v2_5` (its fastest) | An ElevenLabs voice id. Default: the premade "Rachel" |
+| `cartesia` | `sonic-3` | A Cartesia voice id. Required: Cartesia is skipped without one |
+| `deepgram` | `aura-2` | An Aura voice. Default: `aura-2-thalia-en` |
+| `openai` | `gpt-4o-mini-tts` | `voice` (alloy, coral, verse…). Takes `instructions` |
+
+A provider that fails, or that sends no audible audio within 3 seconds, is
+passed over for the next one. Once audio has gone out, a failure ends the
+stream. The `X-Speech-Model` header names the provider and model that served.
+To find an ElevenLabs voice id, use
+[voice search](/camelrun/voice-calls#find-a-voice).
+
+Speech is billed as its provider bills it: OpenAI's per second of speech made,
+ElevenLabs, Cartesia and Deepgram Aura per character of the text, at their list
+prices. Each is a `usage.recorded` with `kind: "speech"` and `audioSeconds`,
+against an end user's credit when you name a `subject` (held before it is made).
+A caller that hangs up stops it, and what was made is billed. Nothing is kept:
+neither the text nor the audio.
+
+## Formats and limits
+
+| | |
+| --- | --- |
+| Formats | Ogg (Opus or Vorbis: Discord, Telegram and WhatsApp voice notes), WebM (browsers' `MediaRecorder`), MP3, M4A/MP4 (AAC), WAV, FLAC |
+| One audio file | 25 MB and 30 minutes |
+| One message | 5 audio files, 30 minutes in all |
+
+camelRun reads a file's length from its container before sending it, so its cost
+is known first. Audio whose container gives no length (an Ogg stream cut short)
+is refused (415, `UNSUPPORTED_AUDIO`), as are other formats such as AIFF, CAF and
+AMR. Convert them first, e.g. `ffmpeg -i in.aiff out.flac`. Too large or too long
+is a 413 (`AUDIO_TOO_LARGE`, `AUDIO_TOO_LONG`). A provider failure is a 502
+(`TRANSCRIPTION_FAILED`); audio the provider refuses, a 400.
+
+## Billing
+
+| | On the platform's key |
+| --- | --- |
+| Transcription (`gpt-transcribe`) | $0.0045 per minute of audio, billed per second |
+| Speech, OpenAI (`gpt-4o-mini-tts`) | $0.015 per minute of speech made, billed per second |
+| Speech, other providers | Per 1,000 characters: ElevenLabs Flash/Turbo v2.5 $0.05, Cartesia `sonic-3` $0.05, Deepgram `aura-2` $0.03 |
+
+On your own key or a key scope's, the provider bills you and camelRun charges
+nothing. Either way it is recorded:
+
+- in `GET /v1/usage`, a row per day with `kind: "transcription"` and model
+  `openai/gpt-transcribe` (`responses` counts transcriptions);
+- as a [`usage.recorded`](/camelrun/webhooks) event with
+  `kind: "transcription"`, `audioSeconds` and no tokens. In a message it carries
+  the run's `requestId`, `actor`, the agent's identity and key scope; on its own,
+  `agentId: null` and the `subject`, `context` and `actor` you sent.
+
+It counts toward an agent's spend limit, a run's own spend limit, your monthly
+cap and prepaid credit, as a model response does. See
+[Pricing](/camelrun/pricing).
+
+## Privacy
+
+Audio and transcripts are never written to camelRun's logs, which carry sizes,
+lengths, the model and error classes. An attached file and its transcript are
+kept with the agent's history and workspace, and deleted with them. A standalone
+transcription keeps nothing. OpenAI processes the audio under its API data
+policy (not used for training).
+
+## Not yet
+
+- **Audio to the model itself.** Every model reads the transcript today.
+- **Timestamps or speaker labels.** Transcripts are text only.

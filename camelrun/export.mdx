@@ -20,11 +20,17 @@ curl -sf https://run.camelai.com/v1/account/export -H "Authorization: Bearer $CA
 | `account.json` | your account's id, the identity you sign in with, when it was made and exported |
 | `agents/<id>/agent.json` | each agent's configuration and schedules |
 | `agents/<id>/history/*.json` | each agent's whole history, a page of whole turns per file, named by its first message's index |
+| `workspaces.json`, `workspace-assignments.json`, `workspace-usage.json` | your [workspaces](/camelrun/workspaces) (archived ones too), their assignment history, and the daily model and tool usage attributed to each |
+| `schedule-deliveries.json` | the delivery status of [scheduled](/camelrun/schedules) report emails |
+| `computers.json`, `computer-sessions.json` | your [computer](/camelrun/computers) connections and their sessions |
 | `definitions.json`, `channels.json`, `webhooks.json` | your definitions, channels and webhook endpoints (secrets and credentials left out or masked) |
+| `telemetry.json` | where your traces are exported (header values left out) |
 | `tokens.json`, `keys.json` | your API tokens' names and prefixes, and which provider keys are set (last four characters): never a token or key |
 | `oauth-grants.json`, `discord.json` | applications you let act for your account, and managed Discord bindings |
 | `volumes/<id>/volume.json`, `volumes/<id>/files/…` | each volume's name and size, and its files |
 | `billing/ledger.jsonl`, `billing/usage.json` | your credit ledger (newest first) and model usage per day and model |
+| `billing/attempts.jsonl` | model attempts and their settlement state |
+| `end-users/settings.json`, `end-users/end-users.jsonl`, `end-users/ledger.jsonl` | how you meter your own users' [credit](/camelrun/end-user-credits), each user's balance and overrides, and their credit ledger |
 
 **An export is whole, or it fails.** Each agent's history is read from the node
 serving it, so it includes the turn that just ended. If anything cannot be read,

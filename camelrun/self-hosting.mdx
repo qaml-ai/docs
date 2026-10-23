@@ -125,6 +125,13 @@ does not undo them, so back up first (below). On `docker compose stop`, the
 runtime lets running turns finish (up to 100 seconds by default) before it
 exits.
 
+run.camelai.com runs ahead of the latest release. Calendar schedules with
+emailed reports, workspaces, computers, the `x_search` builtin and paged
+`GET /v1/agents` are on the hosted runtime now and listed under **Unreleased**
+in the release notes: a self-hosted runtime gets them with the next release.
+Scheduled email also needs account mail through Amazon SES (see
+[Configuration](/camelrun/configuration#account-mail)).
+
 The SDKs (`@camelai/run`, `camelai-run`) are versioned apart from the runtime.
 A new SDK can call API your runtime does not have yet: upgrade the runtime when
 you upgrade the SDKs, or keep the SDK release from your runtime's date.
