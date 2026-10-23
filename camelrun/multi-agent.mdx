@@ -11,7 +11,8 @@ answer back as the call's result, while it keeps the conversation. This is the
 OpenAI Agents SDK's `agent.as_tool()` and LangGraph's supervisor. The runtime
 runs it, and it is durable: a sub-agent is an agent of its own, and a parent
 interrupted while it waits (camelRun restarted under it) still collects the
-sub-agent's answer when its run resumes.
+sub-agent's answer when its run resumes. For a short tour, see [multi-agent
+orchestration on camelRun](https://camelai.com/run/sub-agents).
 
 The `agents` built-in starts sub-agents in the **background** instead: the
 model goes on at once, and each one's answer arrives as a message of its own
