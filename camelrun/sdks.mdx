@@ -221,7 +221,6 @@ Run options for `run` and `stream`:
 | `idempotencyKey` | `idempotency_key=` | The run's id. The same key returns the same run |
 | `signal` | `timeout=` | Stop waiting; the run goes on |
 | `throwOnError` | `throw_on_error=` | `false` returns a failed run instead of throwing `RunError` |
-| `history` | `history=` | `"none"`: the model sees the instructions and this message only; the run is still recorded. See [Runs without the history](/camelrun/concepts#runs-without-the-history) |
 | `whileRunning` | `while_running=` | `"queue"` (default) or `"steer"` |
 | `spendLimit` | `spend_limit=` | `{usd}`: this run's own budget |
 | `runLimits` | `run_limits=` | `{maxResponses, maxSeconds}`: this run's own, lowering the agent's |

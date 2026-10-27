@@ -55,7 +55,7 @@ curl https://run.camelai.com/v1/agents/$AGENT/prompt \
 The prompt answers `202` with the request record. `requestId` is optional; it
 makes the prompt idempotent, so sending the same one again returns the same run.
 Other fields are `files`, `metadata`, `whileRunning` (`queue` or `steer`),
-`history` (`"none"`: without the agent's history), `spendLimit`, `runLimits`,
+`spendLimit`, `runLimits`,
 `bucket`, `allowDisconnected` and `output` (`{schema}`, for
 [structured output](/camelrun/structured-output)).
 

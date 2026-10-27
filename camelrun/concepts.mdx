@@ -90,24 +90,11 @@ the runs queued behind it are cancelled (code `cancelled`).
 `abort({ queued: "keep" })` stops the running turn only. A failed run throws a
 `RunError` carrying the run, unless you pass `throwOnError: false`.
 
-### Runs without the history
+### Runs without an agent
 
-`history: "none"` (Python `history="none"`) runs a message as a new
-conversation would. The model sees the agent's instructions and tools as they
-are now, and this message, not the messages before it. One agent can then
-answer many independent questions without making an agent for each.
-
-```ts
-const run = await agent.run("Is a hot dog a sandwich?", { history: "none", output: Verdict });
-```
-
-The run is still recorded in the agent's history, its user message marked
-`history: "none"`. It's for a prompt that starts its own turn, not
-`whileRunning: "steer"`. Resumed after a person answers, the run stays without
-the history.
-
-When there is no agent to keep at all (classify, extract, vote, judge),
-`agents.run({ instructions, input, output })` (REST: `POST /v1/runs`) takes a
+Every run of an agent sees its history; long conversations are compacted
+automatically. When there is no agent to keep at all (classify, extract, vote,
+judge), `agents.run({ instructions, input, output })` (REST: `POST /v1/runs`) takes a
 configuration and an input and returns the result, with no agent made. See
 [Stateless runs](/camelrun/stateless-runs).
 
@@ -170,8 +157,8 @@ earlier = await agent.fork(at_message=4)
 
 A fork is an agent like any other: it counts toward your agents and storage.
 It also counts against the agent-create rate limit (`atMessage: 0` included);
-to run one message without the history, send it with `history: "none"`
-instead. The copy itself costs only storage, and shares stored content with the
+to run one message without any history, use a
+[stateless run](/camelrun/stateless-runs) instead. The copy itself costs only storage, and shares stored content with the
 source. Over REST it's `POST /v1/agents/{id}/fork` with `{key?, name?,
 atMessage?, ttlSeconds?, subject?, context?, systemPromptAppend?, modelHeaders?}`;
 in the console, **Fork** on the agent's page, or **Fork from here** under a
@@ -273,10 +260,9 @@ everySeconds, calendar })`, or the `schedule` built-in so the agent sets its own
 from a [webhook](/camelrun/webhooks). See [Schedules](/camelrun/schedules) for
 calendar schedules and report emails.
 
-A repeating schedule's wake-ups are turns of the agent, so by default each one
-reads all the history before it. `history: "none"` on a text schedule wakes it
-with only the system prompt and the text. Write the text to say everything the
-run needs.
+A repeating schedule's wake-ups are turns of the agent, so each one reads the
+history before it, compacted as it grows. That lets a daily agent build on what
+it did before.
 
 A wake-up camelRun can't deliver (the agent is busy at its account's limit,
 say) is tried again 1, 5 and 15 minutes later, then given up. A refusal a retry

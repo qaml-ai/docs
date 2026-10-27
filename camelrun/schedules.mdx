@@ -22,7 +22,6 @@ The same from the API, `POST /v1/agents/{id}/schedules`:
 ```json
 {
   "text": "Research today's developments, save the report, and return the complete report with source links.",
-  "history": "none",
   "calendar": {
     "time": "08:00",
     "timeZone": "America/Chicago",
@@ -47,9 +46,8 @@ Give one way to time it:
 | `calendar: { time, timeZone, daysOfWeek? }` | At a local `HH:MM` in an IANA time zone, on the days given |
 
 A schedule delivers `text` as a message, or runs `code` in the sandbox with the
-agent's tools: give one of them. `history: "none"` wakes the agent with only its
-instructions and the text, not its history, so a daily agent doesn't read an
-ever longer conversation. Its runs are still recorded.
+agent's tools: give one of them. Each wake-up sees the agent's history, compacted as it
+grows, so a daily agent can build on its earlier runs.
 
 Calendar schedules:
 
