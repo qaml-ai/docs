@@ -111,6 +111,7 @@
               "camelrun/structured-output",
               "camelrun/stateless-runs",
               "camelrun/multi-agent",
+              "camelrun/workflows",
               "camelrun/schedules",
               "camelrun/browser",
               "camelrun/computers",

@@ -191,6 +191,7 @@ Pick by where your code runs:
 | A third-party API | **OpenAPI** or **MCP** sources in a definition | camelRun calls the API itself, with credentials it stores sealed |
 | Web search, fetching pages, scheduling, asking the user | **Built-ins** | `builtins: ["web_search", "web_fetch", "schedule", "ask_user"]` |
 | Other agents doing tasks for this one | The **`delegate`** built-in | `delegate: { agents: ["researcher"] }`. See [Multi-agent](/camelrun/multi-agent) |
+| Many agents, coordinated by a plan | The **`workflow`** built-in: the model writes a script that calls agents | `workflow: { agents: ["researcher"] }`, and `run_workflow`. See [Workflows](/camelrun/workflows) |
 
 The same `tool({...})` definitions work attached and served, so you can start
 attached and move to served without changing a tool (see [Several processes,
