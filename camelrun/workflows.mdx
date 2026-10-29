@@ -1,0 +1,203 @@
+---
+title: 'Dynamic workflows and sub-agents on camelRun'
+sidebarTitle: 'Workflows'
+description: 'Let an agent coordinate sub-agents with a JavaScript workflow, collect their answers, and return one result. Configure limits and follow progress.'
+---
+
+[View as Markdown](https://camelai.com/docs/camelrun/workflows.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
+
+A **workflow** is a JavaScript script an agent runs to coordinate many
+sub-agents at once. One tool call (`run_workflow`) carries the whole plan, the
+agents' answers stay in the script's variables, and only the script's return
+value comes back to the model. It is for work one conversation cannot
+coordinate turn by turn: a sweep over every route handler, a migration across
+hundreds of files, a question checked against several independent sources.
+
+It is built on the same sub-agents as [`delegate`](/camelrun/multi-agent): a
+workflow's `agent()` calls make real child agents, with the same limits,
+links, budget and events. For background sub-agents whose answers arrive as
+messages, see [Multi-agent](/camelrun/multi-agent#background-sub-agents).
+
+## Turn it on
+
+Give the agent the `workflow` builtin and say whom its scripts may coordinate.
+The SDKs add the builtin when you pass the settings; in REST send both.
+
+<CodeGroup>
+```ts TypeScript
+const lead = await agents.upsert("migration-lead", {
+  instructions: "You plan migrations. Write a workflow when the work is a sweep.",
+  workflow: { agents: ["worker"], maxAgents: 40, maxParallel: 6 },
+});
+```
+```python Python
+lead = await agents.upsert("migration-lead",
+    instructions="You plan migrations. Write a workflow when the work is a sweep.",
+    workflow={"agents": ["worker"], "maxAgents": 40, "maxParallel": 6})
+```
+```json REST
+{ "builtins": ["workflow"],
+  "workflow": { "agents": ["worker"], "maxAgents": 40, "maxParallel": 6 } }
+```
+</CodeGroup>
+
+A definition takes the same pair, for every agent made from it. The settings
+go with the builtin in both directions: settings without it are refused, and so
+is the builtin without settings.
+
+| Setting | |
+| --- | --- |
+| `agents` | Who a script may coordinate: definition keys or ids (a new child agent for each `agent()` call), or `{ agent: "key" }` for an existing agent that keeps its history. Up to 32 |
+| `instructions` | `true`: the script may start a child with instructions of its own instead, on its own model |
+| `maxAgents` | The most `agent()` calls one workflow may make: 256 by default, up to 4,096. The ceiling is a hard stop |
+| `maxParallel` | Agent calls in flight at once: 16 by default, up to 64. The rest queue inside the script |
+| `maxDepth` | How deep a chain of agents may go, counted with `delegate`'s: 2 by default, 1–5 |
+
+## What the model writes
+
+The tool takes a `script` and optional `args`. The script is plain JavaScript
+with top-level `await`:
+
+```js
+export const meta = { name: "audit-routes", description: "Audit every route for missing auth" }
+
+phase("discover")
+const found = await agent("List every .ts file under src/routes/.", {
+  agent: "worker",
+  label: "list",
+  schema: { type: "object", required: ["files"], properties: { files: { type: "array", items: { type: "string" } } } },
+})
+
+phase("audit")
+const audits = await pipeline(found.files, file =>
+  agent(`Audit ${file} for missing authentication checks. Reply with the issue, or "fine".`, { agent: "worker", label: file }),
+)
+
+phase("report")
+const report = await agent(`Group these findings by severity:\n${audits.join("\n")}`, { agent: "reviewer", label: "report" })
+return { files: found.files.length, report }
+```
+
+| API | |
+| --- | --- |
+| `await agent(prompt, { agent?, label?, phase?, schema? })` | One sub-agent. Resolves to its text, or with `schema` (a JSON Schema for an object) its validated object. Resolves to `null` if it failed, was stopped, or is not one of the agents the settings allow |
+| `await parallel([...])` | A barrier over `agent()` calls started at once; a failed call is `null` in its place |
+| `await pipeline(items, ...stages)` | Each item through the stages, items running together. A stage returning `null` or `undefined` ends that item (kept as `null`) |
+| `phase(title)` | Groups the agents after it under a title in progress events |
+| `log(message)` | A progress line, in `workflow_progress` events |
+| `args` | What the call passed as `args` |
+| `export const meta = { name, description }` | Free-form metadata for the script; the runtime does not use it |
+
+Each agent sees only the prompt it is given, never the parent's conversation,
+so put in it everything the child needs. Only the script's return value comes
+back: return the fields the model needs, not everything every agent said. A
+`schema` shapes one child's answer exactly as [structured
+output](/camelrun/structured-output) does, validated before the call returns.
+
+## The tool's result
+
+```json
+{
+  "status": "completed",
+  "agents": [
+    { "index": 0, "label": "src/routes/a.ts", "agent": "worker", "status": "completed" },
+    { "index": 1, "label": "src/routes/b.ts", "agent": "worker", "status": "failed", "error": "…" }
+  ],
+  "value": { "files": 12, "report": "…" }
+}
+```
+
+A script that throws, runs past its deadline, or asks past `maxAgents` answers
+`status: "failed"` (or `"canceled"`) with an `error`, and the call is an error
+result the model sees. A child that fails is `null` to the script instead, so
+the script decides what a partial failure means.
+
+## Who the children are
+
+Every `agent()` call makes a child agent, as a `delegate` call does:
+
+- **linked to its parent**: `parentAgentId` and `parentRunId` on the agent and in
+  its run's metadata, one step down the delegation chain
+- **acting for whom the parent acts** (`subject`, `context`), with its key scope,
+  and billed to the same account
+- **bounded by the parent's budget**: parallel children share what the run has
+  left, and what they spend counts against the parent's limit
+  (`run.usage.subagentCostUsd`)
+- **taken from the account's busy slots** like any agent, with its own
+  definition's `runLimits`
+- **a day long**, as a scratch agent is
+
+A script cannot coordinate an agent already working on its chain, and a
+workflow's children may not go past `maxDepth` — counted together with
+`delegate`'s.
+
+## Interruption and the script's clock
+
+If a workflow is interrupted, it resumes using the children it already started
+instead of starting the same work again. Keep its inputs stable so it asks the
+same questions when it resumes.
+
+`Date.now()` is fixed at the time the request started and `Math.random()` is
+seeded from the run. `new Date()` and `performance.now()` are not frozen: keep
+them out of prompts, or pass the time in `args`.
+
+## Script environment
+
+The script has no Node globals, filesystem, network access or module imports.
+Put work that needs tools in an agent's task. A script is stopped at its deadline
+or when its run is aborted. Workflows may queue when the runtime is at capacity.
+
+<Note>
+Await the `agent()` calls whose answers you need before returning. When the
+script ends, any children it left running are stopped.
+</Note>
+
+## Watch it
+
+Ask for a run's sub-agents' events and a workflow's own arrive with them:
+`?subagents=1` in the API, `subagents: true` in the SDKs.
+
+| Event | |
+| --- | --- |
+| `workflow_start` | `toolCallId`: the script began |
+| `workflow_progress` | `toolCallId`, `phase?`, `log?`: a phase began, or a log line |
+| `subagent_start`, `subagent_end` | one per `agent()` call, as for `delegate` (the `name` is the target's name) |
+| `workflow_end` | `toolCallId`, `status`, `agents`, `error?`: the script ended |
+
+The children's own streams and histories always have everything; these are the
+parent's view. See [Events](/camelrun/events).
+
+## Limits
+
+| | |
+| --- | --- |
+| `agent()` calls per workflow | 256 by default, at most 4,096 (`maxAgents`) |
+| Agent calls in flight | 16 by default, at most 64 (`maxParallel`) |
+| Items per `parallel()` / `pipeline()` | 16,384 |
+| A script | 128,000 characters; its `args` 256 KB; its return value 256 KB |
+| A task (one `agent()` prompt) | 100,000 characters; a text answer is cut at 128 KB with a marker |
+| JSON answer size | Up to 128 KB; a larger answer fails the workflow |
+| `phase()` titles / `log()` lines | 512 / 1,000 (500-character titles, 2,000-character lines) |
+| Deadline | 60 minutes, then the sandbox is killed |
+| Depth | counted with `delegate`'s `maxDepth` (2 by default) |
+
+See [Limits](/camelrun/limits) for the rest.
+
+## Running a workflow without the model
+
+The agent writes the script and calls `run_workflow`. Running a fixed script
+directly without a model turn is not available yet. To initiate a workflow from
+your application, send the agent a prompt with the task or the script to run.
+
+## Notes
+
+- Named targets (`{ agent: "key" }`) are real agents with their own queue: two
+  calls to one in the same script run one after the other. Definition targets
+  make a new child per call and are the parallel choice.
+- An explicit user abort stops the workflow and its children. An interruption
+  that will resume preserves the children for the next attempt.
+- `maxAgents` bounds one `run_workflow` call. A definition that also enables
+  `workflow` can fan out again at the next level; the chain's `maxDepth`, spend
+  limits and the account's busy-agent cap are what bound the total today.
+
+For large fan-outs, the tool result includes up to 128 KB of child metadata in `agents`; `agentsOmitted` reports how many additional records were omitted. Child events and history remain available, and the script still receives every child answer.
