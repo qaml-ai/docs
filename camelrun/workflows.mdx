@@ -1,7 +1,7 @@
 ---
-title: 'Workflows: a script an agent runs to coordinate sub-agents on camelRun'
+title: 'Dynamic workflows and sub-agents on camelRun'
 sidebarTitle: 'Workflows'
-description: 'Build dynamic workflows on camelRun: an agent writes a JavaScript script that coordinates many sub-agents, run in a sandbox, and only the script’s result comes back.'
+description: 'Let an agent coordinate sub-agents with a JavaScript workflow, collect their answers, and return one result. Configure limits and follow progress.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/workflows.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
@@ -49,8 +49,8 @@ is the builtin without settings.
 | --- | --- |
 | `agents` | Who a script may coordinate: definition keys or ids (a new child agent for each `agent()` call), or `{ agent: "key" }` for an existing agent that keeps its history. Up to 32 |
 | `instructions` | `true`: the script may start a child with instructions of its own instead, on its own model |
-| `maxAgents` | The most `agent()` calls one workflow may make: 32 by default, up to 120. The ceiling is a hard stop |
-| `maxParallel` | Agent calls in flight at once: 4 by default, up to 16. The rest queue inside the script |
+| `maxAgents` | The most `agent()` calls one workflow may make: 256 by default, up to 4,096. The ceiling is a hard stop |
+| `maxParallel` | Agent calls in flight at once: 16 by default, up to 64. The rest queue inside the script |
 | `maxDepth` | How deep a chain of agents may go, counted with `delegate`'s: 2 by default, 1–5 |
 
 ## What the model writes
@@ -64,6 +64,7 @@ export const meta = { name: "audit-routes", description: "Audit every route for 
 phase("discover")
 const found = await agent("List every .ts file under src/routes/.", {
   agent: "worker",
+  label: "list",
   schema: { type: "object", required: ["files"], properties: { files: { type: "array", items: { type: "string" } } } },
 })
 
@@ -73,7 +74,8 @@ const audits = await pipeline(found.files, file =>
 )
 
 phase("report")
-return await agent(`Group these findings by severity:\n${audits.join("\n")}`, { agent: "reviewer" })
+const report = await agent(`Group these findings by severity:\n${audits.join("\n")}`, { agent: "reviewer", label: "report" })
+return { files: found.files.length, report }
 ```
 
 | API | |
@@ -129,33 +131,25 @@ A script cannot coordinate an agent already working on its chain, and a
 workflow's children may not go past `maxDepth` — counted together with
 `delegate`'s.
 
-## Replay and the script's clock
+## Interruption and the script's clock
 
-A child is keyed by what it was asked — a hash of the prompt, agent,
-instructions and schema, plus how many times that ask came up — never by
-arrival order. A script replayed on another node, after the one running it was
-lost, finds the children it already made instead of starting them again.
+If a workflow is interrupted, it resumes using the children it already started
+instead of starting the same work again. Keep its inputs stable so it asks the
+same questions when it resumes.
 
 `Date.now()` is fixed at the time the request started and `Math.random()` is
-seeded from the run, so a replay asks exactly the same questions. `new Date()`
-and `performance.now()` are not frozen: keep them out of prompts, or pass the
-time in `args`.
+seeded from the run. `new Date()` and `performance.now()` are not frozen: keep
+them out of prompts, or pass the time in `args`.
 
-## Where the script runs
+## Script environment
 
-In the runtime's sandbox — the same `v8-exec` isolate `js_exec` uses: a bare
-V8 with no Node globals, no filesystem, no network and no module loader. What a
-script can do is what its `agent()` calls can do, and nothing more. It is
-killed at its deadline or when the run stops, so a loop in a script cannot hold
-the node.
-
-A workflow holds a sandbox for minutes rather than seconds, so a node admits a
-few at once (4 per node, 2 per account); the rest wait for a slot.
+The script has no Node globals, filesystem, network access or module imports.
+Put work that needs tools in an agent's task. A script is stopped at its deadline
+or when its run is aborted. Workflows may queue when the runtime is at capacity.
 
 <Note>
-A JS script cannot leave an `agent()` unawaited — the sandbox refuses a
-return with tool calls still pending. Every child the script starts is one it
-waited for, or one a stop ended.
+Await the `agent()` calls whose answers you need before returning. When the
+script ends, any children it left running are stopped.
 </Note>
 
 ## Watch it
@@ -167,7 +161,7 @@ Ask for a run's sub-agents' events and a workflow's own arrive with them:
 | --- | --- |
 | `workflow_start` | `toolCallId`: the script began |
 | `workflow_progress` | `toolCallId`, `phase?`, `log?`: a phase began, or a log line |
-| `subagent_start`, `subagent_end` | one per `agent()` call, as for `delegate` (the `name` is the call's `label`) |
+| `subagent_start`, `subagent_end` | one per `agent()` call, as for `delegate` (the `name` is the target's name) |
 | `workflow_end` | `toolCallId`, `status`, `agents`, `error?`: the script ended |
 
 The children's own streams and histories always have everything; these are the
@@ -177,32 +171,33 @@ parent's view. See [Events](/camelrun/events).
 
 | | |
 | --- | --- |
-| `agent()` calls per workflow | 32 by default, at most 120 (`maxAgents`) |
-| Agent calls in flight | 4 by default, at most 16 (`maxParallel`) |
-| Items per `parallel()` / `pipeline()` | 512 |
-| A script | 32,000 characters; its `args` 64 KB; its return value 64 KB |
-| A task (one `agent()` prompt) | 24,000 characters; an answer is cut at 24,000 |
-| `phase()` titles / `log()` lines | 64 / 100 (500 characters each) |
-| Deadline | 10 minutes, then the sandbox is killed |
+| `agent()` calls per workflow | 256 by default, at most 4,096 (`maxAgents`) |
+| Agent calls in flight | 16 by default, at most 64 (`maxParallel`) |
+| Items per `parallel()` / `pipeline()` | 16,384 |
+| A script | 128,000 characters; its `args` 256 KB; its return value 256 KB |
+| A task (one `agent()` prompt) | 100,000 characters; a text answer is cut at 128 KB with a marker |
+| JSON answer size | Up to 128 KB; a larger answer fails the workflow |
+| `phase()` titles / `log()` lines | 512 / 1,000 (500-character titles, 2,000-character lines) |
+| Deadline | 60 minutes, then the sandbox is killed |
 | Depth | counted with `delegate`'s `maxDepth` (2 by default) |
 
 See [Limits](/camelrun/limits) for the rest.
 
 ## Running a workflow without the model
 
-This release is the model's tool: the agent writes the script and calls
-`run_workflow`. Running a fixed script from your code — a `workflow` request
-method, `POST /v1/agents/{id}/workflow`, and `agent.workflow(script)` in the
-SDKs — is a follow-up. Until it lands, drive one from code with a prompt, or
-keep the script in a prompt the agent calls verbatim.
+The agent writes the script and calls `run_workflow`. Running a fixed script
+directly without a model turn is not available yet. To initiate a workflow from
+your application, send the agent a prompt with the task or the script to run.
 
 ## Notes
 
 - Named targets (`{ agent: "key" }`) are real agents with their own queue: two
   calls to one in the same script run one after the other. Definition targets
   make a new child per call and are the parallel choice.
-- A workflow that stops names each child's request when it aborts it, so it
-  cannot stop another caller's turn on a shared named agent.
+- An explicit user abort stops the workflow and its children. An interruption
+  that will resume preserves the children for the next attempt.
 - `maxAgents` bounds one `run_workflow` call. A definition that also enables
   `workflow` can fan out again at the next level; the chain's `maxDepth`, spend
   limits and the account's busy-agent cap are what bound the total today.
+
+For large fan-outs, the tool result includes up to 128 KB of child metadata in `agents`; `agentsOmitted` reports how many additional records were omitted. Child events and history remain available, and the script still receives every child answer.
