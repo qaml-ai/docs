@@ -165,7 +165,7 @@ See [Voice and audio](/camelrun/voice) and [Images](/camelrun/images).
 
 | Limit | Value |
 | --- | --- |
-| How long an input waits | 7 days by default; from 60 seconds to 30 days |
+| How long an input waits | 15 minutes by default, then the runtime answers for the person; from 60 seconds to 30 days |
 | Inputs one tool call may ask at once | 8 |
 | Answers in one batch (`POST .../inputs`) | 1 to 100 |
 | An input's message | 4,000 characters |
@@ -210,8 +210,6 @@ spend limits like any other.
 | Channel senders | `perSenderPerMinute` 1 to 600 (default 10), `turnsPerDay` 1 to 1,000,000 (default 1,000); `allow` at most 1,000 senders |
 | Channel daily turns | Count messages, and turns you start through the API or a schedule, since those also post |
 | Channel attachments | 10 files a message, 25 MiB each, 100 MiB in all |
-| Camel Discord servers | 10 per account, or 1 on free credit |
-| A Camel Discord server | `perSenderPerMinute` 1 to 100 (default 5), `turnsPerDay` 1 to 10,000 (default 100; at most 500 on free credit); no `schedule` builtin |
 | Webhook endpoints | 16 per account |
 | A webhook delivery | 10 seconds to answer; retried for up to 3 days |
 | A rotated webhook secret | Keeps signing beside the new one for 24 hours |

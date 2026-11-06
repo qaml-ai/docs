@@ -132,9 +132,22 @@ model has no way to answer.
   with "Not answered: the user sent a new message instead", then the message
   runs.
 - `agent.abort()` cancels them.
-- Inputs expire after `humanInput.expiresInSeconds`: 7 days by default, at most
-  30. Expired and cancelled inputs close their calls and end the turn without
-  calling the model, unless `humanInput.onExpire` is `resume`.
+- Inputs expire after `humanInput.expiresInSeconds`: 900 (15 minutes) by
+  default, 60 to 2,592,000 (30 days), never past the agent's own expiry. Then the
+  runtime answers for the person, and the model goes on with its turn. The answer
+  says it is automatic, not the user's:
+  - an approval is **never** given: the call does not run, and its result is
+    `The user did not respond in a timely manner, so this call was not approved
+    and did not run. Continue without it, or ask again later.`;
+  - `ask_user` returns `{"answers": {}, "timedOut": true, "message": "The user
+    did not respond in a timely manner. Continue. …"}`;
+  - a tool's own request (a form, a URL, `context.confirm`) is cancelled: the
+    tool is not called again, and the model reads that the request was cancelled.
+
+  The input's `state` is `expired`, its `answer.by` is `{system: "expired"}`, and
+  the agent's `input_resolved` event and the `input.resolved` webhook say the
+  same. An answer that comes later is a 409 (`This input expired: no one answered
+  in time…`); send a new message instead.
 
 ```json
 {"name": "Ops", "builtins": ["ask_user"],
@@ -144,7 +157,7 @@ model has no way to answer.
 
 ## In a channel
 
-In Slack, Telegram or Discord, a suspended turn's reply ends with its first
+In Slack or Telegram, a suspended turn's reply ends with its first
 input as text: a question's numbered options, the call to approve, the URL, or
 a confirmation. The next message from someone allowed to answer, if it fits (an
 option's number or label, `approve` or `yes`, `deny` or `no`, `done`), is the

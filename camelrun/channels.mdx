@@ -1,16 +1,15 @@
 ---
-title: 'Put AI agents in Slack, Discord and Telegram with camelRun'
+title: 'Put AI agents in Slack, Telegram, GitHub, email and webhooks with camelRun'
 sidebarTitle: 'Channels'
-description: 'Let people talk to camelRun AI agents in Slack, Telegram and Discord, and have agents answer GitHub pull requests, issues and signed webhooks.'
+description: 'Let people talk to camelRun AI agents in Slack, Telegram and email, and have agents answer GitHub pull requests, issues and signed webhooks.'
 ---
 
 [View as Markdown](https://camelai.com/docs/camelrun/channels.md) · [Docs index for coding agents](https://run.camelai.com/llms.txt)
 
 A channel lets people talk to agents from a messaging service (Telegram, Slack
-or Discord), or has agents answer activity on GitHub. A `webhook` channel
+or email), or has agents answer activity on GitHub. A `webhook` channel
 lets a service that signs its webhooks (Sentry, Linear, Shopify, your own) start
-agents. For Discord you can also skip making a bot: [add the Camel Discord
-bot](#add-the-camel-discord-bot) to your server from the console. For a short
+agents. For a short
 tour, see [Slack AI agents](https://camelai.com/run/slack), [Telegram AI
 bots](https://camelai.com/run/telegram) and [GitHub AI
 agents](https://camelai.com/run/github) on camelRun.
@@ -32,80 +31,18 @@ the channel.
 | --- | --- | --- | --- |
 | `telegram` | `botToken` | Webhook, registered for you | A chat |
 | `slack` | `botToken` (`xoxb-...`), `signingSecret` | Webhook, pasted into the app | A thread started by an @mention, or a DM |
-| `discord` | `botToken` | The Gateway, which camelRun keeps connected | A DM, or a channel or thread where the bot is @mentioned |
-| Camel Discord bot | None: one Discord authorization from the console | Camel's shared Gateway | An allowed server channel or thread where Camel is @mentioned |
 | `github` | `appId`, `privateKey`, `webhookSecret` | Webhook, pasted into the GitHub App | A pull request or issue |
 | `webhook` | `secret`, optional `replyUrl` | Webhook, pasted into the sending service | Whatever the `key` template names (one agent by default) |
+| `email` | None | SES, on the runtime's domain | An email thread |
+
+Discord is not a channel type. Discord bots live in [camelBots](https://bots.camelai.com):
+creating a `discord` or `discord-managed` channel answers 400
+`CHANNEL_TYPE_RETIRED`. A Discord channel made before then is kept as it was:
+`GET /v1/channels` lists it with `disabled: true`, it answers nothing, it can't
+be changed, and `DELETE` removes it.
 
 Creating a channel checks its credentials with the service. Credentials are
 stored encrypted, and the API returns only masked values.
-
-## Add the Camel Discord bot
-
-Camel is camelRun's own Discord bot. Adding it to a server takes one step and
-no Discord application or bot token:
-
-<Steps>
-  <Step title="Add Camel">
-    On the console's Channels page, select **Add Camel to Discord**, or open
-    [run.camelai.com/console/?start=discord](https://run.camelai.com/console/?start=discord),
-    which signs you in first if needed. In Discord, choose a server you own or
-    have Manage Server in, and authorize Camel. That adds the bot and connects
-    the server to your camelRun account. One server belongs to one camelRun
-    account at a time.
-  </Step>
-  <Step title="Configure the server">
-    The server's settings open in the console. Choose a
-    [definition](/camelrun/definitions), or create one with the prompt, model
-    and tools you want. Select the allowed channels, then who may talk to
-    Camel: a list of Discord user IDs, or every member. Saving turns Camel on
-    in that server; until then it doesn't answer there.
-  </Step>
-  <Step title="Mention Camel">
-    In an allowed channel, send a message that @mentions Camel. Pick the entry
-    with the App badge in Discord's autocomplete: a role with the same name
-    doesn't count.
-  </Step>
-</Steps>
-
-Each allowed channel or thread has its own persistent agent, with history
-shared by the people in that conversation. Every new turn needs a direct
-mention of Camel, and direct messages are ignored. Camel asks for View
-Channel, Send Messages, Send Messages in Threads, Attach Files and Read Message
-History, never Administrator, and no privileged intents. It has no slash
-commands.
-
-<Warning>
-  Members who can talk to Camel use the definition's tools with your camelRun
-  account's credentials, and their usage is billed to your account. Choose the
-  tools and the allowed members accordingly.
-</Warning>
-
-- **Limits.** Each member has a rate limit (5 turns a minute by default, up to
-  100), and the server has a daily turn limit (100 by default, up to 10,000).
-  Turns you start through the API count against it. There is no dollar budget
-  per server yet; your account's credit and [spend limits](/camelrun/models-and-keys)
-  apply. An account connects at most 10 servers, or 1 while on free credit,
-  which also caps each server at 500 turns a day.
-- **No schedules.** A definition with the `schedule` builtin can't serve a
-  server, since any member could have the agent wake itself outside those
-  limits.
-- **Changing it.** **Configure** edits the definition, tools included, and can
-  apply it to existing conversations; the console reports which were updated,
-  queued or failed.
-- **Pausing and removing.** Pause stops new replies and pending sends.
-  Disconnect keeps the conversation history and stops replies, but leaves Camel
-  in the server. Removing Camel from the server disconnects it, and adding it
-  back needs reactivation in the console. A saved configuration isn't proof a
-  reply was delivered: test with a new mention in an allowed channel.
-- **Moving a server.** A server's administrators decide who runs Camel there.
-  To move it to another camelRun account, remove Camel from the server, then
-  add it again from that account. The previous account keeps its past
-  conversations but sees no new ones.
-
-The Camel bot is set up from the console only, not with `POST /v1/channels`.
-For your own bot name and avatar, or to answer DMs, use the `discord` channel
-with your own bot token below.
 
 ## Set up each service
 
@@ -126,18 +63,6 @@ with your own bot token below.
     old. A mention starts a thread and replies go there; later messages in that
     thread reach its agent without a mention. Slack has no typing indicator for
     bots.
-  </Accordion>
-  <Accordion title="Discord">
-    Create an application, add a bot, and invite it with View Channel, Send
-    Messages, Send Messages in Threads, Attach Files and Read Message History.
-    camelRun keeps the bot's Gateway connection, reconnecting as needed, and
-    retries a token Discord rejects every five minutes.
-    The bot needs no privileged intents: it answers DMs and messages that
-    mention the bot user. A mention of a role with the bot's name doesn't
-    count: in autocomplete, pick the entry with the App badge. Each DM, channel
-    or thread is one conversation with one agent, shared by everyone in it, and
-    in a server every message needs a mention. Replies never ping anyone. Once the token is saved, the console shows an invite link and
-    a test mention.
   </Accordion>
   <Accordion title="GitHub">
     Create a GitHub App with the repository permissions Pull requests (read and
@@ -183,8 +108,8 @@ with your own bot token below.
 - Each external conversation gets its own agent, made on first contact from the
   channel's definition, at its revision then.
 - Senders must be on the allowlist (`access.allow`) unless the channel sets
-  `access.public`: Telegram and Discord user ids or @usernames, Slack member
-  ids (`U0123ABCD`). Each sender is rate limited (`limits.perSenderPerMinute`,
+  `access.public`: Telegram user ids or @usernames, Slack member
+  ids (`U0123ABCD`), GitHub logins. Each sender is rate limited (`limits.perSenderPerMinute`,
   default 10), and the channel has a daily turn cap (`limits.turnsPerDay`,
   default 1,000).
 - Each message carries its sender as `from`, and tool calls carry a runtime-set
@@ -196,12 +121,11 @@ with your own bot token below.
   is left out, and the prompt says so. Voice notes and audio files are
   transcribed for the model as they arrive: see [Voice](/camelrun/voice).
 - The turn's final answer is sent back when the turn ends, split to the
-  service's message limit (4,096 characters on Telegram, 4,000 on Slack, 2,000
-  on Discord), with a typing indicator meanwhile where the service has one.
+  service's message limit (4,096 characters on Telegram, 4,000 on Slack), with a typing indicator meanwhile where the service has one.
   Channel agents also get a `send_message` tool for updates mid-turn, which
   can send files too.
 - Files the agent presents follow the reply: up to 10 MB as photos and 50 MB
-  as documents on Telegram, 100 MiB on Slack, and 10 MiB on Discord. A larger
+  as documents on Telegram, and 100 MiB on Slack. A larger
   file is sent as a [signed link](/camelrun/files) that works for 24 hours.
 - Messages are recorded durably before they are acknowledged, duplicates are
   dropped, and replies go through a durable outbox, so each part is sent once.

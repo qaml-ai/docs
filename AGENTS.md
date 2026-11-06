@@ -90,8 +90,8 @@ bot builder at bots.camelai.com. The product repository is
 `app/components/bot/content.ts` in camelai-salessite.
 
 - Names: the app calls itself "Camel"; the shared Discord app is "Camel's app" (its bot
-  user is "camel"); the assistant is "camel-builder". camelRun's Camel Discord bot
-  (`camelrun/channels.mdx`) is a different thing.
+  user is "camel"); the assistant is "camel-builder". camelRun's Discord channels
+  were removed in November 2026; Discord bots live in camelBot.
 - camelBot is free while in beta, and AI draws on daily allowances (one per bot, one per
   person for camel-builder and AI in tests). Never state dollar amounts.
 - Check capabilities and their boundaries against `src/runtime/bot-sdk.d.ts`,
